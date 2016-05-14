@@ -2,3 +2,4 @@ package: github.com/hopkinsth/oktad
 import:
 - package: github.com/go-ini/ini
 - package: github.com/tj/go-debug
+- package: github.com/jessevdk/go-flags
