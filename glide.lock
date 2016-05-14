@@ -1,6 +1,8 @@
-hash: 6760ee4cd8a97901215c354b59079f8502e864b84b9a220c4acc46818153ddc8
-updated: 2016-05-13T20:30:50.701462974-04:00
+hash: 9e54de99d01302c9476f7b7267fa61c18864b6c88c5e9a7afb0858fe3d549a4e
+updated: 2016-05-13T21:04:25.680924031-04:00
 imports:
 - name: github.com/go-ini/ini
   version: 12f418cc7edc5a618a51407b7ac1f1f512139df3
+- name: github.com/tj/go-debug
+  version: ff4a55a20a86994118644bbddc6a216da193cc13
 devImports: []
