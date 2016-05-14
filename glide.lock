@@ -1,10 +1,12 @@
-hash: 63c3384ce7f2a313b68642e68196a84c18bd5c630196917929b8b4c6795be8f8
-updated: 2016-05-13T21:51:26.493435137-04:00
+hash: 09314c92ee3247365c6442520f1337bfddf0e5b4df86e265d169de0d13c385ca
+updated: 2016-05-13T22:19:07.184447893-04:00
 imports:
 - name: github.com/go-ini/ini
   version: 12f418cc7edc5a618a51407b7ac1f1f512139df3
 - name: github.com/jessevdk/go-flags
   version: 6b9493b3cb60367edd942144879646604089e3f7
+- name: github.com/peterh/liner
+  version: 0e4af131b90a9786839c8b1b01717be263e8555a
 - name: github.com/tj/go-debug
   version: ff4a55a20a86994118644bbddc6a216da193cc13
 devImports: []
