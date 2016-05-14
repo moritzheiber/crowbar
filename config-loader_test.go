@@ -7,7 +7,7 @@ import "io/ioutil"
 func TestLoadConfigBadFiles(t *testing.T) {
 	os.Setenv("HOME", "/tmp")
 
-	if _, err := loadConfig("badfile"); err == nil {
+	if _, err := parseConfig("badfile"); err == nil {
 		t.Log("Config loading should have errored on a bad path!")
 		t.Fail()
 	}
@@ -28,7 +28,7 @@ func TestLoadConfigFromSpecifiedFile(t *testing.T) {
 		t.Fail()
 	}
 
-	if cfg, err := loadConfig("tmp-sample"); err == nil {
+	if cfg, err := parseConfig("tmp-sample"); err == nil {
 		if cfg.BaseURL != "https://awebsite.com" ||
 			cfg.AppURL != "https://awebsite.com/stuff" {
 			t.Log("Config not properly parsed!", cfg)

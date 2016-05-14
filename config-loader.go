@@ -1,11 +1,14 @@
 package main
 
 import "github.com/go-ini/ini"
+import "github.com/tj/go-debug"
 import "os"
 import "fmt"
 import "errors"
 
 var badCfgErr = errors.New("Bad configuration file!")
+
+var debugCfg = debug.Debug("config")
 
 type OktaConfig struct {
 	BaseURL string
@@ -13,16 +16,10 @@ type OktaConfig struct {
 }
 
 // loads configuration data from the file specified
-func loadConfig(fname string) (OktaConfig, error) {
+func parseConfig(fname string) (OktaConfig, error) {
 	var cfg OktaConfig
-	cwd, _ := os.Getwd()
-	hdir := os.Getenv("HOME")
 
-	f, err := ini.LooseLoad(
-		fname,
-		fmt.Sprintf("%s/%s", cwd, ".okta"),
-		fmt.Sprintf("%s/%s", hdir, ".okta-aws/config"),
-	)
+	f, err := loadConfig(fname)
 
 	if err != nil {
 		return cfg, err
@@ -51,4 +48,41 @@ func loadConfig(fname string) (OktaConfig, error) {
 	cfg.AppURL = au.String()
 
 	return cfg, nil
+}
+
+//figures out which config to load
+func loadConfig(fname string) (*ini.File, error) {
+	cwd, _ := os.Getwd()
+
+	cwdPath := fmt.Sprintf(
+		"%s/%s",
+		cwd,
+		".okta",
+	)
+
+	hdirPath := fmt.Sprintf(
+		"%s/%s",
+		os.Getenv("HOME"),
+		".okta-aws/config",
+	)
+
+	debugCfg("trying to load from config param file")
+	if _, err := os.Stat(fname); err == nil {
+		debugCfg("loading %s", fname)
+		return ini.Load(fname)
+	}
+
+	debugCfg("trying to load from CWD")
+	if _, err := os.Stat(cwdPath); err == nil {
+		debugCfg("loading %s", cwdPath)
+		return ini.Load(cwdPath)
+	}
+
+	debugCfg("trying to load from home dir")
+	if _, err := os.Stat(hdirPath); err == nil {
+		debugCfg("loading %s", hdirPath)
+		return ini.Load(hdirPath)
+	}
+
+	return nil, badCfgErr
 }
