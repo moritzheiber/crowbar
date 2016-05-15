@@ -11,8 +11,45 @@ import "github.com/tj/go-debug"
 import "net/http"
 
 var noMfaError = errors.New("MFA required to use this tool")
+var loginFailedError = errors.New("login failed")
 
 var debugOkta = debug.Debug("oktad:okta")
+
+type OktaLoginRequest struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+	Options  map[string]interface{}
+}
+
+type OktaLoginResponse struct {
+	Status   string
+	Embedded struct {
+		Factors []OktaMfaFactor
+	} `json:"_embedded"`
+}
+
+type OktaMfaFactor struct {
+	Id         string
+	FactorType string
+	Provider   string
+	Status     string
+	Links      map[string]HalLink
+}
+
+type HalLink struct {
+	Href string
+}
+
+func newLoginRequest(user, pass string) OktaLoginRequest {
+	return OktaLoginRequest{
+		user,
+		pass,
+		map[string]interface{}{
+			"multiOptionalFactorEnroll": false,
+			"warnBeforePasswordExpired": false,
+		},
+	}
+}
 
 // begins the login process by authenticating
 // with okta
@@ -44,6 +81,10 @@ func login(cfg OktaConfig, user, pass, destArn string) error {
 		return err
 	}
 
+	if res.StatusCode != http.StatusOK {
+		return loginFailedError
+	}
+
 	b, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		return err
@@ -73,24 +114,13 @@ func login(cfg OktaConfig, user, pass, destArn string) error {
 // just need a buffer, man.
 // or, really, an io.Reader
 func getOktaLoginBody(cfg OktaConfig, user, pass string) io.Reader {
-	return bytes.NewBuffer(
-		[]byte(
-			fmt.Sprintf(
-				`
-					{
-						"username": "%s",
-						"password": "%s",
-						"options": {
-							"multiOptionalFactorEnroll": false,
-							"warnBeforePasswordExpired": false
-						}
-					}
-				`,
-				user,
-				pass,
-			),
-		),
-	)
+	var b bytes.Buffer
+	enc := json.NewEncoder(&b)
+	err := enc.Encode(newLoginRequest(user, pass))
+	if err != nil {
+		debugOkta("Error encoding login json! %s", err)
+	}
+	return &b
 }
 
 // do that mfa stuff
