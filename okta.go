@@ -33,7 +33,7 @@ type OktaMfaFactor struct {
 	FactorType string
 	Provider   string
 	Status     string
-	Links      map[string]HalLink
+	Links      map[string]HalLink `json:"_links"`
 }
 
 type HalLink struct {
@@ -92,17 +92,17 @@ func login(cfg OktaConfig, user, pass, destArn string) error {
 
 	debugOkta("login response body %s", string(b))
 
-	bod := map[string]interface{}{}
-	err = json.Unmarshal(b, &bod)
+	var ores OktaLoginResponse
+	err = json.Unmarshal(b, &ores)
 	if err != nil {
 		return err
 	}
 
-	if pluckStr(bod, "status") != "MFA_REQUIRED" {
+	if ores.Status != "MFA_REQUIRED" {
 		return noMfaError
 	}
 
-	err = doMfa(bod)
+	err = doMfa(ores)
 	if err != nil {
 		return err
 	}
@@ -124,22 +124,19 @@ func getOktaLoginBody(cfg OktaConfig, user, pass string) io.Reader {
 }
 
 // do that mfa stuff
-func doMfa(oktaLoginResult map[string]interface{}) error {
-	factors := pluckIntSlice(oktaLoginResult, "_embedded.factors")
+func doMfa(ores OktaLoginResponse) error {
+	factors := ores.Embedded.Factors
 	if len(factors) == 0 {
 		return errors.New("MFA required but no configured factors.")
 	}
 
-	var tokenFactor map[string]interface{}
+	var tokenFactor OktaMfaFactor
 	for _, factor := range factors {
 		// need to assert that this is a map
 		// since I don't know the structure enough
 		// to make a struct for it
-		if factor, ok := factor.(map[string]interface{}); ok {
-			factorType := pluckStr(factor, "factorType")
-			if factorType == "token:software:totp" {
-				tokenFactor = factor
-			}
+		if factor.FactorType == "token:software:totp" {
+			tokenFactor = factor
 		}
 	}
 
