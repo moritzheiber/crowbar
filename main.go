@@ -75,12 +75,16 @@ func main() {
 			return
 		}
 
-		err = doMfa(ores, factor, mfaToken)
+		sessionToken, err := doMfa(ores, factor, mfaToken)
 		if err != nil {
 			fmt.Println("Error performing MFA auth!")
 			debug("error from doMfa was %s", err)
 			return
 		}
+
+		saml, err := getSaml(oktaCfg, sessionToken)
+		fmt.Println("got saml!", saml)
+
 	}
 }
 

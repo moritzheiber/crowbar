@@ -7,6 +7,7 @@ import "io/ioutil"
 import "errors"
 import "encoding/json"
 import "github.com/tj/go-debug"
+import "github.com/PuerkitoBio/goquery"
 import "net/http"
 
 var noMfaError = errors.New("MFA required to use this tool")
@@ -151,16 +152,19 @@ func extractTokenFactor(ores *OktaLoginResponse) (*OktaMfaFactor, error) {
 }
 
 // do that mfa stuff
-func doMfa(ores *OktaLoginResponse, tf *OktaMfaFactor, mfaToken string) error {
+//
+// returns the okta session token and an error if any)
+func doMfa(ores *OktaLoginResponse, tf *OktaMfaFactor, mfaToken string) (string, error) {
 	var url string
+	var st string
 	if ores == nil || tf == nil || mfaToken == "" {
-		return errors.New("invalid params!")
+		return st, errors.New("invalid params!")
 	}
 
 	vObj, ok := tf.Links["verify"]
 
 	if !ok {
-		return errors.New("Invalid token factor, no 'verify' link found")
+		return st, errors.New("Invalid token factor, no 'verify' link found")
 	}
 
 	type body struct {
@@ -181,16 +185,63 @@ func doMfa(ores *OktaLoginResponse, tf *OktaMfaFactor, mfaToken string) error {
 	res, err := http.DefaultClient.Do(req)
 
 	if err != nil {
-		return err
+		return st, err
 	}
+
+	var mfares OktaLoginResponse
 
 	b, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		return err
+		return st, err
 	}
 
-	fmt.Println(string(b))
+	err = json.Unmarshal(b, &mfares)
+	if err != nil {
+		return st, err
+	}
 
-	return nil
+	debugOkta("response body when MFAing was %s", string(b))
 
+	if mfares.Status != "SUCCESS" {
+		return st, errors.New("MFA did not succeed!")
+	}
+
+	st = mfares.SessionToken
+
+	return st, nil
+}
+
+// fetches the SAML we need for AWS round 1
+func getSaml(cfg OktaConfig, sessionToken string) (string, error) {
+	var saml string
+
+	res, err := http.Get(
+		fmt.Sprintf(
+			"%s?%s=%s",
+			cfg.AppURL,
+			"onetimetoken",
+			sessionToken,
+		),
+	)
+	if err != nil {
+		return saml, err
+	}
+
+	doc, err := goquery.NewDocumentFromResponse(res)
+	if err != nil {
+		return saml, err
+	}
+	sel := doc.Find(`input[name="SAMLResponse"]`)
+
+	if sel.Length() < 1 {
+		debugOkta("didn't find saml response element")
+		return saml, errors.New("Invalid saml response!")
+	}
+
+	saml, ok := sel.First().Attr("value")
+	if !ok {
+		return saml, errors.New("Invalid saml response!")
+	}
+
+	return saml, nil
 }
