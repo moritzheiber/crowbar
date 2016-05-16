@@ -4,3 +4,4 @@ import:
 - package: github.com/tj/go-debug
 - package: github.com/jessevdk/go-flags
 - package: github.com/peterh/liner
+- package: github.com/PuerkitoBio/goquery

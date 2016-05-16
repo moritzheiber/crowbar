@@ -1,5 +1,5 @@
-hash: 09314c92ee3247365c6442520f1337bfddf0e5b4df86e265d169de0d13c385ca
-updated: 2016-05-13T22:19:07.184447893-04:00
+hash: 09c3891c6e793476907769dddd9a0d7bdc4791f7a85df90a4d1a7487274fa6d1
+updated: 2016-05-16T10:39:26.253083835-04:00
 imports:
 - name: github.com/go-ini/ini
   version: 12f418cc7edc5a618a51407b7ac1f1f512139df3
@@ -7,6 +7,8 @@ imports:
   version: 6b9493b3cb60367edd942144879646604089e3f7
 - name: github.com/peterh/liner
   version: 0e4af131b90a9786839c8b1b01717be263e8555a
+- name: github.com/PuerkitoBio/goquery
+  version: 2e29ea41f0d13f4a303c75553f4eeadddc7a4c56
 - name: github.com/tj/go-debug
   version: ff4a55a20a86994118644bbddc6a216da193cc13
 devImports: []
