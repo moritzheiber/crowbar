@@ -53,11 +53,34 @@ func main() {
 		return
 	}
 
-	err = login(oktaCfg, user, pass, destArn)
+	ores, err := login(oktaCfg, user, pass, destArn)
 	if err != nil {
 		fmt.Println("Error grabbing temporary credentials!")
 		debug("login err %s", err)
 		return
+	}
+
+	if ores.Status == "MFA_REQUIRED" {
+		factor, err := extractTokenFactor(ores)
+
+		if err != nil {
+			fmt.Println("Error processing okta response!")
+			debug("err from extractTokenFactor was %s", err)
+			return
+		}
+
+		mfaToken, err := readMfaToken()
+		if err != nil {
+			debug("control-c caught in liner, probably")
+			return
+		}
+
+		err = doMfa(ores, factor, mfaToken)
+		if err != nil {
+			fmt.Println("Error performing MFA auth!")
+			debug("error from doMfa was %s", err)
+			return
+		}
 	}
 }
 
@@ -81,4 +104,13 @@ func readUserPass() (user string, pass string, err error) {
 	}
 
 	return
+}
+
+// reads and returns an mfa token
+func readMfaToken() (string, error) {
+	li := liner.NewLiner()
+	defer li.Close()
+	li.SetCtrlCAborts(true)
+	fmt.Println("Your account requires MFA; please enter a token.")
+	return li.Prompt("MFA token: ")
 }

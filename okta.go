@@ -4,13 +4,13 @@ import "fmt"
 import "bytes"
 import "io"
 import "io/ioutil"
-import "strings"
 import "errors"
 import "encoding/json"
 import "github.com/tj/go-debug"
 import "net/http"
 
 var noMfaError = errors.New("MFA required to use this tool")
+var wrongMfaError = errors.New("No valid mfa congfigured for your account!")
 var loginFailedError = errors.New("login failed")
 
 var debugOkta = debug.Debug("oktad:okta")
@@ -22,8 +22,11 @@ type OktaLoginRequest struct {
 }
 
 type OktaLoginResponse struct {
-	Status   string
-	Embedded struct {
+	ExpiresAt    string
+	SessionToken string
+	Status       string
+	StateToken   string
+	Embedded     struct {
 		Factors []OktaMfaFactor
 	} `json:"_embedded"`
 }
@@ -53,7 +56,7 @@ func newLoginRequest(user, pass string) OktaLoginRequest {
 
 // begins the login process by authenticating
 // with okta
-func login(cfg OktaConfig, user, pass, destArn string) error {
+func login(cfg OktaConfig, user, pass, destArn string) (*OktaLoginResponse, error) {
 	debugOkta("let the login dance begin")
 
 	pr, err := http.NewRequest(
@@ -68,7 +71,7 @@ func login(cfg OktaConfig, user, pass, destArn string) error {
 
 	if err != nil {
 		debugOkta("caught an error building the first request to okta")
-		return err
+		return nil, err
 	}
 
 	ajs := "application/json"
@@ -78,16 +81,16 @@ func login(cfg OktaConfig, user, pass, destArn string) error {
 	res, err := http.DefaultClient.Do(pr)
 	if err != nil {
 		debugOkta("caught error on first request to okta")
-		return err
+		return nil, err
 	}
 
 	if res.StatusCode != http.StatusOK {
-		return loginFailedError
+		return nil, loginFailedError
 	}
 
 	b, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	debugOkta("login response body %s", string(b))
@@ -95,39 +98,37 @@ func login(cfg OktaConfig, user, pass, destArn string) error {
 	var ores OktaLoginResponse
 	err = json.Unmarshal(b, &ores)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	if ores.Status != "MFA_REQUIRED" {
-		return noMfaError
-	}
-
-	err = doMfa(ores)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return &ores, nil
 }
 
 // convenience function to get the request body for the okta request
 // just need a buffer, man.
 // or, really, an io.Reader
 func getOktaLoginBody(cfg OktaConfig, user, pass string) io.Reader {
+	return makeRequestBody(newLoginRequest(user, pass))
+}
+
+// turns a thing (a variable of some sort) into an io.Reader for
+// reading into a request bodygit
+func makeRequestBody(t interface{}) io.Reader {
+	debug := debug.Debug("oktad:makeRequestBody")
 	var b bytes.Buffer
 	enc := json.NewEncoder(&b)
-	err := enc.Encode(newLoginRequest(user, pass))
+	err := enc.Encode(t)
 	if err != nil {
-		debugOkta("Error encoding login json! %s", err)
+		debug("Error encoding json! %s", err)
 	}
 	return &b
 }
 
-// do that mfa stuff
-func doMfa(ores OktaLoginResponse) error {
+// pulls the factor we should use out of the response
+func extractTokenFactor(ores *OktaLoginResponse) (*OktaMfaFactor, error) {
 	factors := ores.Embedded.Factors
 	if len(factors) == 0 {
-		return errors.New("MFA required but no configured factors.")
+		return nil, errors.New("MFA factors not present in response")
 	}
 
 	var tokenFactor OktaMfaFactor
@@ -136,75 +137,60 @@ func doMfa(ores OktaLoginResponse) error {
 		// since I don't know the structure enough
 		// to make a struct for it
 		if factor.FactorType == "token:software:totp" {
+			debugOkta("software totp token found!")
 			tokenFactor = factor
+			break
 		}
 	}
 
-	fmt.Println(tokenFactor)
+	if tokenFactor.Id == "" {
+		return nil, wrongMfaError
+	}
+
+	return &tokenFactor, nil
+}
+
+// do that mfa stuff
+func doMfa(ores *OktaLoginResponse, tf *OktaMfaFactor, mfaToken string) error {
+	var url string
+	if ores == nil || tf == nil || mfaToken == "" {
+		return errors.New("invalid params!")
+	}
+
+	vObj, ok := tf.Links["verify"]
+
+	if !ok {
+		return errors.New("Invalid token factor, no 'verify' link found")
+	}
+
+	type body struct {
+		StateToken string `json:"stateToken"`
+		PassCode   string `json:"passCode"`
+	}
+
+	url = vObj.Href
+	debugOkta("mfa verify url is %s", url)
+	req, _ := http.NewRequest(
+		"POST",
+		url,
+		makeRequestBody(body{ores.StateToken, mfaToken}),
+	)
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+	res, err := http.DefaultClient.Do(req)
+
+	if err != nil {
+		return err
+	}
+
+	b, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(string(b))
+
 	return nil
 
-}
-
-// like pluck, but only gives you strings
-// you'll get an empty string if not found
-func pluckStr(o map[string]interface{}, path string) string {
-	r := pluck(o, path)
-	if r, ok := r.(string); ok {
-		return r
-	} else {
-		return ""
-	}
-}
-
-// like pluck, but only gives you empty interface slices
-// you'll get nil if not found
-func pluckIntSlice(o map[string]interface{}, path string) []interface{} {
-	r := pluck(o, path)
-	if r, ok := r.([]interface{}); ok {
-		return r
-	} else {
-		return nil
-	}
-}
-
-// given a map, pull a property from it at some deeply nested depth
-// this reimplements (most of) JS `pluck` in go: https://github.com/gjohnson/pluck
-func pluck(o map[string]interface{}, path string) interface{} {
-	// support dots for now ebcause thats all we need
-	parts := strings.Split(path, ".")
-
-	if len(parts) == 1 && o[parts[0]] != nil {
-		// if there is only one part, just return that property value
-		return o[parts[0]]
-	} else if len(parts) > 1 && o[parts[0]] != nil {
-		var prev map[string]interface{}
-		var ok bool
-		if prev, ok = o[parts[0]].(map[string]interface{}); !ok {
-			// not an object type! ...or a map, yeah, that.
-			return nil
-		}
-
-		for i := 1; i < len(parts)-1; i += 1 {
-			// we need to check the existence of another
-			// map[string]interface for every property along the way
-			cp := parts[i]
-
-			if prev[cp] == nil {
-				// didn't find the property, it's missing
-				return nil
-			}
-			var ok bool
-			if prev, ok = prev[cp].(map[string]interface{}); !ok {
-				return nil
-			}
-		}
-
-		if prev[parts[len(parts)-1]] != nil {
-			return prev[parts[len(parts)-1]]
-		} else {
-			return nil
-		}
-	}
-
-	return nil
 }
