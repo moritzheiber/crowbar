@@ -7,6 +7,7 @@ import "io/ioutil"
 import "errors"
 import "encoding/json"
 import "encoding/xml"
+import "encoding/base64"
 import "github.com/tj/go-debug"
 import "github.com/PuerkitoBio/goquery"
 import "net/http"
@@ -48,6 +49,7 @@ type HalLink struct {
 // what the hell XML,
 // what the hell.
 type OktaSamlResponse struct {
+	raw        string
 	XMLname    xml.Name `xml:"Response"`
 	Attributes []struct {
 		Name       string `xml:",attr"`
@@ -69,7 +71,7 @@ func newLoginRequest(user, pass string) OktaLoginRequest {
 
 // begins the login process by authenticating
 // with okta
-func login(cfg OktaConfig, user, pass, destArn string) (*OktaLoginResponse, error) {
+func login(cfg OktaConfig, user, pass string) (*OktaLoginResponse, error) {
 	debugOkta("let the login dance begin")
 
 	pr, err := http.NewRequest(
@@ -224,7 +226,8 @@ func doMfa(ores *OktaLoginResponse, tf *OktaMfaFactor, mfaToken string) (string,
 }
 
 // fetches the SAML we need for AWS round 1
-func getSaml(cfg OktaConfig, sessionToken string) (string, error) {
+func getSaml(cfg OktaConfig, sessionToken string) (*OktaSamlResponse, error) {
+	var osres OktaSamlResponse
 	var saml string
 
 	res, err := http.Get(
@@ -236,24 +239,42 @@ func getSaml(cfg OktaConfig, sessionToken string) (string, error) {
 		),
 	)
 	if err != nil {
-		return saml, err
+		return &osres, err
 	}
 
 	doc, err := goquery.NewDocumentFromResponse(res)
 	if err != nil {
-		return saml, err
+		return &osres, err
 	}
 	sel := doc.Find(`input[name="SAMLResponse"]`)
 
 	if sel.Length() < 1 {
 		debugOkta("didn't find saml response element")
-		return saml, errors.New("Invalid saml response!")
+		return &osres, errors.New("Invalid saml response!")
 	}
 
 	saml, ok := sel.First().Attr("value")
 	if !ok {
-		return saml, errors.New("Invalid saml response!")
+		return &osres, errors.New("Invalid saml response!")
 	}
 
-	return saml, nil
+	osres.raw = saml
+	b, err := decodeBase64(saml)
+	if err != nil {
+		debugOkta("error decoding saml base64, %s", err)
+		return &osres, err
+	}
+
+	err = xml.Unmarshal(b, &osres)
+	if err != nil {
+		debugOkta("error decoding saml XML, %s", err)
+		return &osres, err
+	}
+
+	return &osres, nil
+}
+
+func decodeBase64(b64 string) ([]byte, error) {
+	dec := base64.StdEncoding
+	return dec.DecodeString(b64)
 }
