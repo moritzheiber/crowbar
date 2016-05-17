@@ -6,6 +6,7 @@ import "io"
 import "io/ioutil"
 import "errors"
 import "encoding/json"
+import "encoding/xml"
 import "github.com/tj/go-debug"
 import "github.com/PuerkitoBio/goquery"
 import "net/http"
@@ -42,6 +43,17 @@ type OktaMfaFactor struct {
 
 type HalLink struct {
 	Href string
+}
+
+// what the hell XML,
+// what the hell.
+type OktaSamlResponse struct {
+	XMLname    xml.Name `xml:"Response"`
+	Attributes []struct {
+		Name       string `xml:",attr"`
+		NameFormat string `xml:",attr"`
+		Value      string `xml:"AttributeValue"`
+	} `xml:"Assertion>AttributeStatement>Attribute"`
 }
 
 func newLoginRequest(user, pass string) OktaLoginRequest {
