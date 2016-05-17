@@ -1,6 +1,10 @@
-hash: 09c3891c6e793476907769dddd9a0d7bdc4791f7a85df90a4d1a7487274fa6d1
-updated: 2016-05-16T10:39:26.253083835-04:00
+hash: acef351412a37614ab2174f87c47148e35115711390d74af128feb6bc355a6a1
+updated: 2016-05-16T20:38:41.181034726-04:00
 imports:
+- name: github.com/andybalholm/cascadia
+  version: 3ad29d1ad1c4f2023e355603324348cf1f4b2d48
+- name: github.com/aws/aws-sdk-go
+  version: 7bad22e9cff8295edef29844b4daa55ecfb057b9
 - name: github.com/go-ini/ini
   version: 12f418cc7edc5a618a51407b7ac1f1f512139df3
 - name: github.com/jessevdk/go-flags
@@ -11,4 +15,9 @@ imports:
   version: 2e29ea41f0d13f4a303c75553f4eeadddc7a4c56
 - name: github.com/tj/go-debug
   version: ff4a55a20a86994118644bbddc6a216da193cc13
+- name: golang.org/x/net
+  version: ef00b378c73f107bf44d5c9b69875255ce89b79a
+  subpackages:
+  - html
+  - html/atom
 devImports: []
