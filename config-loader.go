@@ -15,6 +15,14 @@ type OktaConfig struct {
 	AppURL  string
 }
 
+// this is what we care about
+// in your aws config
+type AwsConfig struct {
+	// destination ARN
+	DestArn string
+	Region  string
+}
+
 // loads configuration data from the file specified
 func parseConfig(fname string) (OktaConfig, error) {
 	var cfg OktaConfig
@@ -101,28 +109,56 @@ func loadAwsCfg() (*ini.File, error) {
 
 // reads your AWS config file to load the role ARN
 // for a specific profile; returns the ARN and an error if any
-func readAwsProfile(name string) (string, error) {
-
-	var secondRoleArn string
+func readAwsProfile(name string) (AwsConfig, error) {
+	var cfg AwsConfig
 	asec, err := loadAwsCfg()
 	if err != nil {
 		debugCfg("aws profile load err, %s", err)
-		return secondRoleArn, err
+		return cfg, err
 	}
 
 	s, err := asec.GetSection(name)
 	if err != nil {
 		debugCfg("aws profile read err, %s", err)
-		return secondRoleArn, err
+		return cfg, err
 	}
 
 	if !s.HasKey("role_arn") {
 		debugCfg("aws profile %s missing role_arn key", name)
-		return secondRoleArn, err
+		return cfg, err
 	}
 
 	arnKey, _ := s.GetKey("role_arn")
-	secondRoleArn = arnKey.String()
+	cfg.DestArn = arnKey.String()
 
-	return secondRoleArn, nil
+	// try to figure out a region...
+	// try to look for a region key in current section
+	// if fail: try to look for source_profile
+	// if THAT fails, try to load default
+	var loadSection string
+	if s.HasKey("region") {
+		k, _ := s.GetKey("region")
+		cfg.Region = k.String()
+	} else if s.HasKey("source_profile") {
+		k, _ := s.GetKey("source_profile")
+		loadSection = k.String()
+	} else {
+		loadSection = "default"
+	}
+
+	if loadSection != "" {
+		sec, err := asec.GetSection(loadSection)
+		if err == nil {
+			if k, err := sec.GetKey("region"); err == nil {
+				cfg.Region = k.String()
+			}
+		}
+	}
+
+	// finally, if cfg.region is empty, just use us-east-1
+	if cfg.Region == "" {
+		cfg.Region = "us-east-1"
+	}
+
+	return cfg, nil
 }
