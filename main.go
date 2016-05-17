@@ -32,10 +32,6 @@ func main() {
 		return
 	}
 
-	destArn, err := readAwsProfile(
-		fmt.Sprintf("profile %s", args[0]),
-	)
-
 	if err != nil {
 		fmt.Println("Error reading AWS configuration!")
 		return
@@ -53,7 +49,7 @@ func main() {
 		return
 	}
 
-	ores, err := login(oktaCfg, user, pass, destArn)
+	ores, err := login(oktaCfg, user, pass)
 	if err != nil {
 		fmt.Println("Error grabbing temporary credentials!")
 		debug("login err %s", err)
@@ -83,8 +79,25 @@ func main() {
 		}
 
 		saml, err := getSaml(oktaCfg, sessionToken)
-		fmt.Println("got saml!", saml)
+		debug("got saml: \n%s", saml.raw)
 
+		if err != nil {
+			fmt.Println("Error preparing to AssumeRole!")
+			debug("getSaml err was %s", err)
+			return
+		}
+
+		_, err = readAwsProfile(
+			fmt.Sprintf("profile %s", args[0]),
+		)
+
+		if err != nil {
+			fmt.Println("Error reading your AWS profile!")
+			debug("error was... %s", err)
+		}
+
+	} else {
+		fmt.Println("MFA required to use this tool.")
 	}
 }
 
