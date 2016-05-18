@@ -43,3 +43,11 @@ for example
 ```sh
 $ oktad production -- aws ec2 describe-instances
 ```
+
+## Debugging
+
+Login didn't work? Launch this program with `DEBUG=oktad*` in your environment for more debugging info:
+
+```sh
+$ DEBUG=oktad* oktad production -- aws ec2 describe-instances
+```
