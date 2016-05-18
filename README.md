@@ -2,15 +2,9 @@
 
 [okta-aws](https://github.com/RedVentures/okta-aws), but in go. This program authenticates with Okta and then assumes role twice in Amazon.
 
-## Installation
+## Setup
 
-First, install this program:
-
-```sh
-$ go get github.com/hopkinsth/oktad
-```
-
-Second, create an `~/.okta-aws/config` file with your Ookta base URL and app URL, like below:
+First, create an `~/.okta-aws/config` file with your Ookta base URL and app URL, like below:
 
 ```
 [okta]
