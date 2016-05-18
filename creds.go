@@ -8,7 +8,10 @@ import "encoding/json"
 import "fmt"
 import "time"
 import "syscall"
+import "github.com/tj/go-debug"
 import "github.com/aws/aws-sdk-go/aws/credentials"
+
+var debugCredStore = debug.Debug("oktad:credStore")
 
 var credsNotFound = errors.New("credentials not found!")
 var credsExpired = errors.New("credentials expired!")
@@ -52,7 +55,8 @@ func storeCreds(profile string, creds *credentials.Credentials, expire time.Time
 	err = dec.Decode(&allCreds)
 
 	if err != nil && err != io.EOF {
-		return err
+		debugCredStore("error decoding creds, will destroy cred store; err was %s", err)
+		allCreds = CredStore{}
 	}
 
 	if allCreds == nil {
@@ -75,7 +79,14 @@ func storeCreds(profile string, creds *credentials.Credentials, expire time.Time
 		return err
 	}
 
+	f.Sync()
+
 	b, err := json.Marshal(allCreds)
+	if err != nil {
+		return err
+	}
+
+	_, err = f.Seek(0, os.SEEK_SET)
 	if err != nil {
 		return err
 	}
@@ -112,6 +123,7 @@ func loadCreds(profile string) (*credentials.Credentials, error) {
 		),
 	)
 	if err != nil {
+		debugCredStore("error reading credential file")
 		return nil, err
 	}
 
@@ -119,6 +131,7 @@ func loadCreds(profile string) (*credentials.Credentials, error) {
 
 	err = json.Unmarshal(b, &allCreds)
 	if err != nil {
+		debugCredStore("error decoding credential file")
 		return nil, err
 	}
 
