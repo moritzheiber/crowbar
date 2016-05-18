@@ -33,10 +33,19 @@ func main() {
 		return
 	}
 
-	if err != nil {
-		fmt.Println("Error reading AWS configuration!")
+	awsProfile := args[0]
+	maybeCreds, err := loadCreds(awsProfile)
+	if err == nil {
+		debug("found cached credentials, going to use them")
+		// if we could load creds, use them!
+		err := prepAndLaunch(args, maybeCreds)
+		if err != nil {
+			fmt.Println("Error launching program: ", err)
+		}
 		return
 	}
+
+	debug("cred load err %s", err)
 
 	user, pass, err := readUserPass()
 	if err != nil {
@@ -92,7 +101,6 @@ func main() {
 		return
 	}
 
-	awsProfile := args[0]
 	acfg, err := readAwsProfile(
 		fmt.Sprintf("profile %s", awsProfile),
 	)
@@ -102,15 +110,14 @@ func main() {
 		debug("error was... %s", err)
 	}
 
-	mainCreds, err := assumeFirstRole(acfg, saml)
+	mainCreds, _, err := assumeFirstRole(acfg, saml)
 	if err != nil {
 		fmt.Println("Error assuming first role!")
 		debug("error was %s", err)
 		return
 	}
 
-	finalCreds, err := assumeDestinationRole(acfg, mainCreds)
-	finalCreds.Expire()
+	finalCreds, fExp, err := assumeDestinationRole(acfg, mainCreds)
 	if err != nil {
 		fmt.Println("Error assuming second role!")
 		debug("error was %s", err)
@@ -118,7 +125,7 @@ func main() {
 	}
 
 	// all was good, so let's save credentials...
-	err = storeCreds(awsProfile, finalCreds)
+	err = storeCreds(awsProfile, finalCreds, fExp)
 	if err != nil {
 		debug("err storing credentials, %s", err)
 	}

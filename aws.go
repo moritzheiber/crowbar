@@ -2,6 +2,7 @@ package main
 
 import "strings"
 import "errors"
+import "time"
 import "github.com/tj/go-debug"
 import "github.com/aws/aws-sdk-go/aws"
 import "github.com/aws/aws-sdk-go/aws/credentials"
@@ -12,7 +13,9 @@ var debugAws = debug.Debug("oktad:aws")
 
 // assumes the first role and returns the credentials you need for
 // the second assumeRole...
-func assumeFirstRole(acfg AwsConfig, saml *OktaSamlResponse) (*credentials.Credentials, error) {
+// returns those credentials, the expiration time, and error if any
+func assumeFirstRole(acfg AwsConfig, saml *OktaSamlResponse) (*credentials.Credentials, time.Time, error) {
+	var emptyExpire time.Time
 	sess := session.New(
 		aws.NewConfig().WithRegion(acfg.Region),
 	)
@@ -31,7 +34,7 @@ func assumeFirstRole(acfg AwsConfig, saml *OktaSamlResponse) (*credentials.Crede
 	}
 
 	if arns == "" {
-		return nil, errors.New("no arn found from saml data!")
+		return nil, emptyExpire, errors.New("no arn found from saml data!")
 	}
 
 	parts := strings.Split(arns, ",")
@@ -48,7 +51,7 @@ func assumeFirstRole(acfg AwsConfig, saml *OktaSamlResponse) (*credentials.Crede
 
 	if err != nil {
 		debugAws("error in AssumeRoleWithSAML")
-		return nil, err
+		return nil, emptyExpire, err
 	}
 
 	mCreds := credentials.NewStaticCredentials(
@@ -57,14 +60,15 @@ func assumeFirstRole(acfg AwsConfig, saml *OktaSamlResponse) (*credentials.Crede
 		*res.Credentials.SessionToken,
 	)
 
-	return mCreds, nil
+	return mCreds, *res.Credentials.Expiration, nil
 }
 
 // behold, the moment we've been waiting for!
 // we need to assume role into the second account...
 // this will require the AwsConfig, which includes the final
 // destination ARN, and some AWS credentials that allow us to do that
-func assumeDestinationRole(acfg AwsConfig, creds *credentials.Credentials) (*credentials.Credentials, error) {
+func assumeDestinationRole(acfg AwsConfig, creds *credentials.Credentials) (*credentials.Credentials, time.Time, error) {
+	var emptyExpire time.Time
 	sess := session.New(
 		aws.NewConfig().
 			WithRegion(acfg.Region).
@@ -83,7 +87,7 @@ func assumeDestinationRole(acfg AwsConfig, creds *credentials.Credentials) (*cre
 
 	if err != nil {
 		debugAws("error in assumeRole! you were so close!")
-		return nil, err
+		return nil, emptyExpire, err
 	}
 
 	mCreds := credentials.NewStaticCredentials(
@@ -92,5 +96,5 @@ func assumeDestinationRole(acfg AwsConfig, creds *credentials.Credentials) (*cre
 		*res.Credentials.SessionToken,
 	)
 
-	return mCreds, nil
+	return mCreds, *res.Credentials.Expiration, nil
 }
