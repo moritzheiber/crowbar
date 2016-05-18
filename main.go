@@ -52,7 +52,7 @@ func main() {
 
 	ores, err := login(oktaCfg, user, pass)
 	if err != nil {
-		fmt.Println("Error grabbing temporary credentials!")
+		fmt.Println("Error authenticating with Okta! Maybe your username or password are wrong.")
 		debug("login err %s", err)
 		return
 	}
