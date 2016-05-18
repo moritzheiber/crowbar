@@ -9,7 +9,7 @@ Grab a binary for your OS from the [latest release](https://github.com/hopkinsth
 If you're on OSX like me, this might be all you need...
 
 ```sh
-curl -OL https://github.com/hopkinsth/oktad/releases/download/v0.5.0/oktad-darwin-amd64
+curl -OL https://github.com/hopkinsth/oktad/releases/download/v0.5.2/oktad-darwin-amd64
 mv oktad-darwin-amd64 /usr/local/bin/oktad
 ```
 
