@@ -92,8 +92,9 @@ func main() {
 		return
 	}
 
+	awsProfile := args[0]
 	acfg, err := readAwsProfile(
-		fmt.Sprintf("profile %s", args[0]),
+		fmt.Sprintf("profile %s", awsProfile),
 	)
 
 	if err != nil {
@@ -109,10 +110,17 @@ func main() {
 	}
 
 	finalCreds, err := assumeDestinationRole(acfg, mainCreds)
+	finalCreds.Expire()
 	if err != nil {
 		fmt.Println("Error assuming second role!")
 		debug("error was %s", err)
 		return
+	}
+
+	// all was good, so let's save credentials...
+	err = storeCreds(awsProfile, finalCreds)
+	if err != nil {
+		debug("err storing credentials, %s", err)
 	}
 
 	fmt.Println("Everything looks good; launching your program...")
