@@ -2,6 +2,7 @@ package main
 
 import "os"
 import "fmt"
+import "errors"
 import "os/exec"
 import "github.com/tj/go-debug"
 import "github.com/aws/aws-sdk-go/aws/credentials"
@@ -36,4 +37,38 @@ func launch(cmd string, args []string, creds *credentials.Credentials) error {
 	)
 
 	return e.Run()
+}
+
+// prepares arguments for launching & then does it
+// expected input includes arguments from the command line once the program name
+// (in this case ./oktad) is removed
+// and then AWS credentials to put in the environment of the launched program
+func prepAndLaunch(args []string, creds *credentials.Credentials) error {
+	// WHOA!
+	var cmd string
+	var cArgs []string
+
+	if len(args) < 2 {
+		return errors.New("No program specified!")
+
+	}
+
+	for i, a := range args[1:] {
+		if a != "--" {
+			cmd = a
+			if len(args) > (i + 2) {
+				cArgs = args[i+2:]
+			} else {
+				cArgs = []string{}
+			}
+			break
+		}
+	}
+
+	err := launch(cmd, cArgs, creds)
+	if err != nil {
+		debugLaunch("caught error from launcher, %s", err)
+	}
+
+	return err
 }

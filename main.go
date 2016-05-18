@@ -115,32 +115,10 @@ func main() {
 		return
 	}
 
-	// WHOA!
-	var cmd string
-	var cArgs []string
-
-	if len(args) < 2 {
-		fmt.Println("No program specified!")
-		return
-	}
-
-	for i, a := range args[1:] {
-		if a != "--" {
-			cmd = a
-			if len(args) > (i + 2) {
-				cArgs = args[i+2:]
-			} else {
-				cArgs = []string{}
-			}
-			break
-		}
-	}
-
-	err = launch(cmd, cArgs, finalCreds)
+	err = prepAndLaunch(args, finalCreds)
 	if err != nil {
-		debug("caught error from launcher, %s", err)
+		fmt.Println("Error launching program: ", err)
 	}
-
 }
 
 // reads the username and password from the command line
