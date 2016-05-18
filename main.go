@@ -6,15 +6,24 @@ import "github.com/jessevdk/go-flags"
 import "github.com/tj/go-debug"
 import "github.com/peterh/liner"
 
+const VERSION = "0.5.0"
+
 func main() {
 	var opts struct {
-		ConfigFile string `short:"c" long:"config" description:"Path to config file"`
+		ConfigFile   string `short:"c" long:"config" description:"Path to config file"`
+		PrintVersion bool   `short:"v" long:"version" description:"Print version number and exit"`
 	}
 
 	debug := debug.Debug("oktad:main")
 	args, err := flags.Parse(&opts)
 
 	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	if opts.PrintVersion {
+		fmt.Printf("oktad v%s\n", VERSION)
 		return
 	}
 
