@@ -6,7 +6,7 @@ import "github.com/jessevdk/go-flags"
 import "github.com/tj/go-debug"
 import "github.com/peterh/liner"
 
-const VERSION = "0.5.1"
+const VERSION = "0.5.2"
 
 func main() {
 	var opts struct {
