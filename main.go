@@ -124,7 +124,7 @@ func main() {
 			if a != "--" {
 				cmd = a
 				if len(args) > (i + 2) {
-					cArgs = args[i+1:]
+					cArgs = args[i+2:]
 				} else {
 					cArgs = []string{}
 				}
@@ -132,7 +132,10 @@ func main() {
 			}
 		}
 
-		fmt.Println(launch(cmd, cArgs, finalCreds))
+		err = launch(cmd, cArgs, finalCreds)
+		if err != nil {
+			debug("caught error from launcher, %s", err)
+		}
 
 	} else {
 		fmt.Println("MFA required to use this tool.")
