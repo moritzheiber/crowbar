@@ -13,6 +13,7 @@ func main() {
 
 	debug := debug.Debug("oktad:main")
 	args, err := flags.Parse(&opts)
+
 	if err != nil {
 		return
 	}
@@ -87,7 +88,7 @@ func main() {
 			return
 		}
 
-		_, err = readAwsProfile(
+		acfg, err := readAwsProfile(
 			fmt.Sprintf("profile %s", args[0]),
 		)
 
@@ -95,6 +96,43 @@ func main() {
 			fmt.Println("Error reading your AWS profile!")
 			debug("error was... %s", err)
 		}
+
+		mainCreds, err := assumeFirstRole(acfg, saml)
+		if err != nil {
+			fmt.Println("Error assuming first role!")
+			debug("error was %s", err)
+			return
+		}
+
+		finalCreds, err := assumeDestinationRole(acfg, mainCreds)
+		if err != nil {
+			fmt.Println("Error assuming second role!")
+			debug("error was %s", err)
+			return
+		}
+
+		// WHOA!
+		var cmd string
+		var cArgs []string
+
+		if len(args) < 2 {
+			fmt.Println("No program specified!")
+			return
+		}
+
+		for i, a := range args[1:] {
+			if a != "--" {
+				cmd = a
+				if len(args) > (i + 2) {
+					cArgs = args[i+1:]
+				} else {
+					cArgs = []string{}
+				}
+				break
+			}
+		}
+
+		fmt.Println(launch(cmd, cArgs, finalCreds))
 
 	} else {
 		fmt.Println("MFA required to use this tool.")
