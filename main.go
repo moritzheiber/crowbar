@@ -57,89 +57,90 @@ func main() {
 		return
 	}
 
-	if ores.Status == "MFA_REQUIRED" {
-		factor, err := extractTokenFactor(ores)
-
-		if err != nil {
-			fmt.Println("Error processing okta response!")
-			debug("err from extractTokenFactor was %s", err)
-			return
-		}
-
-		mfaToken, err := readMfaToken()
-		if err != nil {
-			debug("control-c caught in liner, probably")
-			return
-		}
-
-		sessionToken, err := doMfa(ores, factor, mfaToken)
-		if err != nil {
-			fmt.Println("Error performing MFA auth!")
-			debug("error from doMfa was %s", err)
-			return
-		}
-
-		saml, err := getSaml(oktaCfg, sessionToken)
-		debug("got saml: \n%s", saml.raw)
-
-		if err != nil {
-			fmt.Println("Error preparing to AssumeRole!")
-			debug("getSaml err was %s", err)
-			return
-		}
-
-		acfg, err := readAwsProfile(
-			fmt.Sprintf("profile %s", args[0]),
-		)
-
-		if err != nil {
-			fmt.Println("Error reading your AWS profile!")
-			debug("error was... %s", err)
-		}
-
-		mainCreds, err := assumeFirstRole(acfg, saml)
-		if err != nil {
-			fmt.Println("Error assuming first role!")
-			debug("error was %s", err)
-			return
-		}
-
-		finalCreds, err := assumeDestinationRole(acfg, mainCreds)
-		if err != nil {
-			fmt.Println("Error assuming second role!")
-			debug("error was %s", err)
-			return
-		}
-
-		// WHOA!
-		var cmd string
-		var cArgs []string
-
-		if len(args) < 2 {
-			fmt.Println("No program specified!")
-			return
-		}
-
-		for i, a := range args[1:] {
-			if a != "--" {
-				cmd = a
-				if len(args) > (i + 2) {
-					cArgs = args[i+2:]
-				} else {
-					cArgs = []string{}
-				}
-				break
-			}
-		}
-
-		err = launch(cmd, cArgs, finalCreds)
-		if err != nil {
-			debug("caught error from launcher, %s", err)
-		}
-
-	} else {
+	if ores.Status != "MFA_REQUIRED" {
 		fmt.Println("MFA required to use this tool.")
+		return
 	}
+
+	factor, err := extractTokenFactor(ores)
+
+	if err != nil {
+		fmt.Println("Error processing okta response!")
+		debug("err from extractTokenFactor was %s", err)
+		return
+	}
+
+	mfaToken, err := readMfaToken()
+	if err != nil {
+		debug("control-c caught in liner, probably")
+		return
+	}
+
+	sessionToken, err := doMfa(ores, factor, mfaToken)
+	if err != nil {
+		fmt.Println("Error performing MFA auth!")
+		debug("error from doMfa was %s", err)
+		return
+	}
+
+	saml, err := getSaml(oktaCfg, sessionToken)
+	debug("got saml: \n%s", saml.raw)
+
+	if err != nil {
+		fmt.Println("Error preparing to AssumeRole!")
+		debug("getSaml err was %s", err)
+		return
+	}
+
+	acfg, err := readAwsProfile(
+		fmt.Sprintf("profile %s", args[0]),
+	)
+
+	if err != nil {
+		fmt.Println("Error reading your AWS profile!")
+		debug("error was... %s", err)
+	}
+
+	mainCreds, err := assumeFirstRole(acfg, saml)
+	if err != nil {
+		fmt.Println("Error assuming first role!")
+		debug("error was %s", err)
+		return
+	}
+
+	finalCreds, err := assumeDestinationRole(acfg, mainCreds)
+	if err != nil {
+		fmt.Println("Error assuming second role!")
+		debug("error was %s", err)
+		return
+	}
+
+	// WHOA!
+	var cmd string
+	var cArgs []string
+
+	if len(args) < 2 {
+		fmt.Println("No program specified!")
+		return
+	}
+
+	for i, a := range args[1:] {
+		if a != "--" {
+			cmd = a
+			if len(args) > (i + 2) {
+				cArgs = args[i+2:]
+			} else {
+				cArgs = []string{}
+			}
+			break
+		}
+	}
+
+	err = launch(cmd, cArgs, finalCreds)
+	if err != nil {
+		debug("caught error from launcher, %s", err)
+	}
+
 }
 
 // reads the username and password from the command line
