@@ -115,6 +115,7 @@ func main() {
 		return
 	}
 
+	fmt.Println("Everything looks good; launching your program...")
 	err = prepAndLaunch(args, finalCreds)
 	if err != nil {
 		fmt.Println("Error launching program: ", err)
