@@ -86,7 +86,7 @@ func assumeDestinationRole(acfg AwsConfig, creds *credentials.Credentials) (*cre
 	)
 
 	if err != nil {
-		debugAws("error in assumeRole! you were so close!")
+		debugAws("error in assumeDestinationRole! you were so close!")
 		return nil, emptyExpire, err
 	}
 
