@@ -7,6 +7,7 @@ import "fmt"
 import "errors"
 
 var badCfgErr = errors.New("Bad configuration file!")
+var awsProfileNotFound = errors.New("AWS profile not found!")
 
 var debugCfg = debug.Debug("oktad:config")
 
@@ -108,7 +109,8 @@ func loadAwsCfg() (*ini.File, error) {
 }
 
 // reads your AWS config file to load the role ARN
-// for a specific profile; returns the ARN and an error if any
+// for a specific profile; returns the ARN, whether we found your profile,
+// and an error if any
 func readAwsProfile(name string) (AwsConfig, error) {
 	var cfg AwsConfig
 	asec, err := loadAwsCfg()
@@ -120,7 +122,7 @@ func readAwsProfile(name string) (AwsConfig, error) {
 	s, err := asec.GetSection(name)
 	if err != nil {
 		debugCfg("aws profile read err, %s", err)
-		return cfg, err
+		return cfg, awsProfileNotFound
 	}
 
 	if !s.HasKey("role_arn") {

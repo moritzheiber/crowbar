@@ -12,9 +12,10 @@ import "github.com/tj/go-debug"
 import "github.com/aws/aws-sdk-go/aws/credentials"
 
 var debugCredStore = debug.Debug("oktad:credStore")
-
 var credsNotFound = errors.New("credentials not found!")
 var credsExpired = errors.New("credentials expired!")
+
+const BASE_PROFILE_CREDS = "__oktad_base_credentials"
 
 type CredStore map[string]AwsCreds
 type AwsCreds struct {
@@ -141,7 +142,11 @@ func loadCreds(profile string) (*credentials.Credentials, error) {
 
 	creds, ok := allCreds[profile]
 	if !ok {
-		return nil, credsNotFound
+		creds, ok = allCreds[BASE_PROFILE_CREDS]
+		if !ok {
+			return nil, credsNotFound
+		}
+
 	}
 
 	if time.Now().UnixNano() >= creds.Expiration.UnixNano() {
