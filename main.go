@@ -5,8 +5,10 @@ import "fmt"
 import "github.com/jessevdk/go-flags"
 import "github.com/tj/go-debug"
 import "github.com/peterh/liner"
+import "github.com/aws/aws-sdk-go/aws/credentials"
+import "time"
 
-const VERSION = "0.5.2"
+const VERSION = "0.6.0"
 
 func main() {
 	var opts struct {
@@ -38,11 +40,35 @@ func main() {
 	}
 
 	if len(args) <= 0 {
-		fmt.Println("You must supply a profile name, sorry.")
+		fmt.Println("Hey, that command won't actually do anything.\n\nSorry.")
 		return
 	}
 
 	awsProfile := args[0]
+	acfg, err := readAwsProfile(
+		fmt.Sprintf("profile %s", awsProfile),
+	)
+
+	var skipSecondRole bool
+
+	if err != nil {
+		//fmt.Println("Error reading your AWS profile!")
+		debug("error reading AWS profile: %s", err)
+		if err == awsProfileNotFound {
+			// if the AWS profile isn't found, we'll assume that
+			// the user intends to run a command in the first account
+			// behind their okta auth, rather than assuming role twice
+			skipSecondRole = true
+			fmt.Printf(
+				"We couldn't find an AWS profile named %s,\nso we will AssumeRole into your base account.\n",
+				awsProfile,
+			)
+			awsProfile = BASE_PROFILE_CREDS
+
+			args = append([]string{BASE_PROFILE_CREDS}, args...)
+		}
+	}
+
 	maybeCreds, err := loadCreds(awsProfile)
 	if err == nil {
 		debug("found cached credentials, going to use them")
@@ -55,15 +81,6 @@ func main() {
 	}
 
 	debug("cred load err %s", err)
-
-	acfg, err := readAwsProfile(
-		fmt.Sprintf("profile %s", awsProfile),
-	)
-
-	if err != nil {
-		fmt.Println("Error reading your AWS profile!")
-		debug("error was... %s", err)
-	}
 
 	user, pass, err := readUserPass()
 	if err != nil {
@@ -119,18 +136,25 @@ func main() {
 		return
 	}
 
-	mainCreds, _, err := assumeFirstRole(acfg, saml)
+	mainCreds, mExp, err := assumeFirstRole(acfg, saml)
 	if err != nil {
 		fmt.Println("Error assuming first role!")
 		debug("error was %s", err)
 		return
 	}
 
-	finalCreds, fExp, err := assumeDestinationRole(acfg, mainCreds)
-	if err != nil {
-		fmt.Println("Error assuming second role!")
-		debug("error was %s", err)
-		return
+	var finalCreds *credentials.Credentials
+	var fExp time.Time
+	if !skipSecondRole {
+		finalCreds, fExp, err = assumeDestinationRole(acfg, mainCreds)
+		if err != nil {
+			fmt.Println("Error assuming second role!")
+			debug("error was %s", err)
+			return
+		}
+	} else {
+		finalCreds = mainCreds
+		fExp = mExp
 	}
 
 	// all was good, so let's save credentials...
