@@ -56,6 +56,15 @@ func main() {
 
 	debug("cred load err %s", err)
 
+	acfg, err := readAwsProfile(
+		fmt.Sprintf("profile %s", awsProfile),
+	)
+
+	if err != nil {
+		fmt.Println("Error reading your AWS profile!")
+		debug("error was... %s", err)
+	}
+
 	user, pass, err := readUserPass()
 	if err != nil {
 		// if we got an error here, the user bailed on us
@@ -108,15 +117,6 @@ func main() {
 		fmt.Println("Error preparing to AssumeRole!")
 		debug("getSaml err was %s", err)
 		return
-	}
-
-	acfg, err := readAwsProfile(
-		fmt.Sprintf("profile %s", awsProfile),
-	)
-
-	if err != nil {
-		fmt.Println("Error reading your AWS profile!")
-		debug("error was... %s", err)
 	}
 
 	mainCreds, _, err := assumeFirstRole(acfg, saml)
