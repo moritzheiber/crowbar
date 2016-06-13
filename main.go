@@ -8,7 +8,7 @@ import "github.com/peterh/liner"
 import "github.com/aws/aws-sdk-go/aws/credentials"
 import "time"
 
-const VERSION = "0.6.0"
+const VERSION = "0.6.1"
 
 func main() {
 	var opts struct {
