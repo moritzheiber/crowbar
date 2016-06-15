@@ -6,7 +6,7 @@ import "os"
 import "fmt"
 import "errors"
 
-var badCfgErr = errors.New("Bad configuration file!")
+var badCfgErr = errors.New("Could not find a suitable oktad config file!")
 var awsProfileNotFound = errors.New("AWS profile not found!")
 
 var debugCfg = debug.Debug("oktad:config")
@@ -78,19 +78,36 @@ func loadConfig(fname string) (*ini.File, error) {
 	debugCfg("trying to load from config param file")
 	if _, err := os.Stat(fname); err == nil {
 		debugCfg("loading %s", fname)
-		return ini.Load(fname)
+		f, err := ini.Load(fname)
+
+		if err == nil {
+			return f, nil
+		}
+
+		debugCfg("error loading %s: %s", fname, err)
 	}
 
 	debugCfg("trying to load from CWD")
 	if _, err := os.Stat(cwdPath); err == nil {
 		debugCfg("loading %s", cwdPath)
-		return ini.Load(cwdPath)
+		f, err := ini.Load(cwdPath)
+		if err == nil {
+			return f, nil
+		}
+
+		debugCfg("error loading %s: %s", cwdPath, err)
 	}
 
 	debugCfg("trying to load from home dir")
 	if _, err := os.Stat(hdirPath); err == nil {
 		debugCfg("loading %s", hdirPath)
-		return ini.Load(hdirPath)
+
+		f, err := ini.Load(hdirPath)
+		if err == nil {
+			return f, nil
+		}
+
+		debugCfg("error loading %s: %s", hdirPath, err)
 	}
 
 	return nil, badCfgErr
