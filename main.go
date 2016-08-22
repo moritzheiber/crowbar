@@ -114,14 +114,24 @@ func main() {
 		return
 	}
 
+	tries := 0
+	var sessionToken string
+
+TRYMFA:
 	mfaToken, err := readMfaToken()
 	if err != nil {
 		debug("control-c caught in liner, probably")
 		return
 	}
 
-	sessionToken, err := doMfa(ores, factor, mfaToken)
-	if err != nil {
+	if tries < 3 {
+		sessionToken, err = doMfa(ores, factor, mfaToken)
+		if err != nil {
+			tries++
+			fmt.Println("Ivalid MFA code, please try again.")
+			goto TRYMFA // eat that, Djikstra!
+		}
+	} else {
 		fmt.Println("Error performing MFA auth!")
 		debug("error from doMfa was %s", err)
 		return
