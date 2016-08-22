@@ -124,7 +124,7 @@ TRYMFA:
 		return
 	}
 
-	if tries < 3 {
+	if tries < 2 {
 		sessionToken, err = doMfa(ores, factor, mfaToken)
 		if err != nil {
 			tries++
