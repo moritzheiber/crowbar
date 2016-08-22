@@ -128,7 +128,7 @@ TRYMFA:
 		sessionToken, err = doMfa(ores, factor, mfaToken)
 		if err != nil {
 			tries++
-			fmt.Println("Ivalid MFA code, please try again.")
+			fmt.Println("Invalid MFA code, please try again.")
 			goto TRYMFA // eat that, Djikstra!
 		}
 	} else {
