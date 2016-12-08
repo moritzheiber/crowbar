@@ -38,7 +38,19 @@ func assumeFirstRole(acfg AwsConfig, saml *OktaSamlResponse) (*credentials.Crede
 	}
 
 	parts := strings.Split(arns, ",")
-	roleArn, principalArn := parts[0], parts[1]
+
+	if len(parts) != 2 {
+		return nil, emptyExpire, errors.New("invalid initial role ARN")
+	}
+
+	var roleArn, principalArn string
+	for _, part := range parts {
+		if strings.Contains(part, "saml-provider") {
+			principalArn = part
+		} else {
+			roleArn = part
+		}
+	}
 
 	res, err := scl.AssumeRoleWithSAML(
 		&sts.AssumeRoleWithSAMLInput{
