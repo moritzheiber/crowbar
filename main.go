@@ -8,19 +8,19 @@ import "github.com/peterh/liner"
 import "github.com/aws/aws-sdk-go/aws/credentials"
 import "time"
 
-const VERSION = "0.6.2"
+const VERSION = "0.6.3"
 
 func main() {
 	var opts struct {
-		ConfigFile   string `short:"c" long:"config" description:"Path to config file"`
-		PrintVersion bool   `short:"v" long:"version" description:"Print version number and exit"`
+		ConfigFile          string `short:"c" long:"config" description:"Path to config file"`
+		PrintVersion        bool   `short:"v" long:"version" description:"Print version number and exit"`
+		ForceNewCredentials bool   `short:"f" long:"force-new" description:"force new credentials"`
 	}
 
 	debug := debug.Debug("oktad:main")
 	args, err := flags.Parse(&opts)
 
 	if err != nil {
-		fmt.Println(err)
 		return
 	}
 
@@ -69,18 +69,20 @@ func main() {
 		}
 	}
 
-	maybeCreds, err := loadCreds(awsProfile)
-	if err == nil {
-		debug("found cached credentials, going to use them")
-		// if we could load creds, use them!
-		err := prepAndLaunch(args, maybeCreds)
-		if err != nil {
-			fmt.Println("Error launching program: ", err)
+	if !opts.ForceNewCredentials {
+		maybeCreds, err := loadCreds(awsProfile)
+		if err == nil {
+			debug("found cached credentials, going to use them")
+			// if we could load creds, use them!
+			err := prepAndLaunch(args, maybeCreds)
+			if err != nil {
+				fmt.Println("Error launching program: ", err)
+			}
+			return
 		}
-		return
-	}
 
-	debug("cred load err %s", err)
+		debug("cred load err %s", err)
+	}
 
 	user, pass, err := readUserPass()
 	if err != nil {
