@@ -103,7 +103,9 @@ func login(cfg OktaConfig, user, pass string) (*OktaLoginResponse, error) {
 		return nil, loginFailedError
 	}
 
+	defer res.Body.Close()
 	b, err := ioutil.ReadAll(res.Body)
+
 	if err != nil {
 		return nil, err
 	}
@@ -205,6 +207,7 @@ func doMfa(ores *OktaLoginResponse, tf *OktaMfaFactor, mfaToken string) (string,
 	var mfares OktaLoginResponse
 
 	b, err := ioutil.ReadAll(res.Body)
+	defer res.Body.Close()
 	if err != nil {
 		return st, err
 	}
