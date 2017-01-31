@@ -10,7 +10,10 @@ import "encoding/xml"
 import "encoding/base64"
 import "github.com/tj/go-debug"
 import "github.com/PuerkitoBio/goquery"
-import "net/http"
+import (
+	"net/http"
+	"github.com/havoc-io/go-keytar"
+)
 
 var noMfaError = errors.New("MFA required to use this tool")
 var wrongMfaError = errors.New("No valid mfa congfigured for your account!")
@@ -71,7 +74,7 @@ func newLoginRequest(user, pass string) OktaLoginRequest {
 
 // begins the login process by authenticating
 // with okta
-func login(cfg OktaConfig, user, pass string) (*OktaLoginResponse, error) {
+func login(cfg *OktaConfig, user, pass string) (*OktaLoginResponse, error) {
 	debugOkta("let the login dance begin")
 
 	pr, err := http.NewRequest(
@@ -124,7 +127,7 @@ func login(cfg OktaConfig, user, pass string) (*OktaLoginResponse, error) {
 // convenience function to get the request body for the okta request
 // just need a buffer, man.
 // or, really, an io.Reader
-func getOktaLoginBody(cfg OktaConfig, user, pass string) io.Reader {
+func getOktaLoginBody(cfg *OktaConfig, user, pass string) io.Reader {
 	return makeRequestBody(newLoginRequest(user, pass))
 }
 
@@ -229,10 +232,7 @@ func doMfa(ores *OktaLoginResponse, tf *OktaMfaFactor, mfaToken string) (string,
 }
 
 // fetches the SAML we need for AWS round 1
-func getSaml(cfg OktaConfig, sessionToken string) (*OktaSamlResponse, error) {
-	var osres OktaSamlResponse
-	var saml string
-
+func getSaml(cfg *OktaConfig, sessionToken string) (*OktaSamlResponse, error) {
 	res, err := http.Get(
 		fmt.Sprintf(
 			"%s?%s=%s",
@@ -242,13 +242,35 @@ func getSaml(cfg OktaConfig, sessionToken string) (*OktaSamlResponse, error) {
 		),
 	)
 	if err != nil {
-		return &osres, err
+		return nil, err
 	}
+
+	return processSamlResponse(res)
+
+}
+
+func getSamlSession(cfg *OktaConfig, cookie *http.Cookie) (*OktaSamlResponse, error) {
+
+	client := http.Client{}
+	req, err := http.NewRequest("GET", cfg.AppURL, nil)
+	req.AddCookie(cookie)
+	res, err := client.Do(req)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return processSamlResponse(res)
+}
+
+func processSamlResponse(res *http.Response) (*OktaSamlResponse, error) {
+	var osres OktaSamlResponse
 
 	doc, err := goquery.NewDocumentFromResponse(res)
 	if err != nil {
 		return &osres, err
 	}
+
 	sel := doc.Find(`input[name="SAMLResponse"]`)
 
 	if sel.Length() < 1 {
@@ -273,6 +295,26 @@ func getSaml(cfg OktaConfig, sessionToken string) (*OktaSamlResponse, error) {
 		debugOkta("error decoding saml XML, %s", err)
 		return &osres, err
 	}
+
+	keyStore, err := keytar.GetKeychain()
+
+	if err != nil {
+		debugOkta("error getting keychain access %s", err)
+	}
+
+	var sessionCookie *http.Cookie
+
+	for _, cookie := range res.Cookies() {
+		if cookie.Name == "sid" {
+			sessionCookie = cookie
+		}
+	}
+	encCookie, err := encodePasswordStruct(sessionCookie)
+	if err != nil {
+		fmt.Println("Failed to write cookie to keystore")
+		debugOkta("error was %s", err)
+	}
+	keytar.ReplacePassword(keyStore, APPNAME, SESSION_COOKIE, encCookie)
 
 	return &osres, nil
 }
