@@ -13,7 +13,7 @@ import (
 	"errors"
 )
 
-const VERSION = "0.7.1"
+const VERSION = "0.7.2"
 const SESSION_COOKIE = "__oktad_session_cookie"
 
 func main() {
