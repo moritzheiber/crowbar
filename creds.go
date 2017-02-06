@@ -1,24 +1,21 @@
 package main
 
-import "errors"
-import "time"
 import "bytes"
+import "errors"
+import "fmt"
+import "time"
+import "encoding/base64"
 import "encoding/gob"
 import "github.com/tj/go-debug"
 import "github.com/aws/aws-sdk-go/aws/credentials"
-import (
-	"github.com/havoc-io/go-keytar"
-	"fmt"
-	"encoding/base64"
-)
+import "github.com/havoc-io/go-keytar"
 
 var debugCredStore = debug.Debug("oktad:credStore")
 var credsNotFound = errors.New("credentials not found!")
 var credsExpired = errors.New("credentials expired!")
 
 const APPNAME = "oktad"
-const BASE_PROFILE_CREDS = "__oktad_base_credentials" +
-	""
+const BASE_PROFILE_CREDS = "__oktad_base_credentials"
 
 type CredStore map[string]AwsCreds
 type AwsCreds struct {

@@ -114,7 +114,7 @@ func main() {
 		}
 	}
 
-	if saml == nil {
+	if saml == nil || saml.raw == "" {
 		// We got a saved session
 
 		cookie := http.Cookie{}
@@ -129,7 +129,7 @@ func main() {
 		}
 	}
 
-	if saml == nil {
+	if saml == nil || saml.raw == "" {
 		// final fallback
 		sessionToken, err = getSessionFromLogin(&oktaCfg)
 		if err != nil {
