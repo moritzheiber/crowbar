@@ -173,7 +173,7 @@ func main() {
 		debug("err storing credentials, %s", err)
 	}
 
-	fmt.Println("Everything looks good; launching your program...")
+	debug("Everything looks good; launching your program...")
 	err = prepAndLaunch(args, finalCreds)
 	if err != nil {
 		fmt.Println("Error launching program: ", err)
