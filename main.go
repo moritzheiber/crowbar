@@ -2,16 +2,14 @@ package main
 
 import "fmt"
 
+import "time"
+import "errors"
+import "net/http"
 import "github.com/jessevdk/go-flags"
 import "github.com/tj/go-debug"
 import "github.com/peterh/liner"
 import "github.com/aws/aws-sdk-go/aws/credentials"
-import (
-	"time"
-	"github.com/havoc-io/go-keytar"
-	"net/http"
-	"errors"
-)
+import "github.com/havoc-io/go-keytar"
 
 const VERSION = "0.7.2"
 const SESSION_COOKIE = "__oktad_session_cookie"
