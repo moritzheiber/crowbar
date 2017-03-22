@@ -56,3 +56,8 @@ Login didn't work? Launch this program with `DEBUG=oktad*` in your environment f
 ```sh
 $ DEBUG=oktad* oktad production -- aws ec2 describe-instances
 ```
+
+## Contributors
+
+- Thomas Hopkins [thopkins@redventures.com]
+- Lee Standen [@lstanden]
