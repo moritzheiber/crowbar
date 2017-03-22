@@ -2,13 +2,17 @@ package main
 
 import "fmt"
 
+import "time"
+import "errors"
+import "net/http"
 import "github.com/jessevdk/go-flags"
 import "github.com/tj/go-debug"
 import "github.com/peterh/liner"
 import "github.com/aws/aws-sdk-go/aws/credentials"
-import "time"
+import "github.com/havoc-io/go-keytar"
 
-const VERSION = "0.6.3"
+const VERSION = "0.7.2"
+const SESSION_COOKIE = "__oktad_session_cookie"
 
 func main() {
 	var opts struct {
@@ -84,68 +88,60 @@ func main() {
 		debug("cred load err %s", err)
 	}
 
-	user, pass, err := readUserPass()
+	keystore, err := keytar.GetKeychain()
 	if err != nil {
-		// if we got an error here, the user bailed on us
-		debug("control-c caught in liner, probably")
+		fmt.Println("Failed to get keychain access")
+		debug("error was %s", err)
 		return
 	}
 
-	if user == "" || pass == "" {
-		fmt.Println("Must supply a username and password!")
-		return
-	}
-
-	ores, err := login(oktaCfg, user, pass)
-	if err != nil {
-		fmt.Println("Error authenticating with Okta! Maybe your username or password are wrong.")
-		debug("login err %s", err)
-		return
-	}
-
-	if ores.Status != "MFA_REQUIRED" {
-		fmt.Println("MFA required to use this tool.")
-		return
-	}
-
-	factor, err := extractTokenFactor(ores)
-
-	if err != nil {
-		fmt.Println("Error processing okta response!")
-		debug("err from extractTokenFactor was %s", err)
-		return
-	}
-
-	tries := 0
 	var sessionToken string
-
-TRYMFA:
-	mfaToken, err := readMfaToken()
-	if err != nil {
-		debug("control-c caught in liner, probably")
-		return
-	}
-
-	if tries < 2 {
-		sessionToken, err = doMfa(ores, factor, mfaToken)
+	var saml *OktaSamlResponse
+	password, err := keystore.GetPassword(APPNAME, SESSION_COOKIE)
+	if err != nil || password == "" {
+		sessionToken, err = getSessionFromLogin(&oktaCfg)
 		if err != nil {
-			tries++
-			fmt.Println("Invalid MFA code, please try again.")
-			goto TRYMFA // eat that, Djikstra!
+			return
 		}
-	} else {
-		fmt.Println("Error performing MFA auth!")
-		debug("error from doMfa was %s", err)
-		return
+
+		saml, err = getSaml(&oktaCfg, sessionToken)
+		if err != nil {
+			fmt.Println("Error parsing SAML response")
+			debug("error was %s", err)
+			return
+		}
 	}
 
-	saml, err := getSaml(oktaCfg, sessionToken)
-	debug("got saml: \n%s", saml.raw)
+	if saml == nil || saml.raw == "" {
+		// We got a saved session
 
-	if err != nil {
-		fmt.Println("Error preparing to AssumeRole!")
-		debug("getSaml err was %s", err)
-		return
+		cookie := http.Cookie{}
+		err = decodePasswordStruct(&cookie, password)
+		if err != nil {
+			debug("failed to read session cookie %s", err)
+		}
+
+		saml, err = getSamlSession(&oktaCfg, &cookie)
+		if err != nil {
+			debug("failed to get session from existing cookie %s", err)
+		}
+	}
+
+	if saml == nil || saml.raw == "" {
+		// final fallback
+		sessionToken, err = getSessionFromLogin(&oktaCfg)
+		if err != nil {
+			fmt.Println("Fatal error getting login session")
+			debug("error was %s", err)
+			return
+		}
+
+		saml, err = getSaml(&oktaCfg, sessionToken)
+		if err != nil {
+			fmt.Println("Fatal error getting saml")
+			debug("error was %s", err)
+			return
+		}
 	}
 
 	mainCreds, mExp, err := assumeFirstRole(acfg, saml)
@@ -175,11 +171,70 @@ TRYMFA:
 		debug("err storing credentials, %s", err)
 	}
 
-	fmt.Println("Everything looks good; launching your program...")
+	debug("Everything looks good; launching your program...")
 	err = prepAndLaunch(args, finalCreds)
 	if err != nil {
 		fmt.Println("Error launching program: ", err)
 	}
+}
+
+func getSessionFromLogin(oktaCfg *OktaConfig) (string, error) {
+	debug := debug.Debug("oktad:getSessionFromLogin")
+
+	user, pass, err := readUserPass()
+	if err != nil {
+		// if we got an error here, the user bailed on us
+		debug("control-c caught in liner, probably")
+		return "", errors.New("control-c")
+	}
+
+	if user == "" || pass == "" {
+		return "", errors.New("Must supply a username and password")
+	}
+
+	ores, err := login(oktaCfg, user, pass)
+	if err != nil {
+		fmt.Println("Error authenticating with Okta! Maybe your username or password are wrong.")
+		debug("login err %s", err)
+		return "", err
+	}
+
+	if ores.Status != "MFA_REQUIRED" {
+		return "", errors.New("MFA required to use this tool")
+	}
+
+	factor, err := extractTokenFactor(ores)
+
+	if err != nil {
+		fmt.Println("Error processing okta response!")
+		debug("err from extractTokenFactor was %s", err)
+		return "", err
+	}
+
+	tries := 0
+	var sessionToken string
+
+	TRYMFA:
+	mfaToken, err := readMfaToken()
+	if err != nil {
+		debug("control-c caught in liner, probably")
+		return "", err
+	}
+
+	if tries < 2 {
+		sessionToken, err = doMfa(ores, factor, mfaToken)
+		if err != nil {
+			tries++
+			fmt.Println("Invalid MFA code, please try again.")
+			goto TRYMFA // eat that, Djikstra!
+		}
+	} else {
+		fmt.Println("Error performing MFA auth!")
+		debug("error from doMfa was %s", err)
+		return "", err
+	}
+
+	return sessionToken, nil
 }
 
 // reads the username and password from the command line

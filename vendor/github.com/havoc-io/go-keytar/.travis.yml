@@ -1,0 +1,43 @@
+# Set the project language
+language: go
+
+# Set test platforms
+os:
+  - osx
+  - linux
+
+# Try building both 32-bit and 64-bit architectures
+env:
+  - GOARCH=386
+  - GOARCH=amd64
+
+# Enable use of container-based infrastructure for Linux
+# NOTE: We'll probably have to disable this if we ever want to have a chance of
+# gnome-keyring-daemon running for testing, but since that doesn't seem possible
+# at the moment, it's better to at least enable the container-based
+# infrastructure so that builds can be tested faster
+sudo: false
+
+# Add additional required packages for Linux
+# NOTE: If we want to use gnome-keyring-daemon, we'll need to install it
+# eventually, but it's blacklisted on Travis CI at the moment anyway.  We might
+# also need to install xvfb and wrap our scripts in xvfb-run, it's not clear
+# because node-keytar has yet to figure it out.
+addons:
+  apt:
+    packages:
+      - libgnome-keyring-dev
+
+# Run build and tests
+# TODO: Run tests for Linux on Travis CI once we can figure out how to talk to
+# gnome-keyring-daemon.  node-keytar hasn't figured it out either.  I think that
+# the daemon needs to be run before login to be able to unlock our login
+# keychain, but I don't see how that's possible with Travis CI.  For now, we can
+# at least check that things compile correctly.
+script:
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then go test; else go build; fi
+
+# Send notifications
+notifications:
+  email:
+    - jacob@havoc.io

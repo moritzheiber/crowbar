@@ -6,3 +6,4 @@ import:
 - package: github.com/peterh/liner
 - package: github.com/PuerkitoBio/goquery
 - package: github.com/aws/aws-sdk-go
+- package: github.com/havoc-io/go-keytar
