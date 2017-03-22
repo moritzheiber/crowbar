@@ -59,5 +59,6 @@ $ DEBUG=oktad* oktad production -- aws ec2 describe-instances
 
 ## Contributors
 
+- Dimitrios Arethas [darethas@redventures.com]
 - Thomas Hopkins [thopkins@redventures.com]
 - Lee Standen [@lstanden]
