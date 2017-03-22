@@ -11,7 +11,7 @@ import "github.com/peterh/liner"
 import "github.com/aws/aws-sdk-go/aws/credentials"
 import "github.com/havoc-io/go-keytar"
 
-const VERSION = "0.7.2"
+const VERSION = "0.7.0"
 const SESSION_COOKIE = "__oktad_session_cookie"
 
 func main() {
@@ -214,7 +214,7 @@ func getSessionFromLogin(oktaCfg *OktaConfig) (string, error) {
 	tries := 0
 	var sessionToken string
 
-	TRYMFA:
+TRYMFA:
 	mfaToken, err := readMfaToken()
 	if err != nil {
 		debug("control-c caught in liner, probably")
