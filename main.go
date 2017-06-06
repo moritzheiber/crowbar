@@ -182,6 +182,7 @@ func main() {
 
 func getSessionFromLogin(oktaCfg *OktaConfig) (string, error) {
 	debug := debug.Debug("oktad:getSessionFromLogin")
+	var user, pass string
 
 	keystore, err := keytar.GetKeychain()
 	if err != nil {
@@ -190,12 +191,12 @@ func getSessionFromLogin(oktaCfg *OktaConfig) (string, error) {
 		return "", errors.New("failed to get keychain access")
 	}
 
-	user, err := keystore.GetPassword(APPNAME, CREDENTIALS_USERNAME)
+	user, err = keystore.GetPassword(APPNAME, CREDENTIALS_USERNAME)
 	if err != nil {
 		debug("error getting username from keychain: %s", err)
 	}
 
-	pass, err := keystore.GetPassword(APPNAME, CREDENTIALS_PASSWORD)
+	pass, err = keystore.GetPassword(APPNAME, CREDENTIALS_PASSWORD)
 	if err != nil {
 		debug("error getting password from keychain: %s", err)
 	}
@@ -219,7 +220,7 @@ func getSessionFromLogin(oktaCfg *OktaConfig) (string, error) {
 		debug("error deleting %s: %s", CREDENTIALS_PASSWORD, err)
 	}
 
-	user, pass, err := readUserPass()
+	user, pass, err = readUserPass()
 	if err != nil {
 		// if we got an error here, the user bailed on us
 		debug("control-c caught in liner, probably")
