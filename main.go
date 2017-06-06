@@ -13,6 +13,8 @@ import "github.com/havoc-io/go-keytar"
 
 const VERSION = "0.7.0"
 const SESSION_COOKIE = "__oktad_session_cookie"
+const CREDENTIALS_USERNAME = "__oktad_username"
+const CREDENTIALS_PASSWORD = "__oktad_password"
 
 func main() {
 	var opts struct {
@@ -181,6 +183,27 @@ func main() {
 func getSessionFromLogin(oktaCfg *OktaConfig) (string, error) {
 	debug := debug.Debug("oktad:getSessionFromLogin")
 
+	keystore, err := keytar.GetKeychain()
+	if err != nil {
+		fmt.Println("Failed to get keychain access")
+		debug("error was %s", err)
+		return "", errors.New("failed to get keychain access")
+	}
+
+	user, err := keystore.GetPassword(APPNAME, CREDENTIALS_USERNAME)
+	if err == nil && user != "" {
+		pass, err := keystore.GetPassword(APPNAME, CREDENTIALS_PASSWORD)
+		if err == nil && pass != "" {
+			sessionToken, err := tryLogin(oktaCfg, user, pass)
+			if err == nil && sessionToken != "" {
+				return sessionToken, err
+			}
+		}
+	}
+
+	keystore.DeletePassword(APPNAME, CREDENTIALS_USERNAME)
+	keystore.DeletePassword(APPNAME, CREDENTIALS_PASSWORD)
+
 	user, pass, err := readUserPass()
 	if err != nil {
 		// if we got an error here, the user bailed on us
@@ -192,6 +215,22 @@ func getSessionFromLogin(oktaCfg *OktaConfig) (string, error) {
 		return "", errors.New("Must supply a username and password")
 	}
 
+	sessionToken, err := tryLogin(oktaCfg, user, pass)
+	if err == nil && sessionToken != "" {
+		keystore.AddPassword(APPNAME, CREDENTIALS_USERNAME, user)
+		if err != nil {
+			debug("err storing username", err)
+		}
+		keystore.AddPassword(APPNAME, CREDENTIALS_PASSWORD, pass)
+		if err != nil {
+			debug("err storing password", err)
+		}
+	}
+	return sessionToken, err
+}
+
+func tryLogin(oktaCfg *OktaConfig, user string, pass string) (string, error) {
+	debug := debug.Debug("oktad:tryLogin")
 	ores, err := login(oktaCfg, user, pass)
 	if err != nil {
 		fmt.Println("Error authenticating with Okta! Maybe your username or password are wrong.")
