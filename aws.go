@@ -92,7 +92,7 @@ func assumeDestinationRole(acfg AwsConfig, creds *credentials.Credentials) (*cre
 	)
 
 	var sessionName string
-	if user, err := user.Current(); err != nil {
+	if user, err := user.Current(); err == nil {
 		sessionName = user.Username
 	} else {
 		debugAws("error getting username from OS: %s", err)
