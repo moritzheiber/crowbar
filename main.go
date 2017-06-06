@@ -191,18 +191,33 @@ func getSessionFromLogin(oktaCfg *OktaConfig) (string, error) {
 	}
 
 	user, err := keystore.GetPassword(APPNAME, CREDENTIALS_USERNAME)
-	if err == nil && user != "" {
-		pass, err := keystore.GetPassword(APPNAME, CREDENTIALS_PASSWORD)
-		if err == nil && pass != "" {
-			sessionToken, err := tryLogin(oktaCfg, user, pass)
-			if err == nil && sessionToken != "" {
-				return sessionToken, err
-			}
-		}
+	if err != nil {
+		debug("error getting username from keychain: %s", err)
 	}
 
-	keystore.DeletePassword(APPNAME, CREDENTIALS_USERNAME)
-	keystore.DeletePassword(APPNAME, CREDENTIALS_PASSWORD)
+	pass, err := keystore.GetPassword(APPNAME, CREDENTIALS_PASSWORD)
+	if err != nil {
+		debug("error getting password from keychain: %s", err)
+	}
+
+	if user != "" && pass != "" {
+		sessionToken, err := tryLogin(oktaCfg, user, pass)
+		if err == nil {
+			return sessionToken, err
+		}
+		debug("error authenticating with stored credentials: %s", err)
+		// give the user the chance to log in
+	}
+
+	err = keystore.DeletePassword(APPNAME, CREDENTIALS_USERNAME)
+	if err != nil {
+		debug("error deleting %s: %s", CREDENTIALS_USERNAME, err)
+	}
+
+	err = keystore.DeletePassword(APPNAME, CREDENTIALS_PASSWORD)
+	if err != nil {
+		debug("error deleting %s: %s", CREDENTIALS_PASSWORD, err)
+	}
 
 	user, pass, err := readUserPass()
 	if err != nil {
