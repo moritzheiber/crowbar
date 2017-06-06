@@ -11,7 +11,7 @@ import "github.com/peterh/liner"
 import "github.com/aws/aws-sdk-go/aws/credentials"
 import "github.com/havoc-io/go-keytar"
 
-const VERSION = "0.7.0"
+const VERSION = "0.8.0"
 const SESSION_COOKIE = "__oktad_session_cookie"
 const CREDENTIALS_USERNAME = "__oktad_username"
 const CREDENTIALS_PASSWORD = "__oktad_password"
