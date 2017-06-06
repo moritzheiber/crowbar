@@ -207,7 +207,9 @@ func getSessionFromLogin(oktaCfg *OktaConfig) (string, error) {
 			return sessionToken, err
 		}
 		debug("error authenticating with stored credentials: %s", err)
-		// give the user the chance to log in
+		user = ""
+		pass = ""
+		// give the user the chance to log in by typing in username/password
 	}
 
 	err = keystore.DeletePassword(APPNAME, CREDENTIALS_USERNAME)
