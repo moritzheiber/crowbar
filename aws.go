@@ -3,6 +3,7 @@ package main
 import "strings"
 import "errors"
 import "time"
+import "os/user"
 import "github.com/tj/go-debug"
 import "github.com/aws/aws-sdk-go/aws"
 import "github.com/aws/aws-sdk-go/aws/credentials"
@@ -90,10 +91,18 @@ func assumeDestinationRole(acfg AwsConfig, creds *credentials.Credentials) (*cre
 		sess,
 	)
 
+	var sessionName string
+	if user, err := user.Current(); err != nil {
+		sessionName = user.Username
+	} else {
+		debugAws("error getting username from OS: %s", err)
+		sessionName = "unknown-user"
+	}
+
 	res, err := scl.AssumeRole(
 		&sts.AssumeRoleInput{
 			RoleArn:         &acfg.DestArn,
-			RoleSessionName: aws.String("fromRvMain"),
+			RoleSessionName: &sessionName,
 		},
 	)
 
