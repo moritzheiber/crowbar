@@ -186,7 +186,6 @@ func getSessionFromLogin(oktaCfg *OktaConfig) (string, error) {
 
 	keystore, err := keytar.GetKeychain()
 	if err != nil {
-		fmt.Println("Failed to get keychain access")
 		debug("error was %s", err)
 		return "", errors.New("failed to get keychain access")
 	}
@@ -202,6 +201,7 @@ func getSessionFromLogin(oktaCfg *OktaConfig) (string, error) {
 	}
 
 	if user != "" && pass != "" {
+		debug("stored okta credentials found, attempting to use them")
 		sessionToken, err := tryLogin(oktaCfg, user, pass)
 		if err == nil {
 			return sessionToken, err
@@ -210,6 +210,8 @@ func getSessionFromLogin(oktaCfg *OktaConfig) (string, error) {
 		user = ""
 		pass = ""
 		// give the user the chance to log in by typing in username/password
+	} else {
+		debug("stored okta credentials not found; will prompt for them")
 	}
 
 	err = keystore.DeletePassword(APPNAME, CREDENTIALS_USERNAME)
@@ -237,11 +239,11 @@ func getSessionFromLogin(oktaCfg *OktaConfig) (string, error) {
 	if err == nil && sessionToken != "" {
 		keystore.AddPassword(APPNAME, CREDENTIALS_USERNAME, user)
 		if err != nil {
-			debug("err storing username", err)
+			debug("err storing username: %s", err)
 		}
 		keystore.AddPassword(APPNAME, CREDENTIALS_PASSWORD, pass)
 		if err != nil {
-			debug("err storing password", err)
+			debug("err storing password: %s", err)
 		}
 	}
 	return sessionToken, err
