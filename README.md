@@ -9,8 +9,7 @@ Grab a binary for your OS from the [latest release](https://github.com/hopkinsth
 If you're on OSX like me, this might be all you need...
 
 ```sh
-curl -OL https://github.com/RedVentures/oktad/releases/download/v0.7.0/oktad-darwin-amd64
-mv oktad-darwin-amd64 /usr/local/bin/oktad
+curl -L -o /usr/local/bin/oktad https://github.com/RedVentures/oktad/releases/download/`curl -v 'https://github.com/RedVentures/oktad/releases/latest' 2>&1 | grep Location | grep -E -o 'v[0-9]+\.[0-9]+\.[0-9]+'`/oktad-darwin-amd64 && chmod +x /usr/local/bin/oktad
 ```
 
 ## Setup
