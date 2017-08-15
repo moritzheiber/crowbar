@@ -23,12 +23,11 @@ type AwsCreds struct {
 	Expiration time.Time
 }
 
-
 // stores credentials in a file
 func storeCreds(profile string, creds *credentials.Credentials, expire time.Time) error {
 
 	keyStore, err := keytar.GetKeychain()
-	if (err != nil) {
+	if err != nil {
 		debugCredStore("unable to instantiate keychain storage")
 		return err
 	}
@@ -40,12 +39,12 @@ func storeCreds(profile string, creds *credentials.Credentials, expire time.Time
 	}
 	res, err := encodePasswordStruct(v)
 	if err != nil {
-		debugCredStore("failed to encode password");
+		debugCredStore("failed to encode password")
 	}
 
 	err = keytar.ReplacePassword(keyStore, APPNAME, profile, res)
 
-	if (err != nil) {
+	if err != nil {
 		debugCredStore("failed to store password to keychain")
 		return err
 	}
@@ -59,15 +58,15 @@ func loadCreds(profile string) (*credentials.Credentials, error) {
 
 	keyStore, err := keytar.GetKeychain()
 
-	if (err != nil) {
+	if err != nil {
 		debugCredStore("unable to instantiate keychain storage")
 		return nil, err
 	}
 
 	passwordB64, err := keyStore.GetPassword(APPNAME, profile)
-	if (err != nil) {
+	if err != nil {
 		debugCredStore(fmt.Sprintf("no credentials found for supplied profile: %s", profile))
-		return nil, credsNotFound;
+		return nil, credsNotFound
 	}
 	creds := AwsCreds{}
 	err = decodePasswordStruct(&creds, passwordB64)
@@ -75,7 +74,7 @@ func loadCreds(profile string) (*credentials.Credentials, error) {
 		return nil, credsNotFound
 	}
 
-	if (time.Now().UnixNano() >= creds.Expiration.UnixNano()) {
+	if time.Now().UnixNano() >= creds.Expiration.UnixNano() {
 		return nil, credsExpired
 	}
 
@@ -86,7 +85,6 @@ func loadCreds(profile string) (*credentials.Credentials, error) {
 	), nil
 }
 
-
 func encodePasswordStruct(in interface{}) (string, error) {
 	b := bytes.Buffer{}
 	enc := gob.NewEncoder(&b)
@@ -95,7 +93,7 @@ func encodePasswordStruct(in interface{}) (string, error) {
 	return encString, nil
 }
 
-func decodePasswordStruct(out interface{}, in string) (error) {
+func decodePasswordStruct(out interface{}, in string) error {
 
 	b, err := base64.StdEncoding.DecodeString(in)
 	if err != nil {

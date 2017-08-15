@@ -11,8 +11,8 @@ import "encoding/base64"
 import "github.com/tj/go-debug"
 import "github.com/PuerkitoBio/goquery"
 import (
-	"net/http"
 	"github.com/havoc-io/go-keytar"
+	"net/http"
 )
 
 var noMfaError = errors.New("MFA required to use this tool")
