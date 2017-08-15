@@ -258,8 +258,8 @@ func tryLogin(oktaCfg *OktaConfig, user string, pass string) (string, error) {
 		return "", err
 	}
 
-	if ores.Status != "MFA_REQUIRED" {
-		return "", errors.New("MFA required to use this tool")
+	if ores.Status == "SUCCESS" {
+		return ores.SessionToken, nil
 	}
 
 	factor, err := extractTokenFactor(ores)
