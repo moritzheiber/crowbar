@@ -37,6 +37,38 @@ func storeCreds(profile string, creds *credentials.Credentials, expire time.Time
 		debugCredStore("failed to read aws creds")
 		return err
 	}
+
+  awsCreds, err := loadAwsCreds()
+  if err != nil {
+    debugCredStore("unable to instantiate credential file storage")
+    return err
+  }
+
+  psec := awsCreds.Section(profile)
+
+  accessKey := v.AccessKeyID
+  if psec.HasKey("aws_access_key_id") {
+    psec.Key("aws_access_key_id").SetValue(accessKey)
+  } else {
+    psec.NewKey("aws_access_key_id", accessKey)
+  }
+
+  secretAccessKey := v.SecretAccessKey
+  if psec.HasKey("aws_secret_access_key") {
+    psec.Key("aws_secret_access_key").SetValue(secretAccessKey)
+  } else {
+    psec.NewKey("aws_secret_access_key", secretAccessKey)
+  }
+
+  sessionToken := v.SessionToken
+  if psec.HasKey("aws_session_token") {
+    psec.Key("aws_session_token").SetValue(sessionToken)
+  } else {
+    psec.NewKey("aws_session_token", sessionToken)
+  }
+
+  saveAwsCreds(awsCreds)
+
 	res, err := encodePasswordStruct(v)
 	if err != nil {
 		debugCredStore("failed to encode password")

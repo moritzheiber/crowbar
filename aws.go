@@ -3,7 +3,6 @@ package main
 import "strings"
 import "errors"
 import "time"
-import "os/user"
 import "github.com/tj/go-debug"
 import "github.com/aws/aws-sdk-go/aws"
 import "github.com/aws/aws-sdk-go/aws/credentials"
@@ -15,7 +14,7 @@ var debugAws = debug.Debug("oktad:aws")
 // assumes the first role and returns the credentials you need for
 // the second assumeRole...
 // returns those credentials, the expiration time, and error if any
-func assumeFirstRole(acfg AwsConfig, saml *OktaSamlResponse) (*credentials.Credentials, time.Time, error) {
+func assumeFirstRole(acfg AwsConfig, ocfg OktaConfig, saml *OktaSamlResponse) (*credentials.Credentials, time.Time, error) {
 	var emptyExpire time.Time
 	sess := session.New(
 		aws.NewConfig().WithRegion(acfg.Region),
@@ -53,6 +52,10 @@ func assumeFirstRole(acfg AwsConfig, saml *OktaSamlResponse) (*credentials.Crede
 		}
 	}
 
+  if (ocfg.UserArn != "") {
+    roleArn = ocfg.UserArn
+  }
+
 	res, err := scl.AssumeRoleWithSAML(
 		&sts.AssumeRoleWithSAMLInput{
 			PrincipalArn:    &principalArn,
@@ -73,49 +76,7 @@ func assumeFirstRole(acfg AwsConfig, saml *OktaSamlResponse) (*credentials.Crede
 		*res.Credentials.SessionToken,
 	)
 
-	return mCreds, *res.Credentials.Expiration, nil
-}
-
-// behold, the moment we've been waiting for!
-// we need to assume role into the second account...
-// this will require the AwsConfig, which includes the final
-// destination ARN, and some AWS credentials that allow us to do that
-func assumeDestinationRole(acfg AwsConfig, creds *credentials.Credentials) (*credentials.Credentials, time.Time, error) {
-	var emptyExpire time.Time
-	sess := session.New(
-		aws.NewConfig().
-			WithRegion(acfg.Region).
-			WithCredentials(creds),
-	)
-	scl := sts.New(
-		sess,
-	)
-
-	var sessionName string
-	if user, err := user.Current(); err == nil {
-		sessionName = user.Username
-	} else {
-		debugAws("error getting username from OS: %s", err)
-		sessionName = "unknown-user"
-	}
-
-	res, err := scl.AssumeRole(
-		&sts.AssumeRoleInput{
-			RoleArn:         &acfg.DestArn,
-			RoleSessionName: &sessionName,
-		},
-	)
-
-	if err != nil {
-		debugAws("error in assumeDestinationRole! you were so close!")
-		return nil, emptyExpire, err
-	}
-
-	mCreds := credentials.NewStaticCredentials(
-		*res.Credentials.AccessKeyId,
-		*res.Credentials.SecretAccessKey,
-		*res.Credentials.SessionToken,
-	)
+  debugAws("error in %s", mCreds)
 
 	return mCreds, *res.Credentials.Expiration, nil
 }
