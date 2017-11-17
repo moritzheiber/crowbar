@@ -9,7 +9,7 @@ import "github.com/tj/go-debug"
 import "github.com/peterh/liner"
 import "github.com/havoc-io/go-keytar"
 
-const VERSION = "0.8.0"
+const VERSION = "0.8.1"
 const SESSION_COOKIE = "__oktad_session_cookie"
 const CREDENTIALS_USERNAME = "__oktad_username"
 const CREDENTIALS_PASSWORD = "__oktad_password"
@@ -49,7 +49,7 @@ func main() {
 		fmt.Println("Hey, that command won't actually do anything.\n\nSorry.")
 		return
 	}
-  
+
 	acfg, err := readAwsProfile(
 		fmt.Sprintf("profile %s", awsProfile),
 	)
