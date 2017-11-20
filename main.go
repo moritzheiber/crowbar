@@ -9,10 +9,10 @@ import "github.com/tj/go-debug"
 import "github.com/peterh/liner"
 import "github.com/havoc-io/go-keytar"
 
-const VERSION = "0.8.1"
-const SESSION_COOKIE = "__oktad_session_cookie"
-const CREDENTIALS_USERNAME = "__oktad_username"
-const CREDENTIALS_PASSWORD = "__oktad_password"
+const VERSION = "0.8.2"
+const SESSION_COOKIE = "__oktaws_session_cookie"
+const CREDENTIALS_USERNAME = "__oktaws_username"
+const CREDENTIALS_PASSWORD = "__oktaws_password"
 
 func main() {
 	var opts struct {
@@ -21,7 +21,7 @@ func main() {
 		ForceNewCredentials bool   `short:"f" long:"force-new" description:"force new credentials"`
 	}
 
-	debug := debug.Debug("oktad:main")
+	debug := debug.Debug("oktaws:main")
 	args, err := flags.Parse(&opts)
 
   awsProfile := args[0]
@@ -31,7 +31,7 @@ func main() {
 	}
 
 	if opts.PrintVersion {
-		fmt.Printf("oktad v%s\n", VERSION)
+		fmt.Printf("oktaws v%s\n", VERSION)
 		return
 	}
 
@@ -154,7 +154,7 @@ func main() {
 }
 
 func getSessionFromLogin(oktaCfg *OktaConfig) (string, error) {
-	debug := debug.Debug("oktad:getSessionFromLogin")
+	debug := debug.Debug("oktaws:getSessionFromLogin")
 	var user, pass string
 
 	keystore, err := keytar.GetKeychain()
@@ -223,7 +223,7 @@ func getSessionFromLogin(oktaCfg *OktaConfig) (string, error) {
 }
 
 func tryLogin(oktaCfg *OktaConfig, user string, pass string) (string, error) {
-	debug := debug.Debug("oktad:tryLogin")
+	debug := debug.Debug("oktaws:tryLogin")
 	ores, err := login(oktaCfg, user, pass)
 	if err != nil {
 		fmt.Println("Error authenticating with Okta! Maybe your username or password are wrong.")

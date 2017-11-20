@@ -7,7 +7,7 @@ import "os/exec"
 import "github.com/tj/go-debug"
 import "github.com/aws/aws-sdk-go/aws/credentials"
 
-var debugLaunch = debug.Debug("oktad:launch")
+var debugLaunch = debug.Debug("oktaws:launch")
 
 // runs some program
 func launch(cmd string, args []string, creds *credentials.Credentials) error {
@@ -41,7 +41,7 @@ func launch(cmd string, args []string, creds *credentials.Credentials) error {
 
 // prepares arguments for launching & then does it
 // expected input includes arguments from the command line once the program name
-// (in this case ./oktad) is removed
+// (in this case ./oktaws) is removed
 // and then AWS credentials to put in the environment of the launched program
 func prepAndLaunch(args []string, creds *credentials.Credentials) error {
 	// WHOA!

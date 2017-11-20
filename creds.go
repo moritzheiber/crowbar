@@ -10,12 +10,12 @@ import "github.com/tj/go-debug"
 import "github.com/aws/aws-sdk-go/aws/credentials"
 import "github.com/havoc-io/go-keytar"
 
-var debugCredStore = debug.Debug("oktad:credStore")
+var debugCredStore = debug.Debug("oktaws:credStore")
 var credsNotFound = errors.New("credentials not found!")
 var credsExpired = errors.New("credentials expired!")
 
-const APPNAME = "oktad"
-const BASE_PROFILE_CREDS = "__oktad_base_credentials"
+const APPNAME = "oktaws"
+const BASE_PROFILE_CREDS = "__oktaws_base_credentials"
 
 type CredStore map[string]AwsCreds
 type AwsCreds struct {
@@ -138,7 +138,7 @@ func decodePasswordStruct(out interface{}, in string) error {
 
 	if err != nil {
 		debugCredStore("failed to decode creds from keystore")
-		debug.Debug("oktad:decodePasswordStruct")("error was %s", err)
+		debug.Debug("oktaws:decodePasswordStruct")("error was %s", err)
 		return err
 	}
 

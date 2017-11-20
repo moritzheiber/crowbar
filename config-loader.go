@@ -6,10 +6,10 @@ import "os"
 import "fmt"
 import "errors"
 
-var badCfgErr = errors.New("Could not find a suitable oktad config file!")
+var badCfgErr = errors.New("Could not find a suitable oktaws config file!")
 var awsProfileNotFound = errors.New("AWS profile not found!")
 
-var debugCfg = debug.Debug("oktad:config")
+var debugCfg = debug.Debug("oktaws:config")
 
 type OktaConfig struct {
 	BaseURL string
@@ -79,7 +79,7 @@ func loadConfig(fname string) (*ini.File, error) {
 	hdirPath := fmt.Sprintf(
 		"%s/%s",
 		os.Getenv("HOME"),
-		".okta-aws/config",
+		".oktaws/config",
 	)
 
 	debugCfg("trying to load from config param file")
