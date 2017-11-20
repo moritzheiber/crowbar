@@ -11,9 +11,7 @@ import "github.com/aws/aws-sdk-go/service/sts"
 
 var debugAws = debug.Debug("oktaws:aws")
 
-// assumes the first role and returns the credentials you need for
-// the second assumeRole...
-// returns those credentials, the expiration time, and error if any
+// assumes the role; returns those credentials, the expiration time, and error if any
 func assumeFirstRole(acfg AwsConfig, ocfg OktaConfig, saml *OktaSamlResponse) (*credentials.Credentials, time.Time, error) {
 	var emptyExpire time.Time
 	sess := session.New(
