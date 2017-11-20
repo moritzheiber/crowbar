@@ -2,19 +2,17 @@ package main
 
 import "fmt"
 
-import "time"
 import "errors"
 import "net/http"
 import "github.com/jessevdk/go-flags"
 import "github.com/tj/go-debug"
 import "github.com/peterh/liner"
-import "github.com/aws/aws-sdk-go/aws/credentials"
 import "github.com/havoc-io/go-keytar"
 
-const VERSION = "0.8.0"
-const SESSION_COOKIE = "__oktad_session_cookie"
-const CREDENTIALS_USERNAME = "__oktad_username"
-const CREDENTIALS_PASSWORD = "__oktad_password"
+const VERSION = "0.8.2"
+const SESSION_COOKIE = "__oktaws_session_cookie"
+const CREDENTIALS_USERNAME = "__oktaws_username"
+const CREDENTIALS_PASSWORD = "__oktaws_password"
 
 func main() {
 	var opts struct {
@@ -23,21 +21,23 @@ func main() {
 		ForceNewCredentials bool   `short:"f" long:"force-new" description:"force new credentials"`
 	}
 
-	debug := debug.Debug("oktad:main")
+	debug := debug.Debug("oktaws:main")
 	args, err := flags.Parse(&opts)
+
+  awsProfile := args[0]
 
 	if err != nil {
 		return
 	}
 
 	if opts.PrintVersion {
-		fmt.Printf("oktad v%s\n", VERSION)
+		fmt.Printf("oktaws v%s\n", VERSION)
 		return
 	}
 
 	debug("loading configuration data")
 	// try to load configuration
-	oktaCfg, err := parseConfig(opts.ConfigFile)
+	oktaCfg, err := parseConfig(opts.ConfigFile, awsProfile)
 
 	if err != nil {
 		fmt.Println("Error reading config file!")
@@ -50,21 +50,14 @@ func main() {
 		return
 	}
 
-	awsProfile := args[0]
 	acfg, err := readAwsProfile(
 		fmt.Sprintf("profile %s", awsProfile),
 	)
-
-	var skipSecondRole bool
 
 	if err != nil {
 		//fmt.Println("Error reading your AWS profile!")
 		debug("error reading AWS profile: %s", err)
 		if err == awsProfileNotFound {
-			// if the AWS profile isn't found, we'll assume that
-			// the user intends to run a command in the first account
-			// behind their okta auth, rather than assuming role twice
-			skipSecondRole = true
 			fmt.Printf(
 				"We couldn't find an AWS profile named %s,\nso we will AssumeRole into your base account.\n",
 				awsProfile,
@@ -146,42 +139,22 @@ func main() {
 		}
 	}
 
-	mainCreds, mExp, err := assumeFirstRole(acfg, saml)
+	mainCreds, mExp, err := assumeFirstRole(acfg, oktaCfg, saml)
 	if err != nil {
 		fmt.Println("Error assuming first role!")
 		debug("error was %s", err)
 		return
 	}
 
-	var finalCreds *credentials.Credentials
-	var fExp time.Time
-	if !skipSecondRole {
-		finalCreds, fExp, err = assumeDestinationRole(acfg, mainCreds)
-		if err != nil {
-			fmt.Println("Error assuming second role!")
-			debug("error was %s", err)
-			return
-		}
-	} else {
-		finalCreds = mainCreds
-		fExp = mExp
-	}
-
 	// all was good, so let's save credentials...
-	err = storeCreds(awsProfile, finalCreds, fExp)
+	err = storeCreds(awsProfile, mainCreds, mExp)
 	if err != nil {
 		debug("err storing credentials, %s", err)
-	}
-
-	debug("Everything looks good; launching your program...")
-	err = prepAndLaunch(args, finalCreds)
-	if err != nil {
-		fmt.Println("Error launching program: ", err)
 	}
 }
 
 func getSessionFromLogin(oktaCfg *OktaConfig) (string, error) {
-	debug := debug.Debug("oktad:getSessionFromLogin")
+	debug := debug.Debug("oktaws:getSessionFromLogin")
 	var user, pass string
 
 	keystore, err := keytar.GetKeychain()
@@ -250,12 +223,16 @@ func getSessionFromLogin(oktaCfg *OktaConfig) (string, error) {
 }
 
 func tryLogin(oktaCfg *OktaConfig, user string, pass string) (string, error) {
-	debug := debug.Debug("oktad:tryLogin")
+	debug := debug.Debug("oktaws:tryLogin")
 	ores, err := login(oktaCfg, user, pass)
 	if err != nil {
 		fmt.Println("Error authenticating with Okta! Maybe your username or password are wrong.")
 		debug("login err %s", err)
 		return "", err
+	}
+
+	if ores.Status == "SUCCESS" {
+		return ores.SessionToken, nil
 	}
 
 	if ores.Status != "MFA_REQUIRED" {

@@ -10,12 +10,12 @@ import "github.com/tj/go-debug"
 import "github.com/aws/aws-sdk-go/aws/credentials"
 import "github.com/havoc-io/go-keytar"
 
-var debugCredStore = debug.Debug("oktad:credStore")
+var debugCredStore = debug.Debug("oktaws:credStore")
 var credsNotFound = errors.New("credentials not found!")
 var credsExpired = errors.New("credentials expired!")
 
-const APPNAME = "oktad"
-const BASE_PROFILE_CREDS = "__oktad_base_credentials"
+const APPNAME = "oktaws"
+const BASE_PROFILE_CREDS = "__oktaws_base_credentials"
 
 type CredStore map[string]AwsCreds
 type AwsCreds struct {
@@ -23,12 +23,11 @@ type AwsCreds struct {
 	Expiration time.Time
 }
 
-
 // stores credentials in a file
 func storeCreds(profile string, creds *credentials.Credentials, expire time.Time) error {
 
 	keyStore, err := keytar.GetKeychain()
-	if (err != nil) {
+	if err != nil {
 		debugCredStore("unable to instantiate keychain storage")
 		return err
 	}
@@ -38,14 +37,46 @@ func storeCreds(profile string, creds *credentials.Credentials, expire time.Time
 		debugCredStore("failed to read aws creds")
 		return err
 	}
+
+  awsCreds, err := loadAwsCreds()
+  if err != nil {
+    debugCredStore("unable to instantiate credential file storage")
+    return err
+  }
+
+  psec := awsCreds.Section(profile)
+
+  accessKey := v.AccessKeyID
+  if psec.HasKey("aws_access_key_id") {
+    psec.Key("aws_access_key_id").SetValue(accessKey)
+  } else {
+    psec.NewKey("aws_access_key_id", accessKey)
+  }
+
+  secretAccessKey := v.SecretAccessKey
+  if psec.HasKey("aws_secret_access_key") {
+    psec.Key("aws_secret_access_key").SetValue(secretAccessKey)
+  } else {
+    psec.NewKey("aws_secret_access_key", secretAccessKey)
+  }
+
+  sessionToken := v.SessionToken
+  if psec.HasKey("aws_session_token") {
+    psec.Key("aws_session_token").SetValue(sessionToken)
+  } else {
+    psec.NewKey("aws_session_token", sessionToken)
+  }
+
+  saveAwsCreds(awsCreds)
+
 	res, err := encodePasswordStruct(v)
 	if err != nil {
-		debugCredStore("failed to encode password");
+		debugCredStore("failed to encode password")
 	}
 
 	err = keytar.ReplacePassword(keyStore, APPNAME, profile, res)
 
-	if (err != nil) {
+	if err != nil {
 		debugCredStore("failed to store password to keychain")
 		return err
 	}
@@ -59,15 +90,15 @@ func loadCreds(profile string) (*credentials.Credentials, error) {
 
 	keyStore, err := keytar.GetKeychain()
 
-	if (err != nil) {
+	if err != nil {
 		debugCredStore("unable to instantiate keychain storage")
 		return nil, err
 	}
 
 	passwordB64, err := keyStore.GetPassword(APPNAME, profile)
-	if (err != nil) {
+	if err != nil {
 		debugCredStore(fmt.Sprintf("no credentials found for supplied profile: %s", profile))
-		return nil, credsNotFound;
+		return nil, credsNotFound
 	}
 	creds := AwsCreds{}
 	err = decodePasswordStruct(&creds, passwordB64)
@@ -75,7 +106,7 @@ func loadCreds(profile string) (*credentials.Credentials, error) {
 		return nil, credsNotFound
 	}
 
-	if (time.Now().UnixNano() >= creds.Expiration.UnixNano()) {
+	if time.Now().UnixNano() >= creds.Expiration.UnixNano() {
 		return nil, credsExpired
 	}
 
@@ -86,7 +117,6 @@ func loadCreds(profile string) (*credentials.Credentials, error) {
 	), nil
 }
 
-
 func encodePasswordStruct(in interface{}) (string, error) {
 	b := bytes.Buffer{}
 	enc := gob.NewEncoder(&b)
@@ -95,7 +125,7 @@ func encodePasswordStruct(in interface{}) (string, error) {
 	return encString, nil
 }
 
-func decodePasswordStruct(out interface{}, in string) (error) {
+func decodePasswordStruct(out interface{}, in string) error {
 
 	b, err := base64.StdEncoding.DecodeString(in)
 	if err != nil {
@@ -108,7 +138,7 @@ func decodePasswordStruct(out interface{}, in string) (error) {
 
 	if err != nil {
 		debugCredStore("failed to decode creds from keystore")
-		debug.Debug("oktad:decodePasswordStruct")("error was %s", err)
+		debug.Debug("oktaws:decodePasswordStruct")("error was %s", err)
 		return err
 	}
 

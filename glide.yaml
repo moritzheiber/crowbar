@@ -1,4 +1,4 @@
-package: github.com/hopkinsth/oktad
+package: github.com/jonathanmorley/oktaws
 import:
 - package: github.com/go-ini/ini
 - package: github.com/tj/go-debug

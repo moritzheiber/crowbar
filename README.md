@@ -1,59 +1,74 @@
-# oktad
+# oktaws
 
-[okta-aws](https://github.com/RedVentures/okta-aws), but in go. This program authenticates with Okta and then assumes role twice in Amazon.
+This program authenticates with Okta, assumes a provided role, and pulls a temporary key with STS to then support the role assumption built into the aws cli.
 
 ## Installation
 
-Grab a binary for your OS from the [latest release](https://github.com/hopkinsth/oktad/releases/latest), and put it somewhere in your PATH. Only supports Linux and OSX for now!
+Grab a binary for your OS from the [latest release](https://github.com/jonathanmorley/oktaws/releases/latest), and put it somewhere in your PATH. Only supports Linux and OSX for now!
 
 If you're on OSX like me, this might be all you need...
 
 ```sh
-curl -L -o /usr/local/bin/oktad https://github.com/RedVentures/oktad/releases/download/`curl -v 'https://github.com/RedVentures/oktad/releases/latest' 2>&1 | grep Location | grep -E -o 'v[0-9]+\.[0-9]+\.[0-9]+'`/oktad-darwin-amd64 && chmod +x /usr/local/bin/oktad
+curl -L -o /usr/local/bin/oktaws https://github.com/jonathanmorley/oktaws/releases/download/`curl -v 'https://github.com/jonathanmorley/oktaws/releases/latest' 2>&1 | grep Location | grep -E -o 'v[0-9]+\.[0-9]+\.[0-9]+'`/oktaws-darwin-amd64 && chmod +x /usr/local/bin/oktaws
 ```
 
 ## Setup
 
-First, create an `~/.okta-aws/config` file with your Ookta base URL and app URL, like below:
+First, create an `~/.oktaws/config` file with your Okta base URL, app URL and user ARN, like below:
 
 ```
 [okta]
 baseUrl=https://mycompany.okta.com/
+
+[aws_profile_name]
 appUrl=https://mycompany.okta.com/app/YOUR_APP/OKTA_MAGIC/sso/saml
+user_arn = arn:aws:iam::MY_ACCOUNT_ID:role/initial_role
+
 ```
 
-Third, set up an AWS CLI config file. You need to create `~/.aws/config` and fill it with a profile containing the ARN for a role you ultimately want to get temporary credentials for. This file might look like the following:
+Second, ensure that the `~/.aws/credentials` file does not contain important information under the `aws_profile_name` section, as they will be overwritten with temporary credentials. This file might look like the following:
+
+```
+[aws_profile_name]
+aws_access_key_id     = REDACTED
+aws_secret_access_key = REDACTED
+aws_session_token     = REDACTED
+```
+
+The `~/.aws/config` file is read for information, but not modified. It should look similar to the following to link the profile section with the temporary credentials.
 
 ```
 [default]
 output = json
 region = us-east-1
 
-[profile my_subaccount]
-role_arn = arn:aws:iam::MY_ACCOUNT_ID:role/wizards
+[profile aws_profile_name]
+role_arn = arn:aws:iam::MY_ACCOUNT_ID:role/final_role
+source_profile = aws_profile_name
 ```
 
-With those things set up, you should be able to run `oktad my_subaccount -- [command]` to run whatever `[command]` is with a set of temporary credentials from Amazon.
-
+With those things set up, you should be able to run `oktaws aws_profile_name`
 
 ## Usage
 
 ```sh
-$ oktad [AWS profile] -- [command]
+$ oktaws [AWS profile]
+$ aws [command]
 ```
 
 for example
 
 ```sh
-$ oktad production -- aws ec2 describe-instances
+$ oktaws production
+$ aws ec2 describe-instances
 ```
 
 ## Debugging
 
-Login didn't work? Launch this program with `DEBUG=oktad*` in your environment for more debugging info:
+Login didn't work? Launch this program with `DEBUG=oktaws*` in your environment for more debugging info:
 
 ```sh
-$ DEBUG=oktad* oktad production -- aws ec2 describe-instances
+$ DEBUG=oktaws* oktaws production
 ```
 
 ## Contributors
@@ -62,3 +77,4 @@ $ DEBUG=oktad* oktad production -- aws ec2 describe-instances
 - Thomas Hopkins [thopkins@redventures.com]
 - Lee Standen [@lstanden]
 - Todd Lunter [@tlunter]
+- Jonathan Morley [@jonathanmorley]

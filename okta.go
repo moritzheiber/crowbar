@@ -11,15 +11,15 @@ import "encoding/base64"
 import "github.com/tj/go-debug"
 import "github.com/PuerkitoBio/goquery"
 import (
-	"net/http"
 	"github.com/havoc-io/go-keytar"
+	"net/http"
 )
 
 var noMfaError = errors.New("MFA required to use this tool")
 var wrongMfaError = errors.New("No valid mfa congfigured for your account!")
 var loginFailedError = errors.New("login failed")
 
-var debugOkta = debug.Debug("oktad:okta")
+var debugOkta = debug.Debug("oktaws:okta")
 
 type OktaLoginRequest struct {
 	Username string `json:"username"`
@@ -134,7 +134,7 @@ func getOktaLoginBody(cfg *OktaConfig, user, pass string) io.Reader {
 // turns a thing (a variable of some sort) into an io.Reader for
 // reading into a request bodygit
 func makeRequestBody(t interface{}) io.Reader {
-	debug := debug.Debug("oktad:makeRequestBody")
+	debug := debug.Debug("oktaws:makeRequestBody")
 	var b bytes.Buffer
 	enc := json.NewEncoder(&b)
 	err := enc.Encode(t)
