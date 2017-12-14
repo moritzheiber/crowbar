@@ -17,14 +17,18 @@ curl -L -o /usr/local/bin/oktaws https://github.com/jonathanmorley/oktaws/releas
 First, create an `~/.oktaws/config` file with your Okta base URL, app URL and user ARN, like below:
 
 ```
-[okta]
-baseUrl=https://mycompany.okta.com/
-
 [aws_profile_name]
-appUrl=https://mycompany.okta.com/app/YOUR_APP/OKTA_MAGIC/sso/saml
-user_arn = arn:aws:iam::MY_ACCOUNT_ID:role/initial_role
+organization = mycompany
+app_id = YOUR_APP/OKTA_MAGIC
+role = arn:aws:iam::MY_ACCOUNT_ID:role/initial_role
 
-```
+```https://cvent.okta.com/home/amazon_aws/0oa86lj5jeUdzcbz70x7/272?fromHome=true
+
+The `role` value above is the ARN of the Role you would like to log in as. This can be found in the Roles section of the IAM service of your account.
+
+You can find the other values above by going to your Identity Provider in the IAM service of your AWS account and downloading the metadata.
+The metadata will contain some `<md:SingleSignOnService>` elements, where the `Location` attribute will look like https://mycompany.okta.com/app/YOUR_APP/OKTA_MAGIC/sso/saml"
+The parts of this URL will correspond to the values above.
 
 Second, ensure that the `~/.aws/credentials` file does not contain important information under the `aws_profile_name` section, as they will be overwritten with temporary credentials. This file might look like the following:
 
@@ -68,13 +72,9 @@ $ aws ec2 describe-instances
 Login didn't work? Launch this program with `DEBUG=oktaws*` in your environment for more debugging info:
 
 ```sh
-$ DEBUG=oktaws* oktaws production
+$ RUST_LOG=oktaws=debug oktaws production
 ```
 
 ## Contributors
 
-- Dimitrios Arethas [darethas@redventures.com]
-- Thomas Hopkins [thopkins@redventures.com]
-- Lee Standen [@lstanden]
-- Todd Lunter [@tlunter]
 - Jonathan Morley [@jonathanmorley]

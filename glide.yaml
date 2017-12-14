@@ -1,9 +1,0 @@
-package: github.com/jonathanmorley/oktaws
-import:
-- package: github.com/go-ini/ini
-- package: github.com/tj/go-debug
-- package: github.com/jessevdk/go-flags
-- package: github.com/peterh/liner
-- package: github.com/PuerkitoBio/goquery
-- package: github.com/aws/aws-sdk-go
-- package: github.com/havoc-io/go-keytar
