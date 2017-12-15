@@ -1,15 +1,18 @@
+[![Build Status](https://travis-ci.org/jonathanmorley/oktaws.svg?branch=master)](https://travis-ci.org/jonathanmorley/oktaws)
+[![Build status](https://ci.appveyor.com/api/projects/status/t78vvs8dmwave53o/branch/master?svg=true)](https://ci.appveyor.com/project/jonathanmorley/oktaws/branch/master)
+
 # oktaws
 
 This program authenticates with Okta, assumes a provided role, and pulls a temporary key with STS to then support the role assumption built into the aws cli.
 
 ## Installation
 
-Grab a binary for your OS from the [latest release](https://github.com/jonathanmorley/oktaws/releases/latest), and put it somewhere in your PATH. Only supports Linux and OSX for now!
+Grab a binary for your OS from the [latest release](https://github.com/jonathanmorley/oktaws/releases/latest), and put it somewhere in your PATH. Only supports Windows and MacOS for now!
 
-If you're on OSX like me, this might be all you need...
+### MacOS
 
 ```sh
-curl -L -o /usr/local/bin/oktaws https://github.com/jonathanmorley/oktaws/releases/download/`curl -v 'https://github.com/jonathanmorley/oktaws/releases/latest' 2>&1 | grep Location | grep -E -o 'v[0-9]+\.[0-9]+\.[0-9]+'`/oktaws-darwin-amd64 && chmod +x /usr/local/bin/oktaws
+curl -LSfs https://japaric.github.io/trust/install.sh | sh -s -- --git jonathanmorley/oktaws --target x86_64-apple-darwin --to /usr/local/bin
 ```
 
 ## Setup
