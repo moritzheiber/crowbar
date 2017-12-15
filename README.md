@@ -24,8 +24,7 @@ First, create an `~/.oktaws/config` file with your Okta base URL, app URL and us
 organization = mycompany
 app_id = YOUR_APP/OKTA_MAGIC
 role = arn:aws:iam::MY_ACCOUNT_ID:role/initial_role
-
-```https://cvent.okta.com/home/amazon_aws/0oa86lj5jeUdzcbz70x7/272?fromHome=true
+```
 
 The `role` value above is the ARN of the Role you would like to log in as. This can be found in the Roles section of the IAM service of your account.
 
