@@ -38,17 +38,19 @@ struct Opt {
 }
 
 fn main() {
-    pretty_env_logger::init().unwrap();
+    pretty_env_logger::init()
+        .expect("Error initializing logger");
 
     let opt = Opt::from_args();
     debug!("Options: {:?}", opt);
 
-    let oktaws_config = config::fetch_config(&opt.profile).unwrap();
+    let oktaws_config = config::fetch_config(&opt.profile)
+        .expect("Error fetching config");
 
     let (username, password) = credentials::get_credentials(opt.force_new);
 
     let session_token = okta::login(&oktaws_config.organization, &username, &password)
-        .unwrap()
+        .expect("Error logging into Okta")
         .session_token;
     debug!("Session Token: {}", session_token);
 
@@ -56,21 +58,24 @@ fn main() {
         &oktaws_config.organization,
         &oktaws_config.app_id,
         &session_token,
-    ).unwrap();
+    ).expect("Error fetching SAML assertion from Okta");
     debug!("SAML assertion: {}", saml_assertion);
 
-    let saml_attributes = aws::find_saml_attributes(&saml_assertion).unwrap();
+    let saml_attributes = aws::find_saml_attributes(&saml_assertion)
+        .expect("Error finding SAML attributes");
     debug!("SAML attributes: {:?}", saml_attributes);
 
-    let principal_arn = saml_attributes.get(&oktaws_config.role).unwrap();
+    let principal_arn = saml_attributes.get(&oktaws_config.role)
+        .expect("Error getting the principal ARN from SAML attributes");
     debug!("Principal ARN: {}", principal_arn);
 
     let credentials = aws::assume_role(principal_arn, &oktaws_config.role, &saml_assertion)
-        .unwrap()
+        .expect("Error assuming role in AWS")
         .credentials
-        .unwrap();
+        .expect("Error fetching credentials from assumed AWS role");
     debug!("Credentials: {:?}", credentials);
 
-    aws::set_credentials(&opt.profile, &credentials).unwrap();
+    aws::set_credentials(&opt.profile, &credentials)
+        .expect("Error setting AWS credentials");
     credentials::set_credentials(&username, &password);
 }

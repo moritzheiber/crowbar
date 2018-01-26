@@ -3,31 +3,37 @@ use reqwest;
 use scraper::{Html, Selector};
 
 #[derive(Serialize)]
-struct OktaLoginRequest {
-    username: String,
-    password: String,
+#[serde(rename_all = "camelCase")]
+struct LoginRequest {
+    username: Option<String>,
+    password: Option<String>,
+    relay_state: Option<String>,
+    token: Option<String>,
 }
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct OktaLoginResponse {
+pub struct LoginResponse {
     expires_at: String,
     pub session_token: String,
     status: String,
 }
 
-pub fn login(org: &str, user: &str, password: &str) -> Result<OktaLoginResponse, Error> {
-    let req = OktaLoginRequest {
-        username: String::from(user),
-        password: String::from(password),
+pub fn login(org: &str, user: &str, password: &str) -> Result<LoginResponse, Error> {
+    let req = LoginRequest {
+        username: Some(String::from(user)),
+        password: Some(String::from(password)),
+        relay_state: None,
+        token: None,
     };
 
     let client = reqwest::Client::new();
-    Ok(client
+    let mut resp: reqwest::Response = client
         .post(&format!("https://{}.okta.com/api/v1/authn", org))
         .json(&req)
         .send()?
-        .json()?)
+        .error_for_status()?;
+    Ok(resp.json()?)
 }
 
 pub fn fetch_saml(org: &str, app_id: &str, session_token: &str) -> Result<String, Error> {
