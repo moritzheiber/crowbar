@@ -3,7 +3,7 @@
 
 # oktaws
 
-This program authenticates with Okta, assumes a provided role, and pulls a temporary key with STS to then support the role assumption built into the aws cli.
+This program authenticates with Okta, assumes a provided role, and pulls a temporary key with STS to support the role assumption built into the aws cli.
 
 ## Installation
 
@@ -17,64 +17,63 @@ curl -LSfs https://japaric.github.io/trust/install.sh | sh -s -- --git jonathanm
 
 ## Setup
 
-First, create an `~/.oktaws/config` file with your Okta base URL, app URL and user ARN, like below:
+First, create an `~/.oktaws/<OKTA ACCOUNT>.toml` file with the following information:
 
 ```
-[aws_profile_name]
-organization = mycompany
-app_id = YOUR_APP/OKTA_MAGIC
-role = arn:aws:iam::MY_ACCOUNT_ID:role/initial_role
+username = '<USERNAME>'
+role = '<DEFAULT ROLE>'
+
+[profiles]
+profile1 = '<OKTA APPLICATION NAME>'
+profile2 = { application = '<OKTA APPLICATION NAME>', role = '<ROLE OVERRIDE>' }
 ```
 
-The `role` value above is the ARN of the Role you would like to log in as. This can be found in the Roles section of the IAM service of your account.
+The `role` value above is the name (not ARN) of the role you would like to log in as. This can be found when logging into the AWS console through Okta.
 
-You can find the other values above by going to your Identity Provider in the IAM service of your AWS account and downloading the metadata.
-The metadata will contain some `<md:SingleSignOnService>` elements, where the `Location` attribute will look like https://mycompany.okta.com/app/YOUR_APP/OKTA_MAGIC/sso/saml"
-The parts of this URL will correspond to the values above.
-
-Second, ensure that the `~/.aws/credentials` file does not contain important information under the `aws_profile_name` section, as they will be overwritten with temporary credentials. This file might look like the following:
+Second, ensure that the `~/.aws/credentials` file does not contain important information under the `profile1` or `profile2` sections (or other profiles you define in `~/.oktaws/*.toml`), as they will be overwritten with temporary credentials. This file might look like the following:
 
 ```
-[aws_profile_name]
+[profile1]
 aws_access_key_id     = REDACTED
 aws_secret_access_key = REDACTED
 aws_session_token     = REDACTED
 ```
 
 The `~/.aws/config` file is read for information, but not modified. It should look similar to the following to link the profile section with the temporary credentials.
+See [Assuming a Role](https://docs.aws.amazon.com/cli/latest/userguide/cli-roles.html) for information on configuring the AWS CLI to assume a role.
 
 ```
 [default]
 output = json
 region = us-east-1
 
-[profile aws_profile_name]
+[profile profile1]
 role_arn = arn:aws:iam::MY_ACCOUNT_ID:role/final_role
-source_profile = aws_profile_name
+source_profile = profile1
 ```
 
-With those things set up, you should be able to run `oktaws aws_profile_name`
+With those things set up, you can run `oktaws profile1` to generate keys for a single profile, or `oktaws` to generate keys for all profiles.
 
 ## Usage
 
 ```sh
 $ oktaws [AWS profile]
-$ aws [command]
+$ aws --profile [AWS profile] [command]
 ```
 
 for example
 
 ```sh
 $ oktaws production
-$ aws ec2 describe-instances
+$ aws --profile production ec2 describe-instances
 ```
 
 ## Debugging
 
-Login didn't work? Launch this program with `DEBUG=oktaws*` in your environment for more debugging info:
+Login didn't work? Use the `-v` flag to emit more verbose logs. Add more `-v`s for increased verbosity:
 
 ```sh
-$ RUST_LOG=oktaws=debug oktaws production
+$ oktaws production -vv
 ```
 
 ## Contributors

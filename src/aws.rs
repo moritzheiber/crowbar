@@ -1,16 +1,14 @@
-use base64::decode;
 use failure::Error;
 use ini::Ini;
-use quick_xml::events::Event;
-use quick_xml::reader::Reader;
-use rusoto_core::{default_tls_client, Region};
+use rusoto_core;
+use rusoto_core::Region;
 use rusoto_sts::{AssumeRoleWithSAMLRequest, AssumeRoleWithSAMLResponse, Credentials, Sts,
                  StsClient};
 use rusoto_credential::StaticProvider;
 
 use std::env;
 use std::str;
-use std::collections::HashMap;
+use std::str::FromStr;
 
 #[derive(Serialize, Deserialize)]
 struct AwsCredentialStore {
@@ -19,70 +17,64 @@ struct AwsCredentialStore {
     aws_session_token: String,
 }
 
-pub fn find_saml_attributes(saml_assertion: &str) -> Result<HashMap<String, String>, Error> {
-    let decoded_saml = String::from_utf8(decode(&saml_assertion)?)?;
+#[derive(Debug)]
+pub struct Role {
+    pub provider_arn: String,
+    pub role_arn: String,
+}
 
-    let mut reader = Reader::from_str(&decoded_saml);
-    reader.trim_text(true);
+impl FromStr for Role {
+    type Err = Error;
 
-    let mut values = HashMap::new();
-    let mut buf = Vec::new();
-    let mut in_attribute_value = false;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let splitted: Vec<&str> = s.split(',').collect();
 
-    let attribute_value_name = b"saml2:AttributeValue";
-
-    loop {
-        match reader.read_event(&mut buf) {
-            Ok(Event::Start(ref e)) => {
-                if e.name() == attribute_value_name {
-                    in_attribute_value = true;
-                }
-            }
-            Ok(Event::End(ref e)) => {
-                if e.name() == attribute_value_name {
-                    in_attribute_value = false;
-                }
-            }
-            Ok(Event::Text(e)) => {
-                if in_attribute_value {
-                    let value = e.unescape_and_decode(&reader).unwrap();
-                    let splitted: Vec<&str> = value.split(',').collect();
-
-                    if splitted.len() == 2 {
-                        values.insert(splitted[1].to_owned(), splitted[0].to_owned());
-                    }
-                }
-            }
-            Ok(Event::Eof) => break, // exits the loop when reaching end of file
-            Err(e) => panic!("Error at position {}: {:?}", reader.buffer_position(), e),
-            _ => (), // There are several other `Event`s we do not consider here
+        match splitted.len() {
+            0 | 1 => bail!("Not enough elements in {}", s),
+            2 => Ok(Role {
+                provider_arn: String::from(splitted[0]),
+                role_arn: String::from(splitted[1]),
+            }),
+            _ => bail!("Too many elements in {}", s),
         }
-
-        // if we don't keep a borrow elsewhere, we can clear the buffer to keep memory usage low
-        buf.clear();
     }
+}
 
-    Ok(values)
+impl Role {
+    pub fn role_name(&self) -> Result<&str, Error> {
+        let splitted: Vec<&str> = self.role_arn.split('/').collect();
+
+        match splitted.len() {
+            0 | 1 => bail!("Not enough elements in {}", self.role_arn),
+            2 => Ok(splitted[1]),
+            _ => bail!("Too many elements in {}", self.role_arn),
+        }
+    }
 }
 
 pub fn assume_role(
-    principal_arn: &str,
-    role_arn: &str,
-    saml_assertion: &str,
+    Role {
+        provider_arn,
+        role_arn,
+    }: Role,
+    saml_assertion: String,
 ) -> Result<AssumeRoleWithSAMLResponse, Error> {
-    let provider = StaticProvider::new_minimal(String::from(""), String::from(""));
-
     let req = AssumeRoleWithSAMLRequest {
         duration_seconds: None,
         policy: None,
-        principal_arn: String::from(principal_arn),
-        role_arn: String::from(role_arn),
-        saml_assertion: String::from(saml_assertion),
+        principal_arn: provider_arn,
+        role_arn,
+        saml_assertion,
     };
 
-    let client = StsClient::new(default_tls_client()?, provider, Region::UsEast1);
+    let provider = StaticProvider::new_minimal(String::from(""), String::from(""));
+    let client = StsClient::new(
+        rusoto_core::default_tls_client()?,
+        provider,
+        Region::UsEast1,
+    );
 
-    Ok(client.assume_role_with_saml(&req)?)
+    client.assume_role_with_saml(&req).map_err(|e| e.into())
 }
 
 pub fn set_credentials(profile: &str, credentials: &Credentials) -> Result<(), Error> {
@@ -99,5 +91,6 @@ pub fn set_credentials(profile: &str, credentials: &Credentials) -> Result<(), E
         )
         .set("aws_session_token", credentials.session_token.to_owned());
 
-    Ok(conf.write_to_file(path)?)
+    info!("Saving AWS credentials to {}", path);
+    conf.write_to_file(path).map_err(|e| e.into())
 }

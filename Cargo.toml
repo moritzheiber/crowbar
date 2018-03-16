@@ -1,29 +1,35 @@
 [package]
 name = "oktaws"
-version = "0.9.3"
+version = "0.10.0"
 authors = ["Jonathan Morley <morley.jonathan@gmail.com>"]
+description = "Generates temporary AWS credentials with Okta."
 
 [dependencies]
 reqwest = "0.8.1"
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
+serde_str = "0.1.0"
+toml = "0.4.5"
 rusoto_core = "0.30.0"
 rusoto_sts = "0.30.0"
 rusoto_credential = "0.9.2"
-scraper = "0.4.0"
-base64 = "0.8.0"
-quick-xml = "0.10.0"
-rust-ini = "0.9"
-structopt = "0.1.0"
-structopt-derive = "0.1.0"
-rpassword = "2.0.0"
-text_io = "0.1.6"
+base64 = "0.9.0"
+rust-ini = "0.10.3"
+structopt = "0.2.5"
+structopt-derive = "0.2.5"
 failure = "0.1.1"
-log = "0.3.8"
-pretty_env_logger = "0.1.1"
-keyring = "0.5.1"
+log = "0.4"
+loggerv = "0.7.1"
+keyring = "0.6"
 username = "0.2.0"
+dialoguer = "0.1.0"
+sxd-document = "0.2.6"
+sxd-xpath = "0.4.1"
+kuchiki = "0.7.0"
+regex = "0.2"
+
+path_abs = "0.3.16"
 
 [patch.crates-io]
-keyring = { git = 'https://github.com/jonathanmorley/keyring-rs', branch = 'update-rpassword' }
+html5ever = { git = 'https://github.com/servo/html5ever', rev = '3d5e24bbc3ebadf4e1bb9a4e25dc24c80fed1670' }
