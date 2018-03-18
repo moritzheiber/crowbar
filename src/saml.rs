@@ -5,7 +5,7 @@ use sxd_xpath::{Context, Factory, Value};
 
 use std::str::FromStr;
 
-use aws::Role;
+use aws::role::Role;
 
 #[derive(Debug)]
 pub struct Response {

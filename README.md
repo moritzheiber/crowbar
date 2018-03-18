@@ -30,15 +30,6 @@ profile2 = { application = '<OKTA APPLICATION NAME>', role = '<ROLE OVERRIDE>' }
 
 The `role` value above is the name (not ARN) of the role you would like to log in as. This can be found when logging into the AWS console through Okta.
 
-Second, ensure that the `~/.aws/credentials` file does not contain important information under the `profile1` or `profile2` sections (or other profiles you define in `~/.oktaws/*.toml`), as they will be overwritten with temporary credentials. This file might look like the following:
-
-```
-[profile1]
-aws_access_key_id     = REDACTED
-aws_secret_access_key = REDACTED
-aws_session_token     = REDACTED
-```
-
 The `~/.aws/config` file is read for information, but not modified. It should look similar to the following to link the profile section with the temporary credentials.
 See [Assuming a Role](https://docs.aws.amazon.com/cli/latest/userguide/cli-roles.html) for information on configuring the AWS CLI to assume a role.
 
@@ -52,7 +43,7 @@ role_arn = arn:aws:iam::MY_ACCOUNT_ID:role/final_role
 source_profile = profile1
 ```
 
-With those things set up, you can run `oktaws profile1` to generate keys for a single profile, or `oktaws` to generate keys for all profiles.
+With those set up, you can run `oktaws profile1` to generate keys for a single profile, or just `oktaws` to generate keys for all profiles.
 
 ## Usage
 

@@ -4,7 +4,6 @@ extern crate base64;
 extern crate dialoguer;
 #[macro_use]
 extern crate failure;
-extern crate ini;
 extern crate keyring;
 extern crate kuchiki;
 #[macro_use]
@@ -18,6 +17,7 @@ extern crate rusoto_credential;
 extern crate rusoto_sts;
 #[macro_use]
 extern crate serde_derive;
+extern crate serde_ini;
 extern crate serde_json;
 extern crate serde_str;
 extern crate structopt;
@@ -35,6 +35,7 @@ mod credentials;
 mod saml;
 
 use config::Config;
+use aws::credentials::CredentialsStore;
 
 use failure::Error;
 use path_abs::PathDir;
@@ -61,6 +62,8 @@ fn main() {
                 vec![Ok(Config::default())]
             }
         };
+
+        let mut credentials_store = CredentialsStore::new()?;
 
         for config in configs {
             let opts = args_opts.clone().merge(config?);
@@ -109,11 +112,12 @@ fn main() {
                             if role.role_name()? == profile.role {
                                 debug!("Role: {:?}", role);
 
-                                let assumption_response = aws::assume_role(role, saml_raw.clone())?;
+                                let assumption_response =
+                                    aws::role::assume_role(role, saml_raw.clone())?;
                                 if let Some(credentials) = assumption_response.credentials {
                                     debug!("Credentials: {:?}", credentials);
 
-                                    aws::set_credentials(&profile.id, &credentials)?;
+                                    credentials_store.set_profile(profile.id.clone(), credentials)?;
                                 } else {
                                     error!("Error fetching credentials from assumed AWS role")
                                 }
@@ -127,7 +131,7 @@ fn main() {
             credentials::set_credentials(&org, &username, &password);
         }
 
-        Ok(())
+        credentials_store.save()
     }
 
     if let Err(e) = run() {
