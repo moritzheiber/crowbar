@@ -48,13 +48,13 @@ impl CredentialsStore {
         creds: T,
     ) -> Result<(), Error> {
         match self.0.entry(name) {
-            Entry::Occupied(mut entry) => match entry.get() {
-                &ProfileCredentials::Sts { .. } => {
+            Entry::Occupied(mut entry) => match *entry.get() {
+                ProfileCredentials::Sts { .. } => {
                     entry.insert(creds.into());
                 }
-                &ProfileCredentials::Iam { .. } => {
+                ProfileCredentials::Iam { .. } => {
                     bail!(
-                        "Profile '{}' does not contain STS credentials. Leaving alone",
+                        "Profile '{}' does not contain STS credentials. Ignoring",
                         entry.key()
                     );
                 }

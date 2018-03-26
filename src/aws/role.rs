@@ -1,8 +1,8 @@
 use failure::Error;
-use rusoto_core;
 use rusoto_core::Region;
 use rusoto_sts::{AssumeRoleWithSAMLRequest, AssumeRoleWithSAMLResponse, Sts, StsClient};
 use rusoto_credential::StaticProvider;
+use rusoto_core::reactor::RequestDispatcher;
 
 use std::str;
 use std::str::FromStr;
@@ -58,11 +58,10 @@ pub fn assume_role(
     };
 
     let provider = StaticProvider::new_minimal(String::from(""), String::from(""));
-    let client = StsClient::new(
-        rusoto_core::default_tls_client()?,
-        provider,
-        Region::UsEast1,
-    );
+    let client = StsClient::new(RequestDispatcher::default(), provider, Region::default());
 
-    client.assume_role_with_saml(&req).map_err(|e| e.into())
+    client
+        .assume_role_with_saml(&req)
+        .sync()
+        .map_err(|e| e.into())
 }

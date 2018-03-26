@@ -72,7 +72,7 @@ fn main() {
 
             let username = match opts.username.clone() {
                 Some(username) => username,
-                None => (|| credentials::get_username(&org))()?,
+                None => credentials::get_username(&org)?,
             };
 
             let password = credentials::get_password(&org, &username, opts.force_new)?;
@@ -106,14 +106,14 @@ fn main() {
                             saml::Response::from_okta(&org, app.link_url.clone(), &session_id)?;
                         debug!("SAML assertion: {:?}", saml);
 
-                        let saml_raw = saml.raw;
-
-                        for role in saml.roles {
-                            if role.role_name()? == profile.role {
+                        match saml.roles
+                            .into_iter()
+                            .find(|r| r.role_name().map(|r| r == profile.role).unwrap_or(false))
+                        {
+                            Some(role) => {
                                 debug!("Role: {:?}", role);
 
-                                let assumption_response =
-                                    aws::role::assume_role(role, saml_raw.clone())?;
+                                let assumption_response = aws::role::assume_role(role, saml.raw)?;
                                 if let Some(credentials) = assumption_response.credentials {
                                     debug!("Credentials: {:?}", credentials);
 
@@ -122,6 +122,10 @@ fn main() {
                                     error!("Error fetching credentials from assumed AWS role")
                                 }
                             }
+                            None => error!(
+                                "No matching role ({}) found for profile {}",
+                                profile.role, &profile.id
+                            ),
                         }
                     }
                     None => error!("Could not find application {}", &profile.id),
