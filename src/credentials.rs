@@ -1,6 +1,7 @@
 use keyring::Keyring;
 use username;
 use dialoguer::{Input, PasswordInput};
+use rpassword;
 
 use failure::Error;
 
@@ -14,26 +15,39 @@ pub fn get_username(org: &str) -> Result<String, Error> {
 }
 
 pub fn get_password(org: &str, username: &str, force_new: bool) -> Result<String, Error> {
-    let input = PasswordInput::new(&format!(
-        "Password for https://{}@{}.okta.com",
-        username, org
-    ));
-
     if force_new {
         debug!("Force new is set, prompting for password");
-        input.interact().map_err(|e| e.into())
+        prompt_password(org, username)
     } else {
         match Keyring::new(&format!("oktaws::okta::{}", org), username).get_password() {
             Ok(password) => Ok(password),
             Err(e) => {
                 debug!(
-                    "Get password failed, prompting for password because of {:?}",
+                    "Retrieving cached password failed, prompting for password because of {:?}",
                     e
                 );
-                input.interact().map_err(|e| e.into())
+                prompt_password(org, username)
             }
         }
     }
+}
+
+// We use rpassword here because dialoguer hangs on windows
+#[cfg(windows)]
+fn prompt_password(org: &str, username: &str) -> Result<String, Error> {
+    rpassword::prompt_password_stdout(&format!(
+        "Password for https://{}@{}.okta.com: ",
+        username, org
+    )).map_err(|e| e.into())
+}
+
+#[cfg(not(windows))]
+fn prompt_password(org: &str, username: &str) -> Result<String, Error> {
+    PasswordInput::new(&format!(
+        "Password for https://{}@{}.okta.com",
+        username, org
+    )).interact()
+        .map_err(|e| e.into())
 }
 
 pub fn set_credentials(org: &str, username: &str, password: &str) {

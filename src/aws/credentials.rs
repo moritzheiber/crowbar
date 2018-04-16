@@ -15,13 +15,18 @@ pub struct CredentialsStore(HashMap<String, ProfileCredentials>);
 #[serde(untagged)]
 pub enum ProfileCredentials {
     Sts {
-        #[serde(rename = "aws_access_key_id")] access_key_id: String,
-        #[serde(rename = "aws_secret_access_key")] secret_access_key: String,
-        #[serde(rename = "aws_session_token")] session_token: String,
+        #[serde(rename = "aws_access_key_id")]
+        access_key_id: String,
+        #[serde(rename = "aws_secret_access_key")]
+        secret_access_key: String,
+        #[serde(rename = "aws_session_token")]
+        session_token: String,
     },
     Iam {
-        #[serde(rename = "aws_access_key_id")] access_key_id: String,
-        #[serde(rename = "aws_secret_access_key")] secret_access_key: String,
+        #[serde(rename = "aws_access_key_id")]
+        access_key_id: String,
+        #[serde(rename = "aws_secret_access_key")]
+        secret_access_key: String,
     },
 }
 

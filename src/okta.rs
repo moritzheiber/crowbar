@@ -15,11 +15,16 @@ use std::fmt;
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct OktaLoginRequest {
-    #[serde(skip_serializing_if = "Option::is_none")] username: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")] password: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")] relay_state: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")] options: Option<OktaOptions>,
-    #[serde(skip_serializing_if = "Option::is_none")] state_token: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    username: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    password: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    relay_state: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    options: Option<OktaOptions>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    state_token: Option<String>,
 }
 
 impl OktaLoginRequest {
@@ -59,7 +64,8 @@ pub struct OktaLoginResponse {
     expires_at: String,
     status: OktaLoginState,
     relay_state: Option<String>,
-    #[serde(rename = "_embedded")] embedded: Option<OktaEmbedded>,
+    #[serde(rename = "_embedded")]
+    embedded: Option<OktaEmbedded>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -67,23 +73,29 @@ pub struct OktaLoginResponse {
 pub struct OktaAppLink {
     id: String,
     pub label: String,
-    #[serde(with = "serde_str")] pub link_url: Url,
+    #[serde(with = "serde_str")]
+    pub link_url: Url,
     pub app_name: String,
 }
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct OktaEmbedded {
-    #[serde(default)] factors: Vec<OktaMfaFactor>,
+    #[serde(default)]
+    factors: Vec<OktaMfaFactor>,
 }
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "lowercase", tag = "factorType")]
 pub enum OktaMfaFactor {
-    #[serde(rename_all = "camelCase")] Push { id: String },
-    #[serde(rename_all = "camelCase")] Sms { id: String },
-    #[serde(rename_all = "camelCase")] Call { id: String },
-    #[serde(rename = "token:software:totp", rename_all = "camelCase")] Totp { id: String },
+    #[serde(rename_all = "camelCase")]
+    Push { id: String },
+    #[serde(rename_all = "camelCase")]
+    Sms { id: String },
+    #[serde(rename_all = "camelCase")]
+    Call { id: String },
+    #[serde(rename = "token:software:totp", rename_all = "camelCase")]
+    Totp { id: String },
 }
 
 impl fmt::Display for OktaMfaFactor {

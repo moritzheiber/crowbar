@@ -12,6 +12,7 @@ extern crate loggerv;
 extern crate path_abs;
 extern crate regex;
 extern crate reqwest;
+extern crate rpassword;
 extern crate rusoto_core;
 extern crate rusoto_credential;
 extern crate rusoto_sts;
@@ -82,6 +83,8 @@ fn main() {
             let session_id = okta::login(&org, &login_request)?;
 
             let okta_apps = okta::get_apps(&org, &session_id)?;
+
+            debug!("Okta Apps: {:?}", okta_apps);
 
             let profile_spec = opts.profile.clone();
 
