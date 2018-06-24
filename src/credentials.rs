@@ -1,7 +1,7 @@
-use keyring::Keyring;
-use username;
 use dialoguer::{Input, PasswordInput};
+use keyring::Keyring;
 use rpassword;
+use username;
 
 use failure::Error;
 
@@ -14,19 +14,24 @@ pub fn get_username(org: &str) -> Result<String, Error> {
     input.interact().map_err(|e| e.into())
 }
 
-pub fn get_password(org: &str, username: &str, force_new: bool) -> Result<String, Error> {
+pub fn get_password(
+    organization_name: &str,
+    username: &str,
+    force_new: bool,
+) -> Result<String, Error> {
     if force_new {
         debug!("Force new is set, prompting for password");
-        prompt_password(org, username)
+        prompt_password(organization_name, username)
     } else {
-        match Keyring::new(&format!("oktaws::okta::{}", org), username).get_password() {
+        match Keyring::new(&format!("oktaws::okta::{}", organization_name), username).get_password()
+        {
             Ok(password) => Ok(password),
             Err(e) => {
                 debug!(
                     "Retrieving cached password failed, prompting for password because of {:?}",
                     e
                 );
-                prompt_password(org, username)
+                prompt_password(organization_name, username)
             }
         }
     }
@@ -51,9 +56,11 @@ fn prompt_password(org: &str, username: &str) -> Result<String, Error> {
 }
 
 pub fn set_credentials(org: &str, username: &str, password: &str) {
-    info!("Saving Okta credentials for {}", username);
+    info!(
+        "Saving Okta credentials for https://{}@{}.okta.com",
+        username, org
+    );
     let key = format!("oktaws::okta::{}", org);
     let keyring = Keyring::new(&key, username);
-    trace!("Setting {}'s password to {}", username, password);
     keyring.set_password(password).unwrap();
 }

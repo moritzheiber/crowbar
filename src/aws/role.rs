@@ -1,13 +1,13 @@
 use failure::Error;
-use rusoto_core::Region;
-use rusoto_sts::{AssumeRoleWithSAMLRequest, AssumeRoleWithSAMLResponse, Sts, StsClient};
-use rusoto_credential::StaticProvider;
 use rusoto_core::reactor::RequestDispatcher;
+use rusoto_core::Region;
+use rusoto_credential::StaticProvider;
+use rusoto_sts::{AssumeRoleWithSAMLRequest, AssumeRoleWithSAMLResponse, Sts, StsClient};
 
 use std::str;
 use std::str::FromStr;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub struct Role {
     pub provider_arn: String,
     pub role_arn: String,
@@ -64,4 +64,22 @@ pub fn assume_role(
         .assume_role_with_saml(&req)
         .sync()
         .map_err(|e| e.into())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_attribute() {
+        let attribute =
+            "arn:aws:iam::123456789012:saml-provider/okta-idp,arn:aws:iam::123456789012:role/role1";
+
+        let expected_role = Role {
+            provider_arn: String::from("arn:aws:iam::123456789012:saml-provider/okta-idp"),
+            role_arn: String::from("arn:aws:iam::123456789012:role/role1"),
+        };
+
+        assert_eq!(attribute.parse::<Role>().unwrap(), expected_role);
+    }
 }

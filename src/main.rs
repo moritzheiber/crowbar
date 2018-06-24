@@ -8,7 +8,6 @@ extern crate keyring;
 extern crate kuchiki;
 #[macro_use]
 extern crate log;
-extern crate loggerv;
 extern crate path_abs;
 extern crate regex;
 extern crate reqwest;
@@ -16,140 +15,137 @@ extern crate rpassword;
 extern crate rusoto_core;
 extern crate rusoto_credential;
 extern crate rusoto_sts;
+extern crate stderrlog;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde_ini;
-extern crate serde_json;
 extern crate serde_str;
 extern crate structopt;
 #[macro_use]
 extern crate structopt_derive;
+extern crate glob;
+extern crate serde_json;
 extern crate sxd_document;
 extern crate sxd_xpath;
 extern crate toml;
+extern crate try_from;
 extern crate username;
+extern crate walkdir;
 
-mod okta;
 mod aws;
 mod config;
 mod credentials;
+mod okta;
 mod saml;
 
-use config::Config;
 use aws::credentials::CredentialsStore;
+use config::organization::Organization;
+use config::profile::Profile;
+use config::Config;
+use structopt::StructOpt;
 
 use failure::Error;
-use path_abs::PathDir;
-use structopt::StructOpt;
-use loggerv::Logger;
+use glob::Pattern;
 
-use std::env;
-use std::process;
+#[derive(Clone, StructOpt, Debug)]
+pub struct Opt {
+    /// Profile to update
+    #[structopt(default_value = "*", parse(try_from_str))]
+    pub profiles: Pattern,
 
-fn main() {
-    fn run() -> Result<(), Error> {
-        let args_opts = Config::from_args();
+    /// Okta organization to use
+    #[structopt(short = "o", long = "organizations", default_value = "*", parse(try_from_str))]
+    pub organizations: Pattern,
 
-        Logger::new()
-            .verbosity(args_opts.verbosity)
-            .level(true)
-            .module_path(true)
-            .init()?;
+    /// Forces new credentials
+    #[structopt(short = "f", long = "force-new")]
+    pub force_new: bool,
 
-        let configs = match config_dir() {
-            Ok(dir) => Config::from_dir(&dir)?,
-            Err(e) => {
-                warn!("{}, using default config", e);
-                vec![Ok(Config::default())]
-            }
-        };
+    /// Sets the level of verbosity
+    #[structopt(short = "v", long = "verbose", parse(from_occurrences))]
+    pub verbosity: usize,
 
-        let mut credentials_store = CredentialsStore::new()?;
-
-        for config in configs {
-            let opts = args_opts.clone().merge(config?);
-
-            let org = opts.organization.clone().unwrap();
-
-            let username = match opts.username.clone() {
-                Some(username) => username,
-                None => credentials::get_username(&org)?,
-            };
-
-            let password = credentials::get_password(&org, &username, opts.force_new)?;
-
-            let login_request =
-                okta::OktaLoginRequest::from_credentials(username.clone(), password.clone());
-            let session_id = okta::login(&org, &login_request)?;
-
-            let okta_apps = okta::get_apps(&org, &session_id)?;
-
-            debug!("Okta Apps: {:?}", okta_apps);
-
-            let profile_spec = opts.profile.clone();
-
-            for profile in opts.profiles() {
-                let profile = profile?;
-
-                if let Some(profile_spec) = profile_spec.clone() {
-                    if profile.id != profile_spec {
-                        continue;
-                    }
-                }
-
-                info!("Generating tokens for {}", &profile.id);
-
-                let app = okta_apps
-                    .iter()
-                    .find(|app| app.app_name == "amazon_aws" && app.label == profile.application);
-
-                match app {
-                    Some(app) => {
-                        let mut saml =
-                            saml::Response::from_okta(&org, app.link_url.clone(), &session_id)?;
-                        debug!("SAML assertion: {:?}", saml);
-
-                        match saml.roles
-                            .into_iter()
-                            .find(|r| r.role_name().map(|r| r == profile.role).unwrap_or(false))
-                        {
-                            Some(role) => {
-                                debug!("Role: {:?}", role);
-
-                                let assumption_response = aws::role::assume_role(role, saml.raw)?;
-                                if let Some(credentials) = assumption_response.credentials {
-                                    debug!("Credentials: {:?}", credentials);
-
-                                    credentials_store.set_profile(profile.id.clone(), credentials)?;
-                                } else {
-                                    error!("Error fetching credentials from assumed AWS role")
-                                }
-                            }
-                            None => error!(
-                                "No matching role ({}) found for profile {}",
-                                profile.role, &profile.id
-                            ),
-                        }
-                    }
-                    None => error!("Could not find application {}", &profile.id),
-                }
-            }
-
-            credentials::set_credentials(&org, &username, &password);
-        }
-
-        credentials_store.save()
-    }
-
-    if let Err(e) = run() {
-        error!("{:?}", e);
-        process::exit(1);
-    }
+    /// Silence all output
+    #[structopt(short = "q", long = "quiet")]
+    pub quiet: bool,
 }
 
-fn config_dir() -> Result<PathDir, Error> {
-    match env::home_dir() {
-        None => bail!("Could not get home dir"),
-        Some(home_dir) => PathDir::create_all(home_dir.join(".oktaws")).map_err(|e| e.into()),
+fn main() -> Result<(), Error> {
+    let opt = Opt::from_args();
+
+    stderrlog::new()
+        .module(module_path!())
+        .quiet(opt.quiet)
+        .verbosity(opt.verbosity + 2)
+        .init()?;
+
+    let config = Config::new()?;
+
+    let mut credentials_store = CredentialsStore::new()?;
+
+    let organizations = config
+        .organizations()
+        .filter(|o| opt.organizations.matches(&o.name))
+        .collect::<Vec<Organization>>();
+
+    if organizations.is_empty() {
+        warn!("No organizations found called {}", opt.organizations);
+    } else {
+        for mut organization in organizations {
+            info!("Evaluating profiles in {}", organization.name);
+
+            let session_id = organization.okta_session(opt.force_new)?;
+
+            let profiles = organization
+                .profiles(&session_id)?
+                .filter(|p| opt.profiles.matches(&p.id))
+                .collect::<Vec<Profile>>();
+
+            if profiles.is_empty() {
+                warn!(
+                    "No profiles found called {} in {}",
+                    opt.profiles, organization.name
+                );
+            } else {
+                for profile in profiles {
+                    info!("Generating tokens for {}", &profile.id);
+
+                    let mut saml = saml::Response::from_okta_session_id(
+                        &organization.name,
+                        profile.application.link_url.clone(),
+                        &session_id,
+                    )?;
+
+                    debug!("SAML assertion: {:?}", saml);
+
+                    match saml
+                        .roles
+                        .into_iter()
+                        .find(|r| r.role_name().map(|r| r == profile.role).unwrap_or(false))
+                    {
+                        Some(role) => {
+                            debug!("Role: {:?}", role);
+
+                            let assumption_response = aws::role::assume_role(role, saml.raw)?;
+                            if let Some(credentials) = assumption_response.credentials {
+                                debug!("Credentials: {:?}", credentials);
+
+                                credentials_store.set_profile(profile.id.clone(), credentials)?;
+                            } else {
+                                error!("Error fetching credentials from assumed AWS role")
+                            }
+                        }
+                        None => error!(
+                            "No matching role ({}) found for profile {}",
+                            profile.role, &profile.id
+                        ),
+                    }
+                }
+            }
+        }
+
+        credentials_store.save()?;
     }
+
+    Ok(())
 }

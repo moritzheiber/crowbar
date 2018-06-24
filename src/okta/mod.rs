@@ -1,16 +1,21 @@
+pub mod factor;
+
+use dialoguer;
+use dialoguer::{Input, PasswordInput};
 use failure::Error;
-use reqwest;
-use reqwest::Url;
-use reqwest::header::{Accept, ContentType, Cookie};
 use kuchiki;
 use kuchiki::traits::TendrilSink;
+use okta::factor::Factor;
 use regex::Regex;
-use dialoguer;
+use reqwest;
+use reqwest::header::{Accept, ContentType, Cookie};
+use reqwest::Url;
+use serde_json;
 use serde_str;
+use std::collections::HashMap;
 
+use okta::factor::FactorVerificationRequest;
 use saml::Response as SamlResponse;
-
-use std::fmt;
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -66,9 +71,11 @@ pub struct OktaLoginResponse {
     relay_state: Option<String>,
     #[serde(rename = "_embedded")]
     embedded: Option<OktaEmbedded>,
+    #[serde(rename = "_links", default)]
+    links: HashMap<String, OktaLinks>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct OktaAppLink {
     id: String,
@@ -82,31 +89,47 @@ pub struct OktaAppLink {
 #[serde(rename_all = "camelCase")]
 pub struct OktaEmbedded {
     #[serde(default)]
-    factors: Vec<OktaMfaFactor>,
+    factors: Vec<Factor>,
+    user: OktaUser,
 }
 
 #[derive(Deserialize, Debug)]
-#[serde(rename_all = "lowercase", tag = "factorType")]
-pub enum OktaMfaFactor {
-    #[serde(rename_all = "camelCase")]
-    Push { id: String },
-    #[serde(rename_all = "camelCase")]
-    Sms { id: String },
-    #[serde(rename_all = "camelCase")]
-    Call { id: String },
-    #[serde(rename = "token:software:totp", rename_all = "camelCase")]
-    Totp { id: String },
+#[serde(rename_all = "camelCase")]
+struct OktaUser {
+    id: String,
+    profile: OktaUserProfile,
 }
 
-impl fmt::Display for OktaMfaFactor {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            OktaMfaFactor::Push { .. } => write!(f, "Okta Verify Push"),
-            OktaMfaFactor::Sms { .. } => write!(f, "Okta SMS"),
-            OktaMfaFactor::Call { .. } => write!(f, "Okta Call"),
-            OktaMfaFactor::Totp { .. } => write!(f, "Okta Verify TOTP"),
-        }
-    }
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+struct OktaUserProfile {
+    login: String,
+    first_name: String,
+    last_name: String,
+    locale: String,
+    time_zone: String,
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(untagged)]
+pub enum OktaLinks {
+    Single(OktaLink),
+    Multi(Vec<OktaLink>),
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct OktaLink {
+    name: Option<String>,
+    #[serde(with = "serde_str")]
+    pub href: Url,
+    hints: OktaHint,
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct OktaHint {
+    allow: Vec<String>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -141,19 +164,36 @@ struct OktaSessionResponse {
 pub fn login(org: &str, req: &OktaLoginRequest) -> Result<String, Error> {
     let client = reqwest::Client::new();
 
-    let response: OktaLoginResponse = client
-        .post(&format!("https://{}.okta.com/api/v1/authn", org))
+    let url = format!("https://{}.okta.com/api/v1/authn", org);
+    let login_type = if req.state_token.is_some() {
+        "State Token"
+    } else {
+        "Credentials"
+    };
+
+    debug!("Attempting login to {} with {}", url, login_type);
+
+    let raw_response = client
+        .post(&url)
         .json(&req)
         .header(ContentType::json())
         .header(Accept::json())
         .send()?
         .error_for_status()?
-        .json()?;
+        .text()?;
+
+    let response: OktaLoginResponse = serde_json::from_str(&raw_response)?;
+
+    trace!("Login response: {:?}", response);
 
     match response.status {
-        OktaLoginState::Success => get_session_id(org, &response.session_token.unwrap()),
+        OktaLoginState::Success => Ok(response.session_token.unwrap()),
         OktaLoginState::MfaRequired => {
-            let factors = response.embedded.unwrap().factors;
+            info!("MFA required");
+
+            let embedded = response.embedded.unwrap();
+
+            let factors = embedded.factors;
 
             let factor = match factors.len() {
                 0 => bail!("MFA required, and no available factors"),
@@ -166,13 +206,39 @@ pub fn login(org: &str, req: &OktaLoginRequest) -> Result<String, Error> {
                     for factor in &factors {
                         menu.item(&factor.to_string());
                     }
-                    &factors[menu.interact().unwrap()]
+                    &factors[menu.interact()?]
                 }
             };
 
-            println!("Factor: {:?}", factor);
+            debug!("Factor: {:?}", factor);
 
-            bail!("MFA")
+            if let Some(state_token) = response.state_token {
+                let factor_prompt_response = factor.verify(FactorVerificationRequest::Sms {
+                    state_token,
+                    pass_code: None,
+                })?;
+
+                trace!("Factor Prompt Response: {:?}", factor_prompt_response);
+
+                if let Some(state_token) = factor_prompt_response.state_token {
+                    let mut input = Input::new("MFA response");
+
+                    let mfa_code = input.interact().unwrap();
+
+                    let factor_provided_response = factor.verify(FactorVerificationRequest::Sms {
+                        state_token,
+                        pass_code: Some(mfa_code),
+                    })?;
+
+                    trace!("Factor Provided Response: {:?}", factor_provided_response);
+
+                    Ok(factor_provided_response.session_token.unwrap())
+                } else {
+                    bail!("No state token found");
+                }
+            } else {
+                bail!("No state token found");
+            }
         }
         _ => {
             println!("Resp: {:?}", response);
@@ -181,7 +247,7 @@ pub fn login(org: &str, req: &OktaLoginRequest) -> Result<String, Error> {
     }
 }
 
-fn get_session_id(org: &str, session_token: &str) -> Result<String, Error> {
+pub fn get_session_id(org: &str, session_token: &str) -> Result<String, Error> {
     let client = reqwest::Client::new();
 
     let session_url = format!("https://{}.okta.com/api/v1/sessions", org);
@@ -189,16 +255,18 @@ fn get_session_id(org: &str, session_token: &str) -> Result<String, Error> {
         session_token: Some(String::from(session_token)),
     };
 
-    let session: OktaSessionResponse = client
+    let session = client
         .post(&session_url)
         .json(&session_req)
         .header(ContentType::json())
         .header(Accept::json())
         .send()?
         .error_for_status()?
-        .json()?;
+        .text()?;
 
-    Ok(session.id)
+    trace!("Session {:?}", &session);
+
+    Ok(serde_json::from_str::<OktaSessionResponse>(&session)?.id)
 }
 
 pub fn get_apps(org: &str, session_id: &str) -> Result<Vec<OktaAppLink>, Error> {
@@ -225,18 +293,26 @@ pub fn get_apps(org: &str, session_id: &str) -> Result<Vec<OktaAppLink>, Error> 
 }
 
 impl SamlResponse {
-    pub fn from_okta(org: &str, app_url: Url, session_id: &str) -> Result<Self, Error> {
+    pub fn from_okta_session_id(org: &str, app_url: Url, session_id: &str) -> Result<Self, Error> {
         let client = reqwest::Client::new();
 
         let mut cookies = Cookie::new();
         cookies.append("sid", session_id.to_owned());
 
+        trace!(
+            "Attempting to fetch SAML from {} with sid:{}",
+            &app_url,
+            &session_id
+        );
+
         let response = client
-            .get(app_url)
+            .get(app_url.clone())
             .header(cookies)
             .send()?
             .error_for_status()?
             .text()?;
+
+        trace!("SAML response doc: {}", response);
 
         let doc = kuchiki::parse_html().one(response.clone());
 
@@ -247,20 +323,43 @@ impl SamlResponse {
             }
         }
 
+        debug!("No SAML found, will re-login");
+
         let re = Regex::new(r#"var stateToken = '(.+)';"#).unwrap();
 
         if let Some(cap) = re.captures(&response) {
             let mut state_token = cap[1].to_owned().replace("\\x2D", "-");
 
-            let _login_resp = login(org, &OktaLoginRequest::from_state_token(state_token))?;
-            //println!("Login Resp: {:?}", login_resp);
+            let session_token = login(org, &OktaLoginRequest::from_state_token(state_token))?;
+            let session_id = get_session_id(org, &session_token)?;
+
+            SamlResponse::from_okta_session_token(org, app_url, &session_id)
+        } else {
+            bail!("No SAML block found")
         }
+    }
 
-        bail!("No SAML block found")
+    pub fn from_okta_session_token(
+        org: &str,
+        app_url: Url,
+        session_token: &str,
+    ) -> Result<Self, Error> {
+        let client = reqwest::Client::new();
 
-        /*If no SAML block found then do:
-            Trigger factor
-            Provide Response
-            Use session token like above*/
+        trace!(
+            "Attempting to fetch SAML from {} with session token: {}",
+            &app_url,
+            &session_token
+        );
+
+        let response = client
+            .get(&format!("{}?onetimetoken={}", app_url, session_token))
+            .send()?
+            .error_for_status()?
+            .text()?;
+
+        trace!("SAML response doc: {}", response);
+
+        bail!("Unknown");
     }
 }
