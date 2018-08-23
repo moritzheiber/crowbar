@@ -1,7 +1,6 @@
 use credentials;
 use failure::Error;
-use okta;
-use okta::OktaLoginRequest;
+use okta::client::OktaClient;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
@@ -62,7 +61,7 @@ where
 }
 
 impl Organization {
-    pub fn okta_session(&self, force_new: bool) -> Result<String, Error> {
+    pub fn credentials(&self, force_new: bool) -> Result<(String, String), Error> {
         let username = match self.username {
             Some(ref username) => username.to_owned(),
             None => credentials::get_username(&self.name)?,
@@ -70,19 +69,18 @@ impl Organization {
 
         let password = credentials::get_password(&self.name, &username, force_new)?;
 
-        let login_request = OktaLoginRequest::from_credentials(username.clone(), password.clone());
-        let session_token = okta::login(&self.name, &login_request)?;
-        let session_id = okta::get_session_id(&self.name, &session_token)?;
-        credentials::set_credentials(&self.name, &username, &password);
+        Ok((username, password))
+    }
 
-        Ok(session_id)
+    pub fn okta_client(&self) -> OktaClient {
+        OktaClient::new(self.name.clone())
     }
 
     pub fn profiles<'a>(
         &'a self,
-        okta_session: &str,
+        client: &OktaClient,
     ) -> Result<impl Iterator<Item = Profile> + 'a, Error> {
-        let okta_apps = okta::get_apps(&self.name, okta_session)?;
+        let okta_apps = client.get_apps()?;
 
         Ok(self.profiles.iter().filter_map(move |(id, profile_spec)| {
             match (&self.role, &profile_spec) {

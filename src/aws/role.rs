@@ -60,6 +60,8 @@ pub fn assume_role(
     let provider = StaticProvider::new_minimal(String::from(""), String::from(""));
     let client = StsClient::new(RequestDispatcher::default(), provider, Region::default());
 
+    error!("Assuming role: {:?}", &req);
+
     client
         .assume_role_with_saml(&req)
         .sync()

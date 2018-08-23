@@ -1,10 +1,11 @@
 use failure::Error;
+use okta::auth::LoginResponse;
+use okta::client::OktaClient;
 use okta::OktaLinks;
 use okta::OktaLinks::Multi;
 use okta::OktaLinks::Single;
-use okta::OktaLoginResponse;
 use reqwest;
-use reqwest::header::{Accept, ContentType, Cookie};
+use reqwest::header::{Accept, ContentType};
 use serde_json;
 use std::collections::HashMap;
 use std::fmt;
@@ -183,29 +184,20 @@ impl fmt::Display for Factor {
     }
 }
 
-impl Factor {
-    pub fn verify(&self, request: FactorVerificationRequest) -> Result<OktaLoginResponse, Error> {
-        let client = reqwest::Client::new();
-
-        match *self {
+impl OktaClient {
+    pub fn verify(
+        &self,
+        factor: &Factor,
+        request: FactorVerificationRequest,
+    ) -> Result<LoginResponse, Error> {
+        match *factor {
             Factor::Sms { ref links, .. } => {
                 let url = match links.get("verify").unwrap() {
                     Single(ref link) => link.href.clone(),
                     Multi(ref links) => links.first().unwrap().href.clone(),
                 };
 
-                let resp = client
-                    .post(url)
-                    .json(&request)
-                    .header(ContentType::json())
-                    .header(Accept::json())
-                    .send()?
-                    .error_for_status()?
-                    .text()?;
-
-                trace!("Response: {}", resp);
-
-                serde_json::from_str::<OktaLoginResponse>(&resp).map_err(|e| e.into())
+                self.post_absolute(url, request)
             }
             _ => {
                 // TODO

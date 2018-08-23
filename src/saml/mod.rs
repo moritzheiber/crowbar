@@ -20,7 +20,7 @@ impl FromStr for Response {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let decoded_saml = String::from_utf8(decode(&s)?)?;
 
-        debug!("SAML: {}", s);
+        trace!("SAML: {}", s);
 
         let package = parser::parse(&decoded_saml).expect("Failed parsing xml");
         let document = package.as_document();
