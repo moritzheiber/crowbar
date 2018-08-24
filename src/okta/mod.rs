@@ -2,7 +2,7 @@ pub mod auth;
 pub mod client;
 pub mod factor;
 
-use failure::Error;
+use failure::{Compat, Error};
 use kuchiki;
 use kuchiki::traits::TendrilSink;
 use okta::auth::LoginRequest;
@@ -106,15 +106,17 @@ impl OktaClient {
 
         trace!("SAML response doc for app {:?}: {}", &app_url, &response);
 
-        if let Ok(saml) = SamlResponse::from_html(response.clone()) {
-            return Ok(saml);
-        } else {
-            debug!("No SAML found for app {:?}, will re-login", &app_url);
+        match SamlResponse::from_html(response.clone()) {
+            Err(SamlResponseError::NotFound) => {
+                debug!("No SAML found for app {:?}, will re-login", &app_url);
 
-            let state_token = extract_state_token(&response)?;
-            let session_token =
-                self.get_session_token(&LoginRequest::from_state_token(state_token))?;
-            self.get_saml_response(app_url)
+                let state_token = extract_state_token(&response)?;
+                let session_token =
+                    self.get_session_token(&LoginRequest::from_state_token(state_token))?;
+                self.get_saml_response(app_url)
+            }
+            Err(e) => Err(e.into()),
+            Ok(saml) => Ok(saml),
         }
     }
 }
@@ -131,18 +133,32 @@ fn extract_state_token(text: &str) -> Result<String, Error> {
 }
 
 impl SamlResponse {
-    pub fn from_html(text: String) -> Result<Self, Error> {
+    pub fn from_html(text: String) -> Result<Self, SamlResponseError> {
         let doc = kuchiki::parse_html().one(text);
 
         if let Some(input_node) = doc.select("input[name='SAMLResponse']").unwrap().next() {
             if let Some(saml) = input_node.attributes.borrow().get("value") {
                 trace!("SAML: {}", saml);
-                saml.parse()
+                saml.parse().map_err(|e: Error| e.into())
             } else {
-                bail!("No `value` found in SAML block")
+                Err(SamlResponseError::NotFound)
             }
         } else {
-            bail!("No SAML block found")
+            Err(SamlResponseError::NotFound)
         }
+    }
+}
+
+#[derive(Fail, Debug)]
+pub enum SamlResponseError {
+    #[fail(display = "No SAML found")]
+    NotFound,
+    #[fail(display = "{}", _0)]
+    Invalid(#[cause] Compat<Error>),
+}
+
+impl From<Error> for SamlResponseError {
+    fn from(e: Error) -> SamlResponseError {
+        SamlResponseError::Invalid(e.compat())
     }
 }

@@ -80,4 +80,23 @@ mod tests {
 
         assert_eq!(response.roles, expected_roles);
     }
+
+    #[test]
+    fn parse_response_invalid_no_role() {
+        let mut f =
+            File::open("tests/fixtures/saml_response_invalid_no_role.xml").expect("file not found");
+
+        let mut saml_xml = String::new();
+        f.read_to_string(&mut saml_xml)
+            .expect("something went wrong reading the file");
+
+        let saml_base64 = encode(&saml_xml);
+
+        let response: Error = saml_base64.parse::<Response>().unwrap_err();
+
+        assert_eq!(
+            response.to_string(),
+            "Not enough elements in arn:aws:iam::123456789012:saml-provider/okta-idp"
+        );
+    }
 }

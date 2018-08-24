@@ -82,6 +82,10 @@ pub struct Opt {
     /// Silence all output
     #[structopt(short = "q", long = "quiet")]
     pub quiet: bool,
+
+    /// Run in a synchronous manner (no parallel)
+    #[structopt(short = "s", long = "sync")]
+    pub synchronous: bool,
 }
 
 fn main() -> Result<(), Error> {
@@ -97,13 +101,13 @@ fn main() -> Result<(), Error> {
         .format(flexi_logger::with_thread)
         .start()?;*/
 
-    /*let log_level = match opt.verbosity {
+    let log_level = match opt.verbosity {
         0 => "info",
         1 => "debug",
-        _ => "info",
+        _ => "trace",
     };
 
-    env::set_var("RUST_LOG", format!("{}={}", module_path!(), log_level));*/
+    env::set_var("RUST_LOG", format!("{}={}", module_path!(), log_level));
     pretty_env_logger::init();
 
     let config = Config::new()?;
@@ -124,11 +128,13 @@ fn main() -> Result<(), Error> {
             let mut okta_client = organization.okta_client();
             let (username, password) = organization.credentials(opt.force_new)?;
 
-            let session_token =
-                okta_client.get_session_token(&LoginRequest::from_credentials(username, password))?;
+            let session_token = okta_client.get_session_token(&LoginRequest::from_credentials(
+                username.clone(),
+                password.clone(),
+            ))?;
 
             let session_id = okta_client.get_session_id(&session_token)?;
-            okta_client.set_session_id(session_id);
+            okta_client.set_session_id(session_id.clone());
 
             let profiles = organization
                 .profiles(&okta_client)?
@@ -141,56 +147,71 @@ fn main() -> Result<(), Error> {
                     opt.profiles, organization.name
                 );
             } else {
-                profiles
-                    .par_iter()
-                    .try_for_each(|profile: &Profile| -> Result<(), Error> {
-                        info!("Generating tokens for {}", &profile.id);
+                let credentials_generator = |profile: &Profile| -> Result<(), Error> {
+                    info!("Generating tokens for {}", &profile.id);
 
-                        let saml =
-                            okta_client.get_saml_response(profile.application.link_url.clone())?;
+                    let mut okta_client = organization.okta_client();
+                    okta_client.set_session_id(session_id.clone());
 
-                        trace!("SAML assertion: {:?}", saml);
-
-                        let roles = saml.roles;
-
-                        debug!("SAML Roles: {:?}", &roles);
-
-                        match roles
-                            .into_iter()
-                            .find(|r| r.role_name().map(|r| r == profile.role).unwrap_or(false))
-                        {
-                            Some(role) => {
-                                debug!("Found role: {} in {}", role.role_arn, &profile.id);
-
-                                let raw_saml = saml.raw;
-
-                                let assumption_response =
-                                    match aws::role::assume_role(role, raw_saml.clone()) {
-                                        Ok(res) => res,
-                                        Err(e) => {
-                                            error!("Erroring, tried SAML: {:?}", &raw_saml);
-                                            bail!("{}, in profile: {:?}", e, profile.id);
-                                        }
-                                    };
-
-                                if let Some(credentials) = assumption_response.credentials {
-                                    debug!("Credentials: {:?}", credentials);
-
-                                    credentials_store
-                                        .lock()
-                                        .unwrap()
-                                        .set_profile(profile.id.clone(), credentials)
-                                } else {
-                                    bail!("Error fetching credentials from assumed AWS role")
-                                }
-                            }
-                            None => bail!(
-                                "No matching role ({}) found for profile {}",
-                                profile.role,
-                                &profile.id
+                    let saml =
+                        match okta_client.get_saml_response(profile.application.link_url.clone()) {
+                            Ok(saml) => saml,
+                            Err(e) => bail!(
+                                "Error getting SAML response for profile {} ({})",
+                                profile.id,
+                                e
                             ),
+                        };
+
+                    trace!("SAML assertion: {:?}", saml);
+
+                    let roles = saml.roles;
+
+                    debug!("SAML Roles: {:?}", &roles);
+
+                    match roles
+                        .into_iter()
+                        .find(|r| r.role_name().map(|r| r == profile.role).unwrap_or(false))
+                    {
+                        Some(role) => {
+                            debug!("Found role: {} in {}", role.role_arn, &profile.id);
+
+                            let raw_saml = saml.raw;
+
+                            let assumption_response = match aws::role::assume_role(
+                                role,
+                                raw_saml.clone(),
+                            ) {
+                                Ok(res) => res,
+                                Err(e) => {
+                                    bail!("Error assuming role for profile {} ({})", profile.id, e);
+                                }
+                            };
+
+                            if let Some(credentials) = assumption_response.credentials {
+                                debug!("Credentials: {:?}", credentials);
+
+                                credentials_store
+                                    .lock()
+                                    .unwrap()
+                                    .set_profile(profile.id.clone(), credentials)
+                            } else {
+                                bail!("Error fetching credentials from assumed AWS role")
+                            }
                         }
-                    })?;
+                        None => bail!(
+                            "No matching role ({}) found for profile {}",
+                            profile.role,
+                            &profile.id
+                        ),
+                    }
+                };
+
+                if opt.synchronous {
+                    profiles.iter().try_for_each(credentials_generator)?
+                } else {
+                    profiles.par_iter().try_for_each(credentials_generator)?
+                }
             }
         }
 
