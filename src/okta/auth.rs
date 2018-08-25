@@ -1,12 +1,12 @@
 use dialoguer;
 use dialoguer::Input;
 use failure::Error;
-use okta::client::OktaClient;
-use okta::OktaEmbedded;
-use okta::OktaLinks;
 use std::collections::HashMap;
 
-use okta::factor::FactorVerificationRequest;
+use okta::client::Client;
+use okta::factors::{Factor, FactorVerificationRequest};
+use okta::users::User;
+use okta::Links;
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -58,17 +58,25 @@ pub struct LoginResponse {
     state_token: Option<String>,
     pub session_token: Option<String>,
     expires_at: String,
-    status: OktaLoginState,
+    status: LoginState,
     relay_state: Option<String>,
     #[serde(rename = "_embedded")]
-    embedded: Option<OktaEmbedded>,
+    embedded: Option<LoginEmbedded>,
     #[serde(rename = "_links", default)]
-    links: HashMap<String, OktaLinks>,
+    links: HashMap<String, Links>,
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct LoginEmbedded {
+    #[serde(default)]
+    factors: Vec<Factor>,
+    user: User,
 }
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum OktaLoginState {
+pub enum LoginState {
     Unauthenticated,
     PasswordWarn,
     PasswordExpired,
@@ -83,7 +91,7 @@ pub enum OktaLoginState {
     Success,
 }
 
-impl OktaClient {
+impl Client {
     pub fn login(&self, req: &LoginRequest) -> Result<LoginResponse, Error> {
         let login_type = if req.state_token.is_some() {
             "State Token"
@@ -93,7 +101,7 @@ impl OktaClient {
 
         debug!("Attempting to login with {}", login_type);
 
-        self.post(String::from("api/v1/authn"), req)
+        self.post("api/v1/authn", req)
     }
 
     pub fn get_session_token(&self, req: &LoginRequest) -> Result<String, Error> {
@@ -102,8 +110,8 @@ impl OktaClient {
         trace!("Login response: {:?}", response);
 
         match response.status {
-            OktaLoginState::Success => Ok(response.session_token.unwrap()),
-            OktaLoginState::MfaRequired => {
+            LoginState::Success => Ok(response.session_token.unwrap()),
+            LoginState::MfaRequired => {
                 info!("MFA required");
 
                 let factors = response.embedded.unwrap().factors;
@@ -139,7 +147,7 @@ impl OktaClient {
                     if let Some(state_token) = factor_prompt_response.state_token {
                         let mut input = Input::new("MFA response");
 
-                        let mfa_code = input.interact().unwrap();
+                        let mfa_code = input.interact()?;
 
                         let factor_provided_response = self.verify(
                             &factor,

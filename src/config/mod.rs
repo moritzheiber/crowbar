@@ -1,9 +1,9 @@
 pub mod organization;
-pub mod profile;
 
 use config::organization::Organization;
+use dirs;
 use failure::Error;
-use std::env::{home_dir, var as env_var};
+use std::env::var as env_var;
 use std::path::Path;
 use std::path::PathBuf;
 use try_from::TryInto;
@@ -47,7 +47,7 @@ fn organizations_from_dir(dir: &Path) -> impl Iterator<Item = Organization> {
 }
 
 fn default_profile_location() -> Result<PathBuf, Error> {
-    match home_dir() {
+    match dirs::home_dir() {
         Some(home_dir) => Ok(home_dir.join(".oktaws")),
         None => bail!("The environment variable HOME must be set."),
     }

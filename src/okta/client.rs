@@ -1,22 +1,24 @@
 use failure::Error;
 use reqwest::header::{Accept, ContentType, Cookie};
-use reqwest::Client;
+use reqwest::Client as HttpClient;
 use reqwest::Response;
 use reqwest::Url;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
-pub struct OktaClient {
-    client: Client,
-    base_url: String,
+use okta::Organization;
+
+pub struct Client {
+    client: HttpClient,
+    organization: Organization,
     cookies: Cookie,
 }
 
-impl OktaClient {
-    pub fn new(organization: String) -> OktaClient {
-        OktaClient {
-            client: Client::new(),
-            base_url: String::from(format!("https://{}.okta.com", organization)),
+impl Client {
+    pub fn new(organization: Organization) -> Client {
+        Client {
+            client: HttpClient::new(),
+            organization,
             cookies: Cookie::new(),
         }
     }
@@ -34,12 +36,12 @@ impl OktaClient {
             .map_err(|e| e.into())
     }
 
-    pub fn get<O>(&self, path: String) -> Result<O, Error>
+    pub fn get<O>(&self, path: &str) -> Result<O, Error>
     where
         O: DeserializeOwned,
     {
         self.client
-            .get(&format!("{}/{}", self.base_url, path))
+            .get(&format!("{}/{}", self.organization.base_url, path))
             .header(ContentType::json())
             .header(Accept::json())
             .header(self.cookies.clone())
@@ -49,14 +51,14 @@ impl OktaClient {
             .map_err(|e| e.into())
     }
 
-    pub fn post<I, O>(&self, path: String, body: I) -> Result<O, Error>
+    pub fn post<I, O>(&self, path: &str, body: &I) -> Result<O, Error>
     where
         I: Serialize,
         O: DeserializeOwned,
     {
         self.client
-            .post(&format!("{}/{}", self.base_url, path))
-            .json(&body)
+            .post(&format!("{}/{}", self.organization.base_url, path))
+            .json(body)
             .header(ContentType::json())
             .header(Accept::json())
             .header(self.cookies.clone())
@@ -66,14 +68,14 @@ impl OktaClient {
             .map_err(|e| e.into())
     }
 
-    pub fn post_absolute<I, O>(&self, url: Url, body: I) -> Result<O, Error>
+    pub fn post_absolute<I, O>(&self, url: Url, body: &I) -> Result<O, Error>
     where
         I: Serialize,
         O: DeserializeOwned,
     {
         self.client
             .post(url)
-            .json(&body)
+            .json(body)
             .header(ContentType::json())
             .header(Accept::json())
             .header(self.cookies.clone())

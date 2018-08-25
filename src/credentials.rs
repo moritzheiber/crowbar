@@ -1,12 +1,13 @@
 use dialoguer::{Input, PasswordInput};
 use keyring::Keyring;
+use okta::Organization;
 use rpassword;
 use username;
 
 use failure::Error;
 
-pub fn get_username(org: &str) -> Result<String, Error> {
-    let mut input = Input::new(&format!("Username for https://{}.okta.com", org));
+pub fn get_username(org: &Organization) -> Result<String, Error> {
+    let mut input = Input::new(&format!("Username for {}", org.base_url));
     if let Ok(system_user) = username::get_user_name() {
         input.default(&system_user);
     }
@@ -15,15 +16,15 @@ pub fn get_username(org: &str) -> Result<String, Error> {
 }
 
 pub fn get_password(
-    organization_name: &str,
+    organization: &Organization,
     username: &str,
     force_new: bool,
 ) -> Result<String, Error> {
     if force_new {
         debug!("Force new is set, prompting for password");
-        prompt_password(organization_name, username)
+        prompt_password(organization, username)
     } else {
-        match Keyring::new(&format!("oktaws::okta::{}", organization_name), username).get_password()
+        match Keyring::new(&format!("oktaws::okta::{}", organization.name), username).get_password()
         {
             Ok(password) => Ok(password),
             Err(e) => {
@@ -31,7 +32,7 @@ pub fn get_password(
                     "Retrieving cached password failed, prompting for password because of {:?}",
                     e
                 );
-                prompt_password(organization_name, username)
+                prompt_password(organization, username)
             }
         }
     }
@@ -39,28 +40,37 @@ pub fn get_password(
 
 // We use rpassword here because dialoguer hangs on windows
 #[cfg(windows)]
-fn prompt_password(org: &str, username: &str) -> Result<String, Error> {
-    rpassword::prompt_password_stdout(&format!(
-        "Password for https://{}@{}.okta.com: ",
-        username, org
-    )).map_err(|e| e.into())
+fn prompt_password(organization: &Organization, username: &str) -> Result<String, Error> {
+    let mut url = organization.base_url.clone();
+    url.set_username(username)
+        .map_err(|_| format_err!("Cannot set username for URL"))?;
+
+    rpassword::prompt_password_stdout(&format!("Password for {}: ", url)).map_err(|e| e.into())
 }
 
 #[cfg(not(windows))]
-fn prompt_password(org: &str, username: &str) -> Result<String, Error> {
-    PasswordInput::new(&format!(
-        "Password for https://{}@{}.okta.com",
-        username, org
-    )).interact()
+fn prompt_password(organization: &Organization, username: &str) -> Result<String, Error> {
+    let mut url = organization.base_url.clone();
+    url.set_username(username)
+        .map_err(|_| format_err!("Cannot set username for URL"))?;
+
+    PasswordInput::new(&format!("Password for {}", url))
+        .interact()
         .map_err(|e| e.into())
 }
 
-pub fn set_credentials(org: &str, username: &str, password: &str) {
-    info!(
-        "Saving Okta credentials for https://{}@{}.okta.com",
-        username, org
-    );
-    let key = format!("oktaws::okta::{}", org);
-    let keyring = Keyring::new(&key, username);
-    keyring.set_password(password).unwrap();
+pub fn save_credentials(
+    organization: &Organization,
+    username: &str,
+    password: &str,
+) -> Result<(), Error> {
+    let mut url = organization.base_url.clone();
+    url.set_username(username)
+        .map_err(|_| format_err!("Cannot set username for URL"))?;
+
+    info!("Saving Okta credentials for {}", url);
+
+    Keyring::new(&format!("oktaws::okta::{}", organization.name), username)
+        .set_password(password)
+        .map_err(|e| e.into())
 }

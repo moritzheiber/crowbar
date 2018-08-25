@@ -1,6 +1,6 @@
 use credentials;
 use failure::Error;
-use okta::client::OktaClient;
+use okta::client::Client;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
@@ -8,14 +8,13 @@ use std::path::Path;
 use toml;
 use try_from::TryFrom;
 
-use config::profile::Profile;
+use okta::users::AppLink;
+use okta::Organization as OktaOrganization;
 
-#[serde(default)]
-#[derive(Clone, Debug, Deserialize, Default)]
+#[derive(Clone, Debug)]
 pub struct Organization {
-    #[serde(skip)]
-    pub name: String,
-    pub username: Option<String>,
+    pub okta_organization: OktaOrganization,
+    pub username: String,
     role: Option<String>,
     profiles: HashMap<String, ProfileSpec>,
 }
@@ -30,6 +29,13 @@ pub enum ProfileSpec {
     },
 }
 
+#[derive(Debug)]
+pub struct Profile {
+    pub id: String,
+    pub application: AppLink,
+    pub role: String,
+}
+
 impl<'a, P> TryFrom<&'a P> for Organization
 where
     P: ?Sized + AsRef<Path>,
@@ -42,18 +48,31 @@ where
             .file_stem()
             .map(|stem| stem.to_string_lossy().into_owned())
         {
-            Some(name) => {
+            Some(filename) => {
                 let file_contents = File::open(path)?
                     .bytes()
                     .map(|b| b.map_err(|e| e.into()))
                     .collect::<Result<Vec<u8>, Error>>()?;
 
-                let mut organization: Organization = toml::from_slice(&file_contents)?;
-                organization.name = name;
+                let file_toml: toml::Value = toml::from_slice(&file_contents)?;
 
-                if organization.username.is_none() {}
+                let okta_organization = filename.parse()?;
 
-                Ok(organization)
+                Ok(Organization {
+                    username: file_toml
+                        .get("username")
+                        .map(|u| u.clone().try_into().map_err(|e| e.into()))
+                        .unwrap_or_else(|| credentials::get_username(&okta_organization))?,
+                    role: file_toml
+                        .get("role")
+                        .map(|r| r.clone().try_into())
+                        .unwrap_or(Ok(None))?,
+                    profiles: file_toml
+                        .get("profiles")
+                        .map(|p| p.clone().try_into())
+                        .unwrap_or(Ok(HashMap::new()))?,
+                    okta_organization,
+                })
             }
             None => bail!("Organization name not parseable from {:?}", path.as_ref()),
         }
@@ -61,26 +80,11 @@ where
 }
 
 impl Organization {
-    pub fn credentials(&self, force_new: bool) -> Result<(String, String), Error> {
-        let username = match self.username {
-            Some(ref username) => username.to_owned(),
-            None => credentials::get_username(&self.name)?,
-        };
-
-        let password = credentials::get_password(&self.name, &username, force_new)?;
-
-        Ok((username, password))
-    }
-
-    pub fn okta_client(&self) -> OktaClient {
-        OktaClient::new(self.name.clone())
-    }
-
     pub fn profiles<'a>(
         &'a self,
-        client: &OktaClient,
+        client: &Client,
     ) -> Result<impl Iterator<Item = Profile> + 'a, Error> {
-        let okta_apps = client.get_apps()?;
+        let okta_apps = client.app_links(None)?;
 
         Ok(self.profiles.iter().filter_map(move |(id, profile_spec)| {
             match (&self.role, &profile_spec) {
@@ -112,7 +116,7 @@ impl Organization {
                         None => {
                             error!(
                                 "Could not find Okta application for profile {}/{}",
-                                self.name, id
+                                self.okta_organization.name, id
                             );
                             None
                         }
@@ -121,7 +125,7 @@ impl Organization {
                 (&None, &ProfileSpec::Detailed { role: None, .. }) | (&None, _) => {
                     error!(
                         "No role defined on profile {}/{} and no default role specified",
-                        self.name, id
+                        self.okta_organization.name, id
                     );
                     None
                 }

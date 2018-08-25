@@ -1,10 +1,11 @@
+use dirs;
 use failure::Error;
 use path_abs::PathFile;
 use rusoto_sts::Credentials;
 use serde_ini;
 use std::collections::btree_map::Entry;
 use std::collections::BTreeMap;
-use std::env::{home_dir, var as env_var};
+use std::env::var as env_var;
 use std::fs::File;
 use std::fs::OpenOptions;
 use std::io::{Seek, SeekFrom};
@@ -57,7 +58,7 @@ impl CredentialsStore {
     }
 
     fn default_profile_location() -> Result<PathBuf, Error> {
-        match home_dir() {
+        match dirs::home_dir() {
             Some(home_dir) => Ok(home_dir.join(".aws").join("credentials")),
             None => bail!("The environment variable HOME must be set."),
         }
@@ -231,8 +232,7 @@ aws_session_token=SESSION_TOKEN"
                     secret_access_key: String::from("SECRET_ACCESS_KEY2"),
                     session_token: String::from("SESSION_TOKEN2"),
                 },
-            )
-            .unwrap();
+            ).unwrap();
 
         credentials_store.save().unwrap();
 

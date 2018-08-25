@@ -10,15 +10,14 @@ serde = "1"
 serde_derive = "1"
 serde_str = "0.1"
 toml = "0.4"
-rusoto_core = "0.32"
-rusoto_sts = "0.32"
-rusoto_credential = "0.11"
+rusoto_core = "0.33"
+rusoto_sts = "0.33"
+rusoto_credential = "0.12"
 base64 = "0.9"
 structopt = "0.2"
 structopt-derive = "0.2"
 failure = "0.1"
 log = "0.4"
-stderrlog = "0.4"
 keyring = "0.6"
 username = "0.2"
 dialoguer = "0.1"
@@ -32,18 +31,10 @@ rpassword = "2"
 try_from = "0.2"
 glob = "0.2"
 walkdir = "2"
-serde_json = "1"
 rayon = "1"
-flexi_logger = "^0.9.2"
 pretty_env_logger = "0.2"
-
-[patch.crates-io]
-# For https://github.com/servo/html5ever/pull/322
-html5ever = { git = 'https://github.com/servo/html5ever', rev = '3d5e24bbc3ebadf4e1bb9a4e25dc24c80fed1670' }
-# For https://github.com/rusoto/rusoto/pull/1001
-rusoto_core = { git = 'https://github.com/rusoto/rusoto' }
-# To support rusoto_core above
-rusoto_credential = { git = 'https://github.com/rusoto/rusoto' }
+dirs = "1"
+itertools = "0.7"
 
 [dev-dependencies]
 tempfile = "3"

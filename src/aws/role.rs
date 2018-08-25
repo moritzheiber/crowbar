@@ -1,5 +1,5 @@
 use failure::Error;
-use rusoto_core::reactor::RequestDispatcher;
+use rusoto_core::request::HttpClient;
 use rusoto_core::Region;
 use rusoto_credential::StaticProvider;
 use rusoto_sts::{AssumeRoleWithSAMLRequest, AssumeRoleWithSAMLResponse, Sts, StsClient};
@@ -58,12 +58,12 @@ pub fn assume_role(
     };
 
     let provider = StaticProvider::new_minimal(String::from(""), String::from(""));
-    let client = StsClient::new(RequestDispatcher::default(), provider, Region::default());
+    let client = StsClient::new_with(HttpClient::new()?, provider, Region::default());
 
     trace!("Assuming role: {:?}", &req);
 
     client
-        .assume_role_with_saml(&req)
+        .assume_role_with_saml(req)
         .sync()
         .map_err(|e| e.into())
 }

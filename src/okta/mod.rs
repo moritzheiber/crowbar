@@ -1,113 +1,70 @@
 pub mod auth;
 pub mod client;
-pub mod factor;
+pub mod factors;
+pub mod sessions;
+pub mod users;
 
 use failure::{Compat, Error};
 use kuchiki;
 use kuchiki::traits::TendrilSink;
 use okta::auth::LoginRequest;
-use okta::client::OktaClient;
-use okta::factor::Factor;
+use okta::client::Client;
 use regex::Regex;
 use reqwest::Url;
 use serde_str;
 
 use saml::Response as SamlResponse;
 
-#[derive(Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct OktaAppLink {
-    id: String,
-    pub label: String,
-    #[serde(with = "serde_str")]
-    pub link_url: Url,
-    pub app_name: String,
+use std::str;
+use std::str::FromStr;
+
+#[derive(Clone, Debug)]
+pub struct Organization {
+    pub name: String,
+    pub base_url: Url,
 }
 
-#[derive(Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct OktaEmbedded {
-    #[serde(default)]
-    factors: Vec<Factor>,
-    user: OktaUser,
-}
+impl FromStr for Organization {
+    type Err = Error;
 
-#[derive(Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-struct OktaUser {
-    id: String,
-    profile: OktaUserProfile,
-}
-
-#[derive(Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-struct OktaUserProfile {
-    login: String,
-    first_name: String,
-    last_name: String,
-    locale: String,
-    time_zone: String,
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Organization {
+            name: String::from(s),
+            base_url: Url::parse(&format!("https://{}.okta.com", s))?,
+        })
+    }
 }
 
 #[derive(Deserialize, Debug)]
 #[serde(untagged)]
-pub enum OktaLinks {
-    Single(OktaLink),
-    Multi(Vec<OktaLink>),
+pub enum Links {
+    Single(Link),
+    Multi(Vec<Link>),
 }
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct OktaLink {
+pub struct Link {
     name: Option<String>,
     #[serde(with = "serde_str")]
     pub href: Url,
-    hints: OktaHint,
+    hints: Hint,
 }
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct OktaHint {
+pub struct Hint {
     allow: Vec<String>,
 }
 
-#[derive(Serialize, Debug)]
-#[serde(rename_all = "camelCase")]
-struct OktaSessionRequest {
-    session_token: Option<String>,
-}
-
-#[derive(Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-struct OktaSessionResponse {
-    id: String,
-}
-
-impl OktaClient {
-    pub fn get_session_id(&self, session_token: &str) -> Result<String, Error> {
-        let session: OktaSessionResponse = self.post(
-            String::from("api/v1/sessions?additionalFields=cookieTokenUrl"),
-            OktaSessionRequest {
-                session_token: Some(String::from(session_token)),
-            },
-        )?;
-
-        debug!("Session {:?}", &session);
-
-        Ok(session.id)
-    }
-
-    pub fn get_apps(&self) -> Result<Vec<OktaAppLink>, Error> {
-        self.get(String::from("api/v1/users/me/appLinks"))
-    }
-
+impl Client {
     pub fn get_saml_response(&self, app_url: Url) -> Result<SamlResponse, Error> {
         let response = self.get_response(app_url.clone())?.text()?;
 
         trace!("SAML response doc for app {:?}: {}", &app_url, &response);
 
-        match SamlResponse::from_html(response.clone()) {
-            Err(SamlResponseError::NotFound) => {
+        match extract_saml_response(response.clone()) {
+            Err(ExtractSamlResponseError::NotFound) => {
                 debug!("No SAML found for app {:?}, will re-login", &app_url);
 
                 let state_token = extract_state_token(&response)?;
@@ -122,43 +79,42 @@ impl OktaClient {
 }
 
 fn extract_state_token(text: &str) -> Result<String, Error> {
-    let re = Regex::new(r#"var stateToken = '(.+)';"#).unwrap();
+    let re = Regex::new(r#"var stateToken = '(.+)';"#)?;
 
     if let Some(cap) = re.captures(text) {
         Ok(cap[1].to_owned().replace("\\x2D", "-"))
     } else {
-        trace!("Expected state token in {}", &text);
         bail!("No state token found")
     }
 }
 
-impl SamlResponse {
-    pub fn from_html(text: String) -> Result<Self, SamlResponseError> {
-        let doc = kuchiki::parse_html().one(text);
+pub fn extract_saml_response(text: String) -> Result<SamlResponse, ExtractSamlResponseError> {
+    let doc = kuchiki::parse_html().one(text);
+    let input_node = doc
+        .select("input[name='SAMLResponse']")
+        .map_err(|_| ExtractSamlResponseError::NotFound)?
+        .next()
+        .ok_or(ExtractSamlResponseError::NotFound)?;
 
-        if let Some(input_node) = doc.select("input[name='SAMLResponse']").unwrap().next() {
-            if let Some(saml) = input_node.attributes.borrow().get("value") {
-                trace!("SAML: {}", saml);
-                saml.parse().map_err(|e: Error| e.into())
-            } else {
-                Err(SamlResponseError::NotFound)
-            }
-        } else {
-            Err(SamlResponseError::NotFound)
-        }
-    }
+    let attributes = &input_node.attributes.borrow();
+    let saml = attributes
+        .get("value")
+        .ok_or(ExtractSamlResponseError::NotFound)?;
+
+    trace!("SAML: {}", saml);
+    saml.parse().map_err(|e: Error| e.into())
 }
 
 #[derive(Fail, Debug)]
-pub enum SamlResponseError {
+pub enum ExtractSamlResponseError {
     #[fail(display = "No SAML found")]
     NotFound,
     #[fail(display = "{}", _0)]
     Invalid(#[cause] Compat<Error>),
 }
 
-impl From<Error> for SamlResponseError {
-    fn from(e: Error) -> SamlResponseError {
-        SamlResponseError::Invalid(e.compat())
+impl From<Error> for ExtractSamlResponseError {
+    fn from(e: Error) -> ExtractSamlResponseError {
+        ExtractSamlResponseError::Invalid(e.compat())
     }
 }

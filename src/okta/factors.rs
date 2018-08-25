@@ -1,12 +1,9 @@
 use failure::Error;
 use okta::auth::LoginResponse;
-use okta::client::OktaClient;
-use okta::OktaLinks;
-use okta::OktaLinks::Multi;
-use okta::OktaLinks::Single;
-use reqwest;
-use reqwest::header::{Accept, ContentType};
-use serde_json;
+use okta::client::Client;
+use okta::Links;
+use okta::Links::Multi;
+use okta::Links::Single;
 use std::collections::HashMap;
 use std::fmt;
 
@@ -19,7 +16,7 @@ pub enum Factor {
         provider: FactorProvider,
         status: Option<FactorStatus>,
         #[serde(rename = "_links")]
-        links: HashMap<String, OktaLinks>,
+        links: HashMap<String, Links>,
     },
     #[serde(rename_all = "camelCase")]
     Sms {
@@ -28,7 +25,7 @@ pub enum Factor {
         status: Option<FactorStatus>,
         profile: SmsFactorProfile,
         #[serde(rename = "_links")]
-        links: HashMap<String, OktaLinks>,
+        links: HashMap<String, Links>,
     },
     #[serde(rename_all = "camelCase")]
     Call {
@@ -37,7 +34,7 @@ pub enum Factor {
         status: Option<FactorStatus>,
         profile: CallFactorProfile,
         #[serde(rename = "_links")]
-        links: HashMap<String, OktaLinks>,
+        links: HashMap<String, Links>,
     },
     #[serde(rename = "token", rename_all = "camelCase")]
     Token {
@@ -46,7 +43,7 @@ pub enum Factor {
         status: Option<FactorStatus>,
         profile: TokenFactorProfile,
         #[serde(rename = "_links")]
-        links: HashMap<String, OktaLinks>,
+        links: HashMap<String, Links>,
         verify: Option<FactorVerification>,
     },
     #[serde(rename = "token:software:totp", rename_all = "camelCase")]
@@ -56,7 +53,7 @@ pub enum Factor {
         status: Option<FactorStatus>,
         profile: TokenFactorProfile,
         #[serde(rename = "_links")]
-        links: HashMap<String, OktaLinks>,
+        links: HashMap<String, Links>,
     },
     #[serde(rename = "token:hardware", rename_all = "camelCase")]
     Hotp {
@@ -65,7 +62,7 @@ pub enum Factor {
         status: Option<FactorStatus>,
         profile: TokenFactorProfile,
         #[serde(rename = "_links")]
-        links: HashMap<String, OktaLinks>,
+        links: HashMap<String, Links>,
         verify: Option<FactorVerification>,
     },
     #[serde(rename_all = "camelCase")]
@@ -75,7 +72,7 @@ pub enum Factor {
         status: Option<FactorStatus>,
         profile: QuestionFactorProfile,
         #[serde(rename = "_links")]
-        links: HashMap<String, OktaLinks>,
+        links: HashMap<String, Links>,
     },
     #[serde(rename_all = "camelCase")]
     Web {
@@ -84,7 +81,7 @@ pub enum Factor {
         status: Option<FactorStatus>,
         profile: WebFactorProfile,
         #[serde(rename = "_links")]
-        links: HashMap<String, OktaLinks>,
+        links: HashMap<String, Links>,
     },
 }
 
@@ -184,7 +181,7 @@ impl fmt::Display for Factor {
     }
 }
 
-impl OktaClient {
+impl Client {
     pub fn verify(
         &self,
         factor: &Factor,
@@ -197,7 +194,7 @@ impl OktaClient {
                     Multi(ref links) => links.first().unwrap().href.clone(),
                 };
 
-                self.post_absolute(url, request)
+                self.post_absolute(url, &request)
             }
             _ => {
                 // TODO
