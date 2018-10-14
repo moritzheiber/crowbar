@@ -3,7 +3,3 @@ target_directory = "target/release"
 hashes = ["md5", "sha256", "sha512"]
 containers = ["tar.bzip2"]
 cook_directory = "target/cooked/"
-
-[[cook.ingredient]]
-source = "README.md"
-destination = "README.md"
