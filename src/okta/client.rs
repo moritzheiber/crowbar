@@ -1,17 +1,19 @@
 use failure::Error;
-use reqwest::header::{Accept, ContentType, Cookie};
+use itertools::Itertools;
+use reqwest::header::{HeaderValue, ACCEPT, COOKIE};
 use reqwest::Client as HttpClient;
 use reqwest::Response;
 use reqwest::Url;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
+use std::collections::HashMap;
 
 use okta::Organization;
 
 pub struct Client {
     client: HttpClient,
     organization: Organization,
-    cookies: Cookie,
+    cookies: HashMap<String, String>,
 }
 
 impl Client {
@@ -19,18 +21,25 @@ impl Client {
         Client {
             client: HttpClient::new(),
             organization,
-            cookies: Cookie::new(),
+            cookies: HashMap::new(),
         }
     }
 
     pub fn set_session_id(&mut self, session_id: String) {
-        self.cookies.append("sid", session_id);
+        self.cookies.insert("sid".to_string(), session_id);
+    }
+
+    fn cookie_header(&self) -> String {
+        self.cookies
+            .iter()
+            .map(|(k, v)| format!("{}={}", k, v))
+            .join(";")
     }
 
     pub fn get_response(&self, url: Url) -> Result<Response, Error> {
         self.client
             .get(url)
-            .header(self.cookies.clone())
+            .header(COOKIE, self.cookie_header())
             .send()?
             .error_for_status()
             .map_err(|e| e.into())
@@ -41,10 +50,9 @@ impl Client {
         O: DeserializeOwned,
     {
         self.client
-            .get(&format!("{}/{}", self.organization.base_url, path))
-            .header(ContentType::json())
-            .header(Accept::json())
-            .header(self.cookies.clone())
+            .get(self.organization.base_url.join(path)?)
+            .header(ACCEPT, HeaderValue::from_static("application/json"))
+            .header(COOKIE, self.cookie_header())
             .send()?
             .error_for_status()?
             .json()
@@ -57,11 +65,10 @@ impl Client {
         O: DeserializeOwned,
     {
         self.client
-            .post(&format!("{}/{}", self.organization.base_url, path))
+            .post(self.organization.base_url.join(path)?)
             .json(body)
-            .header(ContentType::json())
-            .header(Accept::json())
-            .header(self.cookies.clone())
+            .header(ACCEPT, HeaderValue::from_static("application/json"))
+            .header(COOKIE, self.cookie_header())
             .send()?
             .error_for_status()?
             .json()
@@ -76,9 +83,8 @@ impl Client {
         self.client
             .post(url)
             .json(body)
-            .header(ContentType::json())
-            .header(Accept::json())
-            .header(self.cookies.clone())
+            .header(ACCEPT, HeaderValue::from_static("application/json"))
+            .header(COOKIE, self.cookie_header())
             .send()?
             .error_for_status()?
             .json()

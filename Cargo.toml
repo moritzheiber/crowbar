@@ -5,14 +5,14 @@ authors = ["Jonathan Morley <morley.jonathan@gmail.com>"]
 description = "Generates temporary AWS credentials with Okta."
 
 [dependencies]
-reqwest = "0.8"
+reqwest = "0.9"
 serde = "1"
 serde_derive = "1"
 serde_str = "0.1"
 toml = "0.4"
-rusoto_core = "0.33"
-rusoto_sts = "0.33"
-rusoto_credential = "0.12"
+rusoto_core = "0.34"
+rusoto_sts = "0.34"
+rusoto_credential = "0.13"
 base64 = "0.9"
 structopt = "0.2"
 structopt-derive = "0.2"
@@ -27,7 +27,6 @@ kuchiki = "0.7"
 regex = "1"
 serde_ini = "0.1"
 path_abs = "0.4"
-rpassword = "2"
 try_from = "0.2"
 glob = "0.2"
 walkdir = "2"
@@ -36,5 +35,12 @@ pretty_env_logger = "0.2"
 dirs = "1"
 itertools = "0.7"
 
+[target.'cfg(windows)'.dependencies]
+rpassword = "2"
+
 [dev-dependencies]
 tempfile = "3"
+
+[build-dependencies]
+flate2 = "1"
+tar = "0.4"

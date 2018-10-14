@@ -1,3 +1,4 @@
+pub mod credentials;
 pub mod organization;
 
 use config::organization::Organization;

@@ -3,8 +3,8 @@ use failure::Error;
 use path_abs::PathFile;
 use rusoto_sts::Credentials;
 use serde_ini;
-use std::collections::btree_map::Entry;
-use std::collections::BTreeMap;
+use std::collections::hash_map::Entry;
+use std::collections::HashMap;
 use std::env::var as env_var;
 use std::fs::File;
 use std::fs::OpenOptions;
@@ -17,7 +17,7 @@ use try_from::{TryFrom, TryInto};
 #[derive(Debug)]
 pub struct CredentialsStore {
     file: File,
-    credentials: BTreeMap<String, ProfileCredentials>,
+    credentials: HashMap<String, ProfileCredentials>,
 }
 
 impl CredentialsStore {

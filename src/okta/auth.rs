@@ -133,39 +133,39 @@ impl Client {
 
                 debug!("Factor: {:?}", factor);
 
-                if let Some(state_token) = response.state_token {
-                    let factor_prompt_response = self.verify(
-                        &factor,
-                        FactorVerificationRequest::Sms {
-                            state_token,
-                            pass_code: None,
-                        },
-                    )?;
+                let state_token = response
+                    .state_token
+                    .ok_or(format_err!("No state token found in response"))?;
 
-                    trace!("Factor Prompt Response: {:?}", factor_prompt_response);
+                let factor_prompt_response = self.verify(
+                    &factor,
+                    FactorVerificationRequest::Sms {
+                        state_token,
+                        pass_code: None,
+                    },
+                )?;
 
-                    if let Some(state_token) = factor_prompt_response.state_token {
-                        let mut input = Input::new("MFA response");
+                trace!("Factor Prompt Response: {:?}", factor_prompt_response);
 
-                        let mfa_code = input.interact()?;
+                let state_token = factor_prompt_response.state_token.ok_or(format_err!(
+                    "No state token found in factor prompt response"
+                ))?;
 
-                        let factor_provided_response = self.verify(
-                            &factor,
-                            FactorVerificationRequest::Sms {
-                                state_token,
-                                pass_code: Some(mfa_code),
-                            },
-                        )?;
+                let mut input = Input::new("MFA response");
 
-                        trace!("Factor Provided Response: {:?}", factor_provided_response);
+                let mfa_code = input.interact()?;
 
-                        Ok(factor_provided_response.session_token.unwrap())
-                    } else {
-                        bail!("No state token found in factor prompt response");
-                    }
-                } else {
-                    bail!("No state token found in response");
-                }
+                let factor_provided_response = self.verify(
+                    &factor,
+                    FactorVerificationRequest::Sms {
+                        state_token,
+                        pass_code: Some(mfa_code),
+                    },
+                )?;
+
+                trace!("Factor Provided Response: {:?}", factor_provided_response);
+
+                Ok(factor_provided_response.session_token.unwrap())
             }
             _ => {
                 println!("Resp: {:?}", response);

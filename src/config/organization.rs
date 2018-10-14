@@ -1,39 +1,51 @@
-use credentials;
 use failure::Error;
-use okta::client::Client;
-use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
 use std::path::Path;
 use toml;
 use try_from::TryFrom;
 
-use okta::users::AppLink;
+use config::credentials;
 use okta::Organization as OktaOrganization;
+
+#[derive(Clone, Debug)]
+pub struct Profile {
+    pub name: String,
+    pub application_name: String,
+    pub role: String,
+}
+
+impl Profile {
+    fn from_entry(
+        entry: (String, &toml::value::Value),
+        default_role: Option<String>,
+    ) -> Result<Profile, Error> {
+        let application_name = if entry.1.is_table() {
+            entry.1.get("application")
+        } else {
+            Some(entry.1)
+        }.and_then(|a| toml_to_string(a))
+        .unwrap();
+
+        let role = if entry.1.is_table() {
+            entry.1.get("role").and_then(|r| toml_to_string(r))
+        } else {
+            default_role
+        }.ok_or(format_err!("No profile role or default role specified"))?;
+
+        Ok(Profile {
+            name: entry.0,
+            application_name,
+            role,
+        })
+    }
+}
 
 #[derive(Clone, Debug)]
 pub struct Organization {
     pub okta_organization: OktaOrganization,
     pub username: String,
-    role: Option<String>,
-    profiles: HashMap<String, ProfileSpec>,
-}
-
-#[derive(Clone, Debug, Deserialize)]
-#[serde(untagged)]
-pub enum ProfileSpec {
-    Simple(String),
-    Detailed {
-        application: String,
-        role: Option<String>,
-    },
-}
-
-#[derive(Debug)]
-pub struct Profile {
-    pub id: String,
-    pub application: AppLink,
-    pub role: String,
+    pub profiles: Vec<Profile>,
 }
 
 impl<'a, P> TryFrom<&'a P> for Organization
@@ -43,93 +55,47 @@ where
     type Err = Error;
 
     fn try_from(path: &'a P) -> Result<Self, Self::Err> {
-        match path
+        let filename = path
             .as_ref()
             .file_stem()
             .map(|stem| stem.to_string_lossy().into_owned())
-        {
-            Some(filename) => {
-                let file_contents = File::open(path)?
-                    .bytes()
-                    .map(|b| b.map_err(|e| e.into()))
-                    .collect::<Result<Vec<u8>, Error>>()?;
+            .ok_or(format_err!(
+                "Organization name not parseable from {:?}",
+                path.as_ref()
+            ))?;
 
-                let file_toml: toml::Value = toml::from_slice(&file_contents)?;
+        let file_contents = File::open(path)?
+            .bytes()
+            .map(|b| b.map_err(|e| e.into()))
+            .collect::<Result<Vec<u8>, Error>>()?;
 
-                let okta_organization = filename.parse()?;
+        let file_toml: toml::Value = toml::from_slice(&file_contents)?;
 
-                Ok(Organization {
-                    username: file_toml
-                        .get("username")
-                        .map(|u| u.clone().try_into().map_err(|e| e.into()))
-                        .unwrap_or_else(|| credentials::get_username(&okta_organization))?,
-                    role: file_toml
-                        .get("role")
-                        .map(|r| r.clone().try_into())
-                        .unwrap_or(Ok(None))?,
-                    profiles: file_toml
-                        .get("profiles")
-                        .map(|p| p.clone().try_into())
-                        .unwrap_or(Ok(HashMap::new()))?,
-                    okta_organization,
-                })
-            }
-            None => bail!("Organization name not parseable from {:?}", path.as_ref()),
-        }
+        let default_role: Option<String> = file_toml.get("role").and_then(|r| toml_to_string(r));
+
+        let profiles = file_toml
+            .get("profiles")
+            .and_then(|p| p.as_table())
+            .ok_or(format_err!("No profiles table found"))?
+            .into_iter()
+            .map(|(k, v)| Profile::from_entry((k.to_owned(), v), default_role.clone()))
+            .collect::<Result<Vec<Profile>, Error>>()?;
+
+        let okta_organization = filename.parse()?;
+
+        let username = match file_toml.get("username").and_then(|u| toml_to_string(u)) {
+            Some(username) => username,
+            None => credentials::get_username(&okta_organization)?,
+        };
+
+        Ok(Organization {
+            username,
+            profiles,
+            okta_organization,
+        })
     }
 }
 
-impl Organization {
-    pub fn profiles<'a>(
-        &'a self,
-        client: &Client,
-    ) -> Result<impl Iterator<Item = Profile> + 'a, Error> {
-        let okta_apps = client.app_links(None)?;
-
-        Ok(self.profiles.iter().filter_map(move |(id, profile_spec)| {
-            match (&self.role, &profile_spec) {
-                (&Some(ref role), &ProfileSpec::Simple(ref app))
-                | (
-                    _,
-                    &ProfileSpec::Detailed {
-                        application: ref app,
-                        role: Some(ref role),
-                    },
-                )
-                | (
-                    &Some(ref role),
-                    &ProfileSpec::Detailed {
-                        application: ref app,
-                        role: None,
-                    },
-                ) => {
-                    let app_link = okta_apps.clone().into_iter().find(|app_link| {
-                        app_link.app_name == "amazon_aws" && &app_link.label == app
-                    });
-
-                    match app_link {
-                        Some(application) => Some(Profile {
-                            id: id.to_owned(),
-                            application,
-                            role: role.to_owned(),
-                        }),
-                        None => {
-                            error!(
-                                "Could not find Okta application for profile {}/{}",
-                                self.okta_organization.name, id
-                            );
-                            None
-                        }
-                    }
-                }
-                (&None, &ProfileSpec::Detailed { role: None, .. }) | (&None, _) => {
-                    error!(
-                        "No role defined on profile {}/{} and no default role specified",
-                        self.okta_organization.name, id
-                    );
-                    None
-                }
-            }
-        }))
-    }
+fn toml_to_string(value: &toml::value::Value) -> Option<String> {
+    value.as_str().map(|r| r.to_owned())
 }

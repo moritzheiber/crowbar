@@ -30,7 +30,7 @@ impl FromStr for Organization {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(Organization {
             name: String::from(s),
-            base_url: Url::parse(&format!("https://{}.okta.com", s))?,
+            base_url: Url::parse(&format!("https://{}.okta.com/", s))?,
         })
     }
 }
