@@ -40,7 +40,3 @@ rpassword = "2"
 
 [dev-dependencies]
 tempfile = "3"
-
-[build-dependencies]
-flate2 = "1"
-tar = "0.4"
