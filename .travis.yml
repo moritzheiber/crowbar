@@ -28,7 +28,7 @@ before_install:
   - cargo install cargo-cook || echo "cargo-cook already installed"
 
 script:
-  - [[ "${TRAVIS_RUST_VERSION}" == 'stable' ]] && cargo fmt -- --check
+  - if [[ "${TRAVIS_RUST_VERSION}" == 'stable' ]]; then cargo fmt -- --check fi
   - cargo clippy -- -D warnings
   - cargo build --release --verbose
   - cargo test --verbose
@@ -36,9 +36,9 @@ script:
 
 after_success:
   # measure code coverage and upload to coveralls.io
-  - [[ "${TRAVIS_RUST_VERSION}" == 'stable' && "${TRAVIS_OS_NAME}" == 'linux' ]] && cargo coveralls
+  - if [[ "${TRAVIS_RUST_VERSION}" == 'stable' && "${TRAVIS_OS_NAME}" == 'linux' ]]; then cargo coveralls fi
   # upload documentation to github.io (gh-pages branch)
-  - [[ "${TRAVIS_RUST_VERSION}" == 'stable' && "${TRAVIS_OS_NAME}" == 'linux' ]] && cargo doc-upload
+  - if [[ "${TRAVIS_RUST_VERSION}" == 'stable' && "${TRAVIS_OS_NAME}" == 'linux' ]]; then cargo doc-upload fi
 
 deploy:
   # TODO update `api_key.secure`
@@ -50,11 +50,7 @@ deploy:
   file_glob: true
   files: target/cooked/*
   on:
-    # TODO Here you can pick which targets will generate binary releases
-    # In this example, there are some targets that are tested using the stable
-    # and nightly channels. This condition makes sure there is only one release
-    # for such targets and that's generated using the stable channel
-    condition: "${TRAVIS_RUST_VERSION}" == 'stable'
+    rust: stable
     tags: true
   provider: releases
   skip_cleanup: true
