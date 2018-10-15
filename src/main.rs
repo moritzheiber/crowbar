@@ -51,7 +51,6 @@ use failure::Error;
 use glob::Pattern;
 use okta::auth::LoginRequest;
 use okta::client::Client as OktaClient;
-use rayon::iter::IntoParallelIterator;
 use rayon::iter::IntoParallelRefIterator;
 use rayon::iter::ParallelIterator;
 use rusoto_sts::Credentials;

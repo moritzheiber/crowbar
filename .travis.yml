@@ -21,6 +21,7 @@ matrix:
   allow_failures:
     - rust: nightly
 
+# Dependencies
 before_install:
   - rustup component add rustfmt-preview
   - rustup component add clippy-preview
@@ -28,17 +29,21 @@ before_install:
   - cargo install cargo-cook || echo "cargo-cook already installed"
 
 script:
-  - if [[ "${TRAVIS_RUST_VERSION}" == 'stable' ]]; then cargo fmt -- --check fi
+  # Pre-compile lints
+  - if [[ "${TRAVIS_RUST_VERSION}" == 'stable' ]]; then cargo fmt -- --check; fi
   - cargo clippy -- -D warnings
-  - cargo build --release --verbose
-  - cargo test --verbose
-  - cargo doc --verbose
+  # Build and everything that depends on compilation
+  - |
+    cargo build --release --verbose &&
+    cargo test --verbose
 
 after_success:
   # measure code coverage and upload to coveralls.io
-  - if [[ "${TRAVIS_RUST_VERSION}" == 'stable' && "${TRAVIS_OS_NAME}" == 'linux' ]]; then cargo coveralls fi
+  - if [[ "${TRAVIS_RUST_VERSION}" == 'stable' && "${TRAVIS_OS_NAME}" == 'linux' ]]; then cargo coveralls; fi
   # upload documentation to github.io (gh-pages branch)
-  - if [[ "${TRAVIS_RUST_VERSION}" == 'stable' && "${TRAVIS_OS_NAME}" == 'linux' ]]; then cargo doc-upload fi
+  - if [[ "${TRAVIS_RUST_VERSION}" == 'stable' && "${TRAVIS_OS_NAME}" == 'linux' ]]; then cargo doc --verbose && cargo doc-upload; fi
+  # Prep binary for github release
+  - cargo cook
 
 deploy:
   # TODO update `api_key.secure`
