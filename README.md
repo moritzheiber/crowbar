@@ -3,7 +3,7 @@
 
 # oktaws
 
-This program authenticates with Okta, assumes a provided role, and pulls a temporary key with STS to support the role assumption built into the aws cli.
+This program authenticates with Okta, assumes a provided role, and pulls a temporary key with STS to support the role assumption built into the `aws` cli.
 
 ## Installation
 
