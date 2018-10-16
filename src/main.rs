@@ -1,5 +1,3 @@
-#![warn(unused)]
-
 extern crate base64;
 extern crate dialoguer;
 #[macro_use]
@@ -26,6 +24,7 @@ extern crate serde;
 extern crate serde_ini;
 extern crate serde_str;
 extern crate structopt;
+#[allow(unused_imports)]
 #[macro_use]
 extern crate structopt_derive;
 extern crate itertools;
