@@ -3,8 +3,8 @@ use failure::Error;
 use path_abs::PathFile;
 use rusoto_sts::Credentials;
 use serde_ini;
-use std::collections::hash_map::Entry;
-use std::collections::HashMap;
+use std::collections::btree_map::Entry;
+use std::collections::BTreeMap;
 use std::env::var as env_var;
 use std::fs::File;
 use std::fs::OpenOptions;
@@ -17,7 +17,8 @@ use try_from::{TryFrom, TryInto};
 #[derive(Debug)]
 pub struct CredentialsStore {
     file: File,
-    credentials: HashMap<String, ProfileCredentials>,
+    // `BTreeMap`s are sorted
+    credentials: BTreeMap<String, ProfileCredentials>,
 }
 
 impl CredentialsStore {
@@ -155,7 +156,7 @@ aws_session_token=SESSION_TOKEN"
 
         let credentials_store: CredentialsStore = tmpfile.try_into().unwrap();
 
-        let mut expected_credentials = HashMap::new();
+        let mut expected_credentials = BTreeMap::new();
         expected_credentials.insert(
             String::from("example"),
             ProfileCredentials::Sts {
@@ -187,7 +188,7 @@ aws_session_token=SESSION_TOKEN"
 
         let credentials_store: CredentialsStore = tmpfile.try_into().unwrap();
 
-        let mut expected_credentials = HashMap::new();
+        let mut expected_credentials = BTreeMap::new();
         expected_credentials.insert(
             String::from("example"),
             ProfileCredentials::Sts {
@@ -261,7 +262,7 @@ aws_secret_access_key=SECRET_ACCESS_KEY"
 
         let credentials_store: CredentialsStore = tmpfile.try_into().unwrap();
 
-        let mut expected_credentials = HashMap::new();
+        let mut expected_credentials = BTreeMap::new();
         expected_credentials.insert(
             String::from("example"),
             ProfileCredentials::Iam {
