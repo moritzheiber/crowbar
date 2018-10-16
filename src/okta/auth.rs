@@ -135,11 +135,11 @@ impl Client {
 
                 let state_token = response
                     .state_token
-                    .ok_or(format_err!("No state token found in response"))?;
+                    .ok_or_else(|| format_err!("No state token found in response"))?;
 
                 let factor_prompt_response = self.verify(
                     &factor,
-                    FactorVerificationRequest::Sms {
+                    &FactorVerificationRequest::Sms {
                         state_token,
                         pass_code: None,
                     },
@@ -147,9 +147,9 @@ impl Client {
 
                 trace!("Factor Prompt Response: {:?}", factor_prompt_response);
 
-                let state_token = factor_prompt_response.state_token.ok_or(format_err!(
-                    "No state token found in factor prompt response"
-                ))?;
+                let state_token = factor_prompt_response
+                    .state_token
+                    .ok_or_else(|| format_err!("No state token found in factor prompt response"))?;
 
                 let mut input = Input::new("MFA response");
 
@@ -157,7 +157,7 @@ impl Client {
 
                 let factor_provided_response = self.verify(
                     &factor,
-                    FactorVerificationRequest::Sms {
+                    &FactorVerificationRequest::Sms {
                         state_token,
                         pass_code: Some(mfa_code),
                     },

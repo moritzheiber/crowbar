@@ -155,7 +155,7 @@ aws_session_token=SESSION_TOKEN"
 
         let credentials_store: CredentialsStore = tmpfile.try_into().unwrap();
 
-        let mut expected_credentials = BTreeMap::new();
+        let mut expected_credentials = HashMap::new();
         expected_credentials.insert(
             String::from("example"),
             ProfileCredentials::Sts {
@@ -187,7 +187,7 @@ aws_session_token=SESSION_TOKEN"
 
         let credentials_store: CredentialsStore = tmpfile.try_into().unwrap();
 
-        let mut expected_credentials = BTreeMap::new();
+        let mut expected_credentials = HashMap::new();
         expected_credentials.insert(
             String::from("example"),
             ProfileCredentials::Sts {
@@ -261,7 +261,7 @@ aws_secret_access_key=SECRET_ACCESS_KEY"
 
         let credentials_store: CredentialsStore = tmpfile.try_into().unwrap();
 
-        let mut expected_credentials = BTreeMap::new();
+        let mut expected_credentials = HashMap::new();
         expected_credentials.insert(
             String::from("example"),
             ProfileCredentials::Iam {

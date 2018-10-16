@@ -31,7 +31,7 @@ impl Profile {
             entry.1.get("role").and_then(|r| toml_to_string(r))
         } else {
             default_role
-        }.ok_or(format_err!("No profile role or default role specified"))?;
+        }.ok_or_else(|| format_err!("No profile role or default role specified"))?;
 
         Ok(Profile {
             name: entry.0,
@@ -59,10 +59,9 @@ where
             .as_ref()
             .file_stem()
             .map(|stem| stem.to_string_lossy().into_owned())
-            .ok_or(format_err!(
-                "Organization name not parseable from {:?}",
-                path.as_ref()
-            ))?;
+            .ok_or_else(|| {
+                format_err!("Organization name not parseable from {:?}", path.as_ref())
+            })?;
 
         let file_contents = File::open(path)?
             .bytes()
@@ -76,7 +75,7 @@ where
         let profiles = file_toml
             .get("profiles")
             .and_then(|p| p.as_table())
-            .ok_or(format_err!("No profiles table found"))?
+            .ok_or_else(|| format_err!("No profiles table found"))?
             .into_iter()
             .map(|(k, v)| Profile::from_entry((k.to_owned(), v), default_role.clone()))
             .collect::<Result<Vec<Profile>, Error>>()?;

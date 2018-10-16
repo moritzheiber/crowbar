@@ -27,7 +27,7 @@ impl FromStr for Response {
 
         let xpath = Factory::new()
             .build("//saml2:Attribute[@Name='https://aws.amazon.com/SAML/Attributes/Role']/saml2:AttributeValue")?
-            .ok_or(format_err!("No XPath was compiled"))?;
+            .ok_or_else(|| format_err!("No XPath was compiled"))?;
 
         let mut context = Context::new();
         context.set_namespace("saml2", "urn:oasis:names:tc:SAML:2.0:assertion");
@@ -76,7 +76,7 @@ mod tests {
                 role_arn: String::from("arn:aws:iam::123456789012:role/role2"),
             },
         ].into_iter()
-            .collect::<HashSet<Role>>();
+        .collect::<HashSet<Role>>();
 
         assert_eq!(response.roles, expected_roles);
     }

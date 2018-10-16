@@ -18,6 +18,7 @@ pub struct SessionResponse {
     pub id: String,
 }
 
+#[allow(dead_code)]
 #[derive(PartialEq, Eq, Hash)]
 pub enum SessionProperties {
     CookieToken,
@@ -37,7 +38,7 @@ impl Client {
     pub fn new_session(
         &self,
         session_token: String,
-        additional_fields: HashSet<SessionProperties>,
+        additional_fields: &HashSet<SessionProperties>,
     ) -> Result<SessionResponse, Error> {
         self.post(
             &format!(

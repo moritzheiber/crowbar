@@ -133,7 +133,7 @@ fn main() -> Result<(), Error> {
             password.clone(),
         ))?;
 
-        let session_id = okta_client.new_session(session_token, HashSet::new())?.id;
+        let session_id = okta_client.new_session(session_token, &HashSet::new())?.id;
         okta_client.set_session_id(session_id.clone());
 
         let profiles = organization
@@ -160,17 +160,17 @@ fn main() -> Result<(), Error> {
             Ok(acc)
         };
 
-        let org_credentials = if opt.asynchronous {
+        let org_credentials: HashMap<_, _> = if opt.asynchronous {
             profiles
                 .par_iter()
-                .try_fold(|| HashMap::new(), credentials_folder)
-                .try_reduce(
-                    || HashMap::new(),
-                    |mut a, b| -> Result<_, Error> {
-                        a.extend(b.into_iter());
-                        Ok(a)
-                    },
-                )?
+                .try_fold_with(HashMap::new(), credentials_folder)
+                .try_reduce_with(|mut a, b| -> Result<_, Error> {
+                    a.extend(b.into_iter());
+                    Ok(a)
+                }).unwrap_or_else(|| {
+                    println!("No profiles");
+                    Ok(HashMap::new())
+                })?
         } else {
             profiles
                 .iter()
@@ -209,11 +209,13 @@ fn fetch_credentials(
         .into_iter()
         .find(|app_link| {
             app_link.app_name == "amazon_aws" && app_link.label == profile.application_name
-        }).ok_or(format_err!(
-            "Could not find Okta application for profile {}/{}",
-            organization.okta_organization.name,
-            profile.name
-        ))?;
+        }).ok_or_else(|| {
+            format_err!(
+                "Could not find Okta application for profile {}/{}",
+                organization.okta_organization.name,
+                profile.name
+            )
+        })?;
 
     debug!("Application Link: {:?}", &app_link);
 
@@ -236,11 +238,13 @@ fn fetch_credentials(
     let role: Role = roles
         .into_iter()
         .find(|r| r.role_name().map(|r| r == profile.role).unwrap_or(false))
-        .ok_or(format_err!(
-            "No matching role ({}) found for profile {}",
-            profile.role,
-            &profile.name
-        ))?;
+        .ok_or_else(|| {
+            format_err!(
+                "No matching role ({}) found for profile {}",
+                profile.role,
+                &profile.name
+            )
+        })?;
 
     trace!(
         "Found role: {} for profile {}",
@@ -251,9 +255,9 @@ fn fetch_credentials(
     let assumption_response = aws::role::assume_role(role, saml.raw)
         .map_err(|e| format_err!("Error assuming role for profile {} ({})", profile.name, e))?;
 
-    let credentials = assumption_response.credentials.ok_or(format_err!(
-        "Error fetching credentials from assumed AWS role"
-    ))?;
+    let credentials = assumption_response
+        .credentials
+        .ok_or_else(|| format_err!("Error fetching credentials from assumed AWS role"))?;
 
     trace!("Credentials: {:?}", credentials);
 

@@ -185,7 +185,7 @@ impl Client {
     pub fn verify(
         &self,
         factor: &Factor,
-        request: FactorVerificationRequest,
+        request: &FactorVerificationRequest,
     ) -> Result<LoginResponse, Error> {
         match *factor {
             Factor::Sms { ref links, .. } => {
@@ -194,7 +194,7 @@ impl Client {
                     Multi(ref links) => links.first().unwrap().href.clone(),
                 };
 
-                self.post_absolute(url, &request)
+                self.post_absolute(url, request)
             }
             _ => {
                 // TODO
