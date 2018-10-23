@@ -73,5 +73,5 @@ pub fn save_credentials(
 
     Keyring::new(&format!("oktaws::okta::{}", organization.name), username)
         .set_password(password)
-        .map_err(|e| e.into())
+        .map_err(|e| format_err!("{}", e))
 }
