@@ -3,13 +3,12 @@ language: rust
 cache: cargo
 
 rust:
-  - nightly
-  - beta
   # check it compiles on the latest stable compiler
   - stable
   # and the first stable one (this should be bumped as the minimum
   # Rust version required changes)
   - 1.29.1
+  - nightly
 
 os:
   - osx
@@ -25,7 +24,6 @@ matrix:
   fast_finish: true
   allow_failures:
     - rust: nightly
-    - rust: beta
     - os: windows
 
 # Dependencies
@@ -37,12 +35,13 @@ before_install:
 
 script:
   # Lints that do not require code to be compiled
-  - cargo fmt -- --verbose --check
-  - cargo clippy -- --deny clippy
+  # We are skipping windows here because the build takes long enough that travis can time out
+  - if [[ "${TRAVIS_OS_NAME}" != 'windows' ]]; then cargo fmt -- --verbose --check; fi
   # Build and everything that depends on compilation
   - |
     cargo build --verbose --release &&
-    cargo test --verbose &&
+    cargo clippy --verbose --release -- --deny clippy &&
+    cargo test --verbose --release &&
     cargo cook
 
 after_success:
