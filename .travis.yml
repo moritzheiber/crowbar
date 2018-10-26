@@ -16,6 +16,11 @@ os:
   - windows
   - linux
 
+addons:
+  apt:
+    packages:
+    - libdbus-1-dev # Linking fails without this
+
 matrix:
   fast_finish: true
   allow_failures:
