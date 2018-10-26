@@ -30,7 +30,7 @@ before_install:
   - rustup component add rustfmt-preview
   - rustup component add clippy-preview
   - cargo install cargo-travis || echo "cargo-travis already installed"
-  - cargo install cargo-cook --git https://github.com/jonathanmorley/cargo-cook --branch no-sysconf || echo "cargo-cook already installed"
+  - cargo install cargo-cook --git https://github.com/jonathanmorley/cargo-cook --branch windows || echo "cargo-cook already installed"
 
 script:
   # Lints that do not require code to be compiled
