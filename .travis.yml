@@ -34,7 +34,7 @@ before_install:
 script:
   - cargo fmt -- --verbose --check
   - cargo build --verbose --release
-  - cargo clippy --verbose --release -- --deny clippy::all
+  - cargo clippy --verbose --release -- --deny clippy
   - cargo test --verbose --release
 
 after_success:
