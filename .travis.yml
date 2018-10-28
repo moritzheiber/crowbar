@@ -30,24 +30,21 @@ before_install:
   - rustup component add rustfmt-preview
   - rustup component add clippy-preview
   - cargo install cargo-travis || echo "cargo-travis already installed"
-  - cargo install cargo-cook --git https://github.com/jonathanmorley/cargo-cook --branch windows || echo "cargo-cook already installed"
 
 script:
-  # Lints that do not require code to be compiled
-  # We are skipping windows here because the build takes long enough that travis can time out
-  - if [[ "${TRAVIS_OS_NAME}" != 'windows' ]]; then cargo fmt -- --verbose --check; fi
-  # Build and everything that depends on compilation
-  - |
-    cargo build --verbose --release &&
-    cargo clippy --verbose --release -- --deny clippy &&
-    cargo test --verbose --release &&
-    cargo cook
+  - cargo fmt -- --verbose --check
+  - cargo build --verbose --release
+  - cargo clippy --verbose --release -- --deny clippy::all
+  - cargo test --verbose --release
 
 after_success:
   # measure code coverage and upload to coveralls.io
   - if [[ "${TRAVIS_RUST_VERSION}" == 'stable' && "${TRAVIS_OS_NAME}" == 'linux' ]]; then cargo coveralls; fi
   # upload documentation to github.io (gh-pages branch)
   - if [[ "${TRAVIS_RUST_VERSION}" == 'stable' && "${TRAVIS_OS_NAME}" == 'linux' ]]; then cargo doc --verbose && cargo doc-upload; fi
+
+before_deploy:
+  - ci/package.sh
 
 deploy:
   # TODO update `api_key.secure`
@@ -57,7 +54,7 @@ deploy:
   api_key:
     secure: "S1VNHaY6FMw1BU9tiIByMsldZGgupCpSnuMrmml5KmQDItqGkhbxlDOKi/aOhBjOmiHfjDb+lY7DdfETeUhDcBtiguiUeG3wl5qS0uJioqjonvQ2LlPjPVKTKBw+fulsVL1AzE6AKM8CyH0iZKIAEGLqlGwTW3q/8urpXk2+Ha9VFnlSTo/OYmuhR+pCPoCxuI9Un7FdYkMKAgwWA5rdMs2wWSyLcGxYlUBATbTFFaA/xoaJUT9iEVq+5/uyb9dlluinahJkeuChDRT3OcV4yK0pkw34d9KsuLIrC9pAwOQnLj4bnc+9Cryhw7HIg5af+9lDV+qGr94oWtFYtdiltlctPndtoKuaJdlaFdrL6rNXtd1IbAOx8MRtBQ8bAK+CazsHuUtOeoOgVy4iiVYnxbR9rVfs337cr+ATYjE1TJf4MtL2FqRf8zb0ydLBAIiAiHt+plzcmZBjPCPjmX8fA1YX9V39IhLSJHBUjFW7JGhRqw5JxlbrfiWQSiqhneNzPGJ/C4JULj2p2eUoIVSL2lqlnTobVedk2x89omAcIDKfaQCstle32ae0eDki5ZQ6paWUMP5/LnMnL734tOndw1xQm9eWal9WDaLAlfhMNlt/t3n7NqHGQ5XGJlmohz6HTz0Lfzg8zHoRlx//z2kEUPbGrMMaX4isSG/AqJmyLrc="
   file_glob: true
-  files: target/cooked/*
+  files: target/package/*
   on:
     rust: stable
     tags: true
