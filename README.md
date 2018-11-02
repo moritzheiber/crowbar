@@ -9,12 +9,6 @@ This program authenticates with Okta, assumes a provided role, and pulls a tempo
 
 Grab a binary for your OS from the [latest release](https://github.com/jonathanmorley/oktaws/releases/latest), and put it somewhere in your PATH. Only supports Windows and MacOS for now!
 
-### MacOS
-
-```sh
-curl -LSfs https://japaric.github.io/trust/install.sh | sh -s -- --git jonathanmorley/oktaws --target x86_64-apple-darwin --to /usr/local/bin
-```
-
 ## Setup
 
 First, create an `~/.oktaws/<OKTA ACCOUNT>.toml` file with the following information:
