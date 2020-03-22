@@ -1,0 +1,6 @@
+[[profiles]]
+name = "profile_a"
+provider = "okta"
+username = "name"
+role = "role"
+url = "https://www.example.com/example/saml"

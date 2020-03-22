@@ -1,5 +1,3 @@
-use failure::Error;
-use okta::client::Client;
 use reqwest::Url;
 use serde_str;
 
@@ -28,13 +26,4 @@ pub struct UserProfile {
     last_name: String,
     locale: String,
     time_zone: String,
-}
-
-impl Client {
-    pub fn app_links(&self, user_id: Option<&str>) -> Result<Vec<AppLink>, Error> {
-        self.get(&format!(
-            "api/v1/users/{}/appLinks",
-            user_id.unwrap_or("me")
-        ))
-    }
 }

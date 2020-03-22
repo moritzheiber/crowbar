@@ -15,6 +15,7 @@ main() {
 
     mkdir -p "${package_dir_path}"
 
+    strip "${binary_dir_path}/${crate_name}"
     tar -cvzf  "${package_dir_path}/${package_file_name}.tar.gz" -C "${binary_dir_path}" "${crate_name}"
     zip -j "${package_dir_path}/${package_file_name}.zip" "${binary_dir_path}/${crate_name}"
 }

@@ -1,9 +1,9 @@
-use failure::Error;
-use okta::auth::LoginResponse;
-use okta::client::Client;
-use okta::Links;
-use okta::Links::Multi;
-use okta::Links::Single;
+use crate::providers::okta::auth::{LoginResponse, PUSH_WAIT_TIMEOUT};
+use crate::providers::okta::client::Client;
+use crate::providers::okta::Links;
+use crate::providers::okta::Links::Multi;
+use crate::providers::okta::Links::Single;
+use anyhow::{anyhow, Result};
 use std::collections::HashMap;
 use std::fmt;
 
@@ -15,6 +15,7 @@ pub enum Factor {
         id: String,
         provider: FactorProvider,
         status: Option<FactorStatus>,
+        profile: PushFactorProfile,
         #[serde(rename = "_links")]
         links: HashMap<String, Links>,
     },
@@ -83,6 +84,15 @@ pub enum Factor {
         #[serde(rename = "_links")]
         links: HashMap<String, Links>,
     },
+    #[serde(rename_all = "camelCase")]
+    WebAuthn {
+        id: String,
+        provider: FactorProvider,
+        status: Option<FactorStatus>,
+        profile: WebAuthnFactorProfile,
+        #[serde(rename = "_links")]
+        links: HashMap<String, Links>,
+    },
 }
 
 #[derive(Deserialize, Debug)]
@@ -94,6 +104,7 @@ pub enum FactorProvider {
     Google,
     Duo,
     Yubico,
+    Fido,
 }
 
 #[derive(Deserialize, Debug)]
@@ -107,6 +118,15 @@ pub enum FactorStatus {
     Expired,
 }
 
+#[derive(Deserialize, Debug, PartialEq, Clone, Copy)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum FactorResult {
+    Waiting,
+    Success,
+    Rejected,
+    Timeout,
+}
+
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct FactorVerification {
@@ -118,6 +138,12 @@ pub struct FactorVerification {
 #[serde(rename_all = "camelCase")]
 pub struct SmsFactorProfile {
     phone_number: String,
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct PushFactorProfile {
+    credential_id: String,
 }
 
 #[derive(Deserialize, Debug)]
@@ -147,6 +173,12 @@ pub struct WebFactorProfile {
     credential_id: String,
 }
 
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct WebAuthnFactorProfile {
+    credential_id: String,
+}
+
 #[derive(Deserialize, Debug, Serialize)]
 #[serde(untagged)]
 pub enum FactorVerificationRequest {
@@ -159,9 +191,14 @@ pub enum FactorVerificationRequest {
         pass_code: Option<String>,
     },
     #[serde(rename_all = "camelCase")]
+    Push { state_token: String },
+    #[serde(rename_all = "camelCase")]
     Call { pass_code: Option<String> },
     #[serde(rename_all = "camelCase")]
-    Totp { pass_code: String },
+    Totp {
+        state_token: String,
+        pass_code: String,
+    },
     #[serde(rename_all = "camelCase")]
     Token { pass_code: String },
 }
@@ -173,10 +210,28 @@ impl fmt::Display for Factor {
             Factor::Sms { ref profile, .. } => write!(f, "Okta SMS to {}", profile.phone_number),
             Factor::Call { ref profile, .. } => write!(f, "Okta Call to {}", profile.phone_number),
             Factor::Token { .. } => write!(f, "Okta One-time Password"),
-            Factor::Totp { .. } => write!(f, "Okta Time-based One-time Password"),
+            Factor::Totp {
+                // Okta identifies any other TOTP provider as "Google"
+                provider: FactorProvider::Google,
+                ..
+            } => write!(f, "Software TOTP"),
+            Factor::Totp { .. } => write!(f, "Okta Verify TOTP"),
             Factor::Hotp { .. } => write!(f, "Okta Hardware One-time Password"),
             Factor::Question { ref profile, .. } => write!(f, "Question: {}", profile.question),
             Factor::Web { .. } => write!(f, "Okta Web"),
+            Factor::WebAuthn { .. } => write!(f, "Okta WebAuthn"),
+        }
+    }
+}
+
+impl fmt::Display for FactorResult {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            FactorResult::Waiting { .. } | FactorResult::Timeout => {
+                write!(f, "No verification after {} seconds", PUSH_WAIT_TIMEOUT)
+            }
+            FactorResult::Rejected { .. } => write!(f, "Verification challenge was rejected"),
+            FactorResult::Success { .. } => write!(f, "Verification challenge was successful"),
         }
     }
 }
@@ -186,7 +241,7 @@ impl Client {
         &self,
         factor: &Factor,
         request: &FactorVerificationRequest,
-    ) -> Result<LoginResponse, Error> {
+    ) -> Result<LoginResponse> {
         match *factor {
             Factor::Sms { ref links, .. } => {
                 let url = match links.get("verify").unwrap() {
@@ -196,10 +251,38 @@ impl Client {
 
                 self.post_absolute(url, request)
             }
+            Factor::Totp { ref links, .. } => {
+                let url = match links.get("verify").unwrap() {
+                    Single(ref link) => link.href.clone(),
+                    Multi(ref links) => links.first().unwrap().href.clone(),
+                };
+
+                self.post_absolute(url, request)
+            }
+            Factor::Push { ref links, .. } => {
+                let url = match links.get("verify").unwrap() {
+                    Single(ref link) => link.href.clone(),
+                    Multi(ref links) => links.first().unwrap().href.clone(),
+                };
+
+                self.post_absolute(url, request)
+            }
             _ => {
                 // TODO
-                bail!("Unsupported MFA method")
+                Err(anyhow!("Unsupported MFA method"))
             }
         }
+    }
+    pub fn poll(
+        &self,
+        response: &LoginResponse,
+        request: &FactorVerificationRequest,
+    ) -> Result<LoginResponse> {
+        let url = match response.links.get("next").unwrap() {
+            Single(ref link) => link.href.clone(),
+            Multi(ref links) => links.first().unwrap().href.clone(),
+        };
+
+        self.post_absolute(url, request)
     }
 }

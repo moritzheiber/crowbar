@@ -1,12 +1,12 @@
+use anyhow::{Context as AnyhowContext, Result};
 use base64::decode;
-use failure::Error;
 use sxd_document::parser;
 use sxd_xpath::{Context, Factory, Value};
 
 use std::collections::HashSet;
 use std::str::FromStr;
 
-use aws::role::Role;
+use crate::aws::role::Role;
 
 #[derive(Debug)]
 pub struct Response {
@@ -15,9 +15,9 @@ pub struct Response {
 }
 
 impl FromStr for Response {
-    type Err = Error;
+    type Err = anyhow::Error;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> Result<Self> {
         let decoded_saml = String::from_utf8(decode(&s)?)?;
 
         trace!("SAML: {}", s);
@@ -27,7 +27,7 @@ impl FromStr for Response {
 
         let xpath = Factory::new()
             .build("//saml2:Attribute[@Name='https://aws.amazon.com/SAML/Attributes/Role']/saml2:AttributeValue")?
-            .ok_or_else(|| format_err!("No XPath was compiled"))?;
+            .with_context(|| "No XPath was compiled")?;
 
         let mut context = Context::new();
         context.set_namespace("saml2", "urn:oasis:names:tc:SAML:2.0:assertion");
@@ -36,7 +36,7 @@ impl FromStr for Response {
             Value::Nodeset(ns) => ns
                 .iter()
                 .map(|a| a.string_value().parse())
-                .collect::<Result<HashSet<Role>, Error>>()?,
+                .collect::<Result<HashSet<Role>, anyhow::Error>>()?,
             _ => HashSet::new(),
         };
 
@@ -75,7 +75,8 @@ mod tests {
                 provider_arn: String::from("arn:aws:iam::123456789012:saml-provider/okta-idp"),
                 role_arn: String::from("arn:aws:iam::123456789012:role/role2"),
             },
-        ].into_iter()
+        ]
+        .into_iter()
         .collect::<HashSet<Role>>();
 
         assert_eq!(response.roles, expected_roles);
@@ -92,7 +93,7 @@ mod tests {
 
         let saml_base64 = encode(&saml_xml);
 
-        let response: Error = saml_base64.parse::<Response>().unwrap_err();
+        let response: anyhow::Error = saml_base64.parse::<Response>().unwrap_err();
 
         assert_eq!(
             response.to_string(),
