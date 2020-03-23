@@ -1,6 +1,9 @@
 sudo: required
 language: rust
 cache: cargo
+env:
+  global:
+  - RUST_BACKTRACE=1
 rust:
 - stable
 - 1.42.0
@@ -20,12 +23,11 @@ matrix:
 before_install:
 - rustup component add rustfmt
 - rustup component add clippy
-- cargo install cargo-travis || echo "cargo-travis already installed"
 script:
-- cargo fmt -- --verbose --check
-- cargo build --verbose --release
-- cargo clippy --verbose --release -- --deny clippy
-- cargo test --verbose --release
+- cargo fmt -- --check
+- cargo build --release
+- cargo clippy --release -- --deny clippy
+- cargo test -- --release
 before_deploy:
 - ci/package.sh
 deploy:

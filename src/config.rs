@@ -211,7 +211,7 @@ mod test {
         assert_eq!(2, config.profiles.len());
 
         let profile = profile_a();
-        let _res = delete_profile(profile.name, &location);
+        delete_profile(profile.name, &location)?;
 
         let config = read_config(&location)?;
         assert_eq!(1, config.profiles.len());
