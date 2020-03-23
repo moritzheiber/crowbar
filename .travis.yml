@@ -1,42 +1,33 @@
 sudo: required
 language: rust
 cache: cargo
-
 rust:
-  - stable
-  - 1.42.0
-  - nightly
-
+- stable
+- 1.42.0
+- nightly
 os:
-  - osx
-  - windows
-  - linux
-
+- osx
+- windows
+- linux
 addons:
   apt:
     packages:
-    - libdbus-1-dev # Linking fails without this
-
+    - libdbus-1-dev
 matrix:
   fast_finish: true
   allow_failures:
-    - rust: nightly
-
-# Dependencies
+  - rust: nightly
 before_install:
-  - rustup component add rustfmt
-  - rustup component add clippy
-  - cargo install cargo-travis || echo "cargo-travis already installed"
-
+- rustup component add rustfmt
+- rustup component add clippy
+- cargo install cargo-travis || echo "cargo-travis already installed"
 script:
-  - cargo fmt -- --verbose --check
-  - cargo build --verbose --release
-  - cargo clippy --verbose --release -- --deny clippy
-  - cargo test --verbose --release
-
+- cargo fmt -- --verbose --check
+- cargo build --verbose --release
+- cargo clippy --verbose --release -- --deny clippy
+- cargo test --verbose --release
 before_deploy:
-  - ci/package.sh
-
+- ci/package.sh
 deploy:
   file_glob: true
   files: target/package/*
@@ -45,8 +36,9 @@ deploy:
     tags: true
   provider: releases
   skip_cleanup: true
-
+  api_key:
+    secure: b7ODaED/GtZGrclbzk6SOFdAbDlt5DJzRovWcR0PKuTXabFL3exg6HKvGibzE7Y8+KcACiu4IlaIwakxXRD7iAA2lM45PxAaJ33njEBUay5ajnppKjx5ZMEdBDcwtZq5XSpnHyoF4bfyHWQtw3zlVNWjb/kopAtBdKGpBOpJkiz6Mb7wcodOcbIi2OC2mwUtxketz5w6YdHODUS69T9MVJZsS4wACvktsMQ4QMRnvclApq8CqKhZKlHqWFotFx4bBy/ijmzMTFWSgUtyfy3iW3sfbaJn4p8qFIV8R33mYvY34xYff4tPAd8mZ4lROO6HOjsf8b4nxqhhBiRoHJJcy6AjZb+TQyPrikK2EvMyZrnhh05tMvXfm5OLuOeXalJqjpdo5MfP0C6/EgPrgLq0Ka4kZE/NfYwkj/t0KhuzclnsKe3lmhLV5EDdM43gQOqH9bmwA4ptkLMiHt8eK7iqXtMMS4vfXduAMC0DLsG43bwnzyJu/bfjkzbYbchecM52LAQUtRsJqpF8tep4i9Y4ktdd3OVy18cC1TcZcx8TK5Q1NE0kmKrneyYMWCGWul/ZHKls7IwgogHX9x/xbnvbpcC3hxmbBWVsRroR189sE04OmXURbXq3PebhwVamibUXQBC8eEkRFKbo3htLXcVwxScjobNJ9sbZsoD7q7gOg/Y=
 branches:
   only:
-    - master
-    - /^v\d+\.\d+\.\d+.*$/ # release tags
+  - master
+  - "/^v\\d+\\.\\d+\\.\\d+.*$/"
