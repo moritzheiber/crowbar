@@ -19,7 +19,7 @@ fn deletes_profile_key_from_file() -> Result<()> {
     env::set_var(AWS_CONFIG_FILE, location);
 
     let config = AwsConfig::new()?;
-    config.delete_profile(&app_profile)?;
+    config.delete_profile(&app_profile.name)?;
 
     let new_config = AwsConfig::new()?;
     assert_eq!(

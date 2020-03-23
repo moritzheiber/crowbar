@@ -4,7 +4,6 @@ cache: cargo
 env:
   global:
   - RUST_BACKTRACE=1
-  - TMPDIR=/tmp/crowbar
 rust:
 - stable
 - 1.42.0
@@ -22,7 +21,6 @@ matrix:
   allow_failures:
   - rust: nightly
 before_install:
-- mkdir -p $TMPDIR
 - rustup component add rustfmt
 - rustup component add clippy || cargo install --git https://github.com/rust-lang/rust-clippy/ --force clippy
 script:

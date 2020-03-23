@@ -61,9 +61,8 @@ impl AwsConfig {
         Ok(())
     }
 
-    pub fn delete_profile(mut self, profile: &AppProfile) -> Result<()> {
-        let name = profile.name.clone();
-        let profile_name = format!("profile {}", &name);
+    pub fn delete_profile(mut self, profile_name: &str) -> Result<()> {
+        let profile_name = format!("profile {}", profile_name);
         self.profiles.delete_from(Some(profile_name), PROFILE_KEY);
 
         self.write_configuration()?;

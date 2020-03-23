@@ -35,6 +35,8 @@ mod utils;
 
 use crate::cli::{CliAction, CliSubAction};
 use crate::config::app::AppProfile;
+use crate::config::aws::AwsConfig;
+use crate::config::CrowbarConfig;
 use anyhow::{anyhow, Result};
 use env_logger::{Builder, WriteStyle};
 use std::io::Write;
@@ -51,18 +53,29 @@ pub fn run() -> Result<()> {
     let force_new_credentials = cli.force;
     let cli_action = cli.action;
     let location = cli.location;
+    let crowbar_config = CrowbarConfig::with_location(location).read()?;
+    let aws_config = AwsConfig::new()?;
 
     match cli_action {
-        CliAction::Profiles { action } => match action {
-            CliSubAction::Add { profile } => config::add_profile(profile, &location),
-            CliSubAction::Delete { profile_name } => {
-                config::delete_profile(profile_name, &location)
+        CliAction::Profiles { action } => {
+            match action {
+                CliSubAction::Add { profile } => {
+                    crowbar_config.add_profile(&profile)?.write()?;
+                    aws_config.add_profile(&profile)?;
+                    println!("Profile {} added successfully!", profile.name)
+                }
+                CliSubAction::Delete { profile_name } => {
+                    crowbar_config.delete_profile(&profile_name)?.write()?;
+                    aws_config.delete_profile(&profile_name)?;
+                    println!("Profile {} deleted successfully", profile_name)
+                }
+                CliSubAction::List {} => crowbar_config.list_profiles()?,
             }
-            CliSubAction::List {} => config::list_profiles(&location),
-        },
+            Ok(())
+        }
         CliAction::Creds { profile, print } => {
-            let config = config::read_config(&location)?;
-            let profiles = config
+            let profiles = crowbar_config
+                .read()?
                 .profiles
                 .into_iter()
                 .filter(|p| p.clone().is_profile(&profile))
