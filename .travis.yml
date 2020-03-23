@@ -3,11 +3,8 @@ language: rust
 cache: cargo
 
 rust:
-  # check it compiles on the latest stable compiler
   - stable
-  # and the first stable one (this should be bumped as the minimum
-  # Rust version required changes)
-  - 1.29.1
+  - 1.42.0
   - nightly
 
 os:
@@ -27,8 +24,8 @@ matrix:
 
 # Dependencies
 before_install:
-  - rustup component add rustfmt-preview
-  - rustup component add clippy-preview
+  - rustup component add rustfmt
+  - rustup component add clippy
   - cargo install cargo-travis || echo "cargo-travis already installed"
 
 script:
@@ -37,22 +34,10 @@ script:
   - cargo clippy --verbose --release -- --deny clippy
   - cargo test --verbose --release
 
-after_success:
-  # measure code coverage and upload to coveralls.io
-  - if [[ "${TRAVIS_RUST_VERSION}" == 'stable' && "${TRAVIS_OS_NAME}" == 'linux' ]]; then cargo coveralls; fi
-  # upload documentation to github.io (gh-pages branch)
-  - if [[ "${TRAVIS_RUST_VERSION}" == 'stable' && "${TRAVIS_OS_NAME}" == 'linux' ]]; then cargo doc --verbose && cargo doc-upload; fi
-
 before_deploy:
   - ci/package.sh
 
 deploy:
-  # TODO update `api_key.secure`
-  # - Create a `public_repo` GitHub token. Go to: https://github.com/settings/tokens/new
-  # - Encrypt it: `travis encrypt 0123456789012345678901234567890123456789
-  # - Paste the output down here
-  api_key:
-    secure: "S1VNHaY6FMw1BU9tiIByMsldZGgupCpSnuMrmml5KmQDItqGkhbxlDOKi/aOhBjOmiHfjDb+lY7DdfETeUhDcBtiguiUeG3wl5qS0uJioqjonvQ2LlPjPVKTKBw+fulsVL1AzE6AKM8CyH0iZKIAEGLqlGwTW3q/8urpXk2+Ha9VFnlSTo/OYmuhR+pCPoCxuI9Un7FdYkMKAgwWA5rdMs2wWSyLcGxYlUBATbTFFaA/xoaJUT9iEVq+5/uyb9dlluinahJkeuChDRT3OcV4yK0pkw34d9KsuLIrC9pAwOQnLj4bnc+9Cryhw7HIg5af+9lDV+qGr94oWtFYtdiltlctPndtoKuaJdlaFdrL6rNXtd1IbAOx8MRtBQ8bAK+CazsHuUtOeoOgVy4iiVYnxbR9rVfs337cr+ATYjE1TJf4MtL2FqRf8zb0ydLBAIiAiHt+plzcmZBjPCPjmX8fA1YX9V39IhLSJHBUjFW7JGhRqw5JxlbrfiWQSiqhneNzPGJ/C4JULj2p2eUoIVSL2lqlnTobVedk2x89omAcIDKfaQCstle32ae0eDki5ZQ6paWUMP5/LnMnL734tOndw1xQm9eWal9WDaLAlfhMNlt/t3n7NqHGQ5XGJlmohz6HTz0Lfzg8zHoRlx//z2kEUPbGrMMaX4isSG/AqJmyLrc="
   file_glob: true
   files: target/package/*
   on:
@@ -63,7 +48,5 @@ deploy:
 
 branches:
   only:
-    - staging # bors r+
-    - trying  # bors try
     - master
     - /^v\d+\.\d+\.\d+.*$/ # release tags
