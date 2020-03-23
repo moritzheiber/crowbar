@@ -22,12 +22,12 @@ matrix:
   - rust: nightly
 before_install:
 - rustup component add rustfmt
-- rustup component add clippy
+- rustup component add clippy --toolchain=nightly || cargo install --git https://github.com/rust-lang/rust-clippy/ --force clippy
 script:
 - cargo fmt -- --check
 - cargo build --release
-- cargo clippy --release -- --deny clippy
-- cargo test -- --release
+- cargo clippy --release
+- cargo test --release
 before_deploy:
 - ci/package.sh
 deploy:

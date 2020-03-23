@@ -63,7 +63,7 @@ impl From<Credentials> for AwsCredentials {
 pub fn fetch_credentials(
     okta_client: &mut OktaClient,
     profile: &AppProfile,
-    force_new_password: &bool,
+    force_new_password: bool,
 ) -> Result<AwsCredentials> {
     let username = &profile.username;
     let password = ConfigCredentials::get_password(&profile, username, force_new_password)?;
@@ -77,7 +77,7 @@ pub fn fetch_credentials(
             &HashSet::new(),
         )?
         .id;
-    okta_client.set_session_id(session_id.clone());
+    okta_client.set_session_id(session_id);
 
     ConfigCredentials::save(&profile, &username, &password)?;
     fetch_sts_assume_role_credentials(&okta_client, &profile)
@@ -162,10 +162,10 @@ pub fn load(profile: &AppProfile) -> Option<AwsCredentials> {
 
             match str::from_utf8(decoded_creds.unwrap().as_slice()) {
                 Ok(creds) => match serde_json::from_str(creds) {
-                    Ok(c) => return Some(c),
+                    Ok(c) => Some(c),
                     Err(e) => {
                         error!("Failed to deserialize the credentials: {}", e);
-                        return None;
+                        None
                     }
                 },
                 Err(e) => {
@@ -173,7 +173,7 @@ pub fn load(profile: &AppProfile) -> Option<AwsCredentials> {
                         "Failed to translate the decoded credentials into a string: {}",
                         e
                     );
-                    return None;
+                    None
                 }
             }
         }

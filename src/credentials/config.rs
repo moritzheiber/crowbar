@@ -3,8 +3,8 @@ use anyhow::{anyhow, Result};
 use dialoguer::PasswordInput;
 use keyring::{Keyring, KeyringError};
 
-pub fn get_password(profile: &AppProfile, username: &str, force_new: &bool) -> Result<String> {
-    if *force_new {
+pub fn get_password(profile: &AppProfile, username: &str, force_new: bool) -> Result<String> {
+    if force_new {
         debug!("Force new is set, prompting for password");
         prompt_password(profile)
     } else {

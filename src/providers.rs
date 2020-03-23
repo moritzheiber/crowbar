@@ -48,7 +48,7 @@ pub fn fetch_credentials(
                         AwsCredentialsOperator::fetch_credentials(
                             &mut okta_client,
                             &profile,
-                            &force_new_credentials,
+                            force_new_credentials,
                         )?
                     }
                 },
@@ -57,7 +57,7 @@ pub fn fetch_credentials(
                     AwsCredentialsOperator::fetch_credentials(
                         &mut okta_client,
                         &profile,
-                        &force_new_credentials,
+                        force_new_credentials,
                     )?
                 }
             };

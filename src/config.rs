@@ -63,7 +63,7 @@ pub fn delete_profile(profile_name: String, location: &Option<String>) -> Result
     let mut profile = profiles.clone();
     profile.retain(|p| p.name == profile_name);
 
-    if profile.len() < 1 {
+    if profile.is_empty() {
         return Err(anyhow!("Unable to delete profile: Profile not found"));
     }
 
@@ -94,19 +94,15 @@ pub fn list_profiles(location: &Option<String>) -> Result<()> {
 }
 
 fn write_config(profiles: Vec<AppProfile>, location: &Option<String>) -> Result<()> {
-    let config = CrowbarConfig { profiles: profiles };
+    let config = CrowbarConfig { profiles };
     match location {
         Some(l) => confy::store_path(l, config).map_err(|e| e.into()),
         _ => confy::store(crate_name!(), config).map_err(|e| e.into()),
     }
 }
 
-fn find_duplicate(vec: &Vec<AppProfile>, profile: &AppProfile) -> bool {
-    vec.iter()
-        .filter(|i| i.name == profile.name)
-        .collect::<Vec<&AppProfile>>()
-        .len()
-        > 0
+fn find_duplicate(vec: &[AppProfile], profile: &AppProfile) -> bool {
+    vec.iter().any(|i| i.name == profile.name)
 }
 
 #[cfg(test)]

@@ -49,7 +49,7 @@ pub fn assume_role(
         policy: None,
         policy_arns: None,
         principal_arn: provider_arn,
-        role_arn: role_arn,
+        role_arn,
         saml_assertion,
     };
 

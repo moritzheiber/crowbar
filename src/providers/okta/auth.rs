@@ -160,7 +160,7 @@ impl Client {
                         let mfa_code = prompt_mfa()?;
 
                         Some(FactorVerificationRequest::Sms {
-                            state_token: state_token.clone(),
+                            state_token,
                             pass_code: Some(mfa_code),
                         })
                     }
@@ -168,13 +168,11 @@ impl Client {
                         let mfa_code = prompt_mfa()?;
 
                         Some(FactorVerificationRequest::Totp {
-                            state_token: state_token.clone(),
+                            state_token,
                             pass_code: mfa_code,
                         })
                     }
-                    Factor::Push { .. } => Some(FactorVerificationRequest::Push {
-                        state_token: state_token,
-                    }),
+                    Factor::Push { .. } => Some(FactorVerificationRequest::Push { state_token }),
                     _ => None,
                 };
 
@@ -215,17 +213,15 @@ impl Client {
 
     fn send_verification_challenge(
         &self,
-        token: String,
+        state_token: String,
         factor: &Factor,
     ) -> Result<Option<LoginResponse>> {
         let factor_verification_challenge = match factor {
             Factor::Sms { .. } => Some(FactorVerificationRequest::Sms {
-                state_token: token.clone(),
+                state_token,
                 pass_code: None,
             }),
-            Factor::Push { .. } => Some(FactorVerificationRequest::Push {
-                state_token: token.clone(),
-            }),
+            Factor::Push { .. } => Some(FactorVerificationRequest::Push { state_token }),
             _ => None,
         };
 
@@ -266,7 +262,7 @@ impl Client {
         }
 
         eprintln!();
-        return Ok(response);
+        Ok(response)
     }
 }
 

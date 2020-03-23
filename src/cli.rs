@@ -140,7 +140,7 @@ pub fn config() -> Result<CliConfig> {
 
     Ok(CliConfig {
         force: matches.is_present("force"),
-        location: location,
+        location,
         log_level: select_log_level(log_level_from_matches),
         action: cli_action?,
     })
