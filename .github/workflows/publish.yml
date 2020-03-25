@@ -1,0 +1,52 @@
+name: Publish
+
+on:
+  push:
+    tags:
+      - "*"
+
+jobs:
+  publish:
+    name: Publish for ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        name: [linux, windows, macos]
+        include:
+          - name: linux
+            os: ubuntu-latest
+            artifact_name: <name>
+            asset_name: <name>-linux
+          - name: windows
+            os: windows-latest
+            artifact_name: <name>.exe
+            asset_name: <name>-windows
+          - name: macos
+            os: macos-latest
+            artifact_name: <name>
+            asset_name: <name>-macos
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          components: rustfmt, clippy
+      - name: Build
+        env:
+          RUST_BACKTRACE: 1
+          RUSTFLAGS: "-C link-arg=-s"
+        run: |
+          cargo fmt -- --check
+          cargo build --release --locked
+          cargo clippy --release
+          cargo test --release
+
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@v1-release
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: target/release/${{ matrix.artifact_name }}
+          asset_name: ${{ matrix.asset_name }}
+          tag: ${{ github.ref }}

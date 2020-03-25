@@ -1,7 +1,6 @@
-#!/usr/bin/env bash
-# This script takes care of packaging (tar.gz and zip) your crate for release
+#!/bin/bash
 
-set -ex
+set -Eeux -o pipefail
 
 main() {
     local crate_name="$(cargo metadata --format-version 1 --no-deps | jq -r '.packages[0].name')"
@@ -11,13 +10,11 @@ main() {
     local package_file_name="${crate_name}-v${crate_version}-${rustc_target}"
 
     local package_dir_path="target/package"
-    local binary_dir_path="target/debug"
+    local binary_dir_path="target/release"
 
     mkdir -p "${package_dir_path}"
 
-    strip "${binary_dir_path}/${crate_name}"
-    tar -cvzf  "${package_dir_path}/${package_file_name}.tar.gz" -C "${binary_dir_path}" "${crate_name}"
-    zip -j "${package_dir_path}/${package_file_name}.zip" "${binary_dir_path}/${crate_name}"
+    cp "${binary_dir_path}/${crate_name}" "${package_dir_path}/${package_file_name}"
 }
 
 main

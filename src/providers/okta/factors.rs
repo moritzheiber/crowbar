@@ -1,8 +1,8 @@
 use crate::providers::okta::auth::{LoginResponse, PUSH_WAIT_TIMEOUT};
 use crate::providers::okta::client::Client;
-use crate::providers::okta::Links;
-use crate::providers::okta::Links::Multi;
-use crate::providers::okta::Links::Single;
+use crate::providers::okta::structure::Links;
+use crate::providers::okta::structure::Links::Multi;
+use crate::providers::okta::structure::Links::Single;
 use anyhow::{anyhow, Result};
 use std::collections::HashMap;
 use std::fmt;

@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/moritzheiber/crowbar.svg?branch=master)](https://travis-ci.org/moritzheiber/crowbar)
 # crowbar
 
 "**Your trusty tool for retrieving AWS credentials securely via SAML**"

@@ -7,8 +7,8 @@ use std::{thread, time::Duration};
 
 use crate::providers::okta::client::Client;
 use crate::providers::okta::factors::{Factor, FactorResult, FactorVerificationRequest};
+use crate::providers::okta::structure::Links;
 use crate::providers::okta::users::User;
-use crate::providers::okta::Links;
 
 const BACKOFF_TIMEOUT: Duration = Duration::from_secs(2);
 pub const PUSH_WAIT_TIMEOUT: i64 = 60;
