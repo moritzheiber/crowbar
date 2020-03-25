@@ -15,16 +15,16 @@ jobs:
         include:
           - name: linux
             os: ubuntu-latest
-            artifact_name: <name>
-            asset_name: <name>-linux
+            artifact_name: crowbar
+            asset_name: crowbar-x86_64-linux
           - name: windows
             os: windows-latest
-            artifact_name: <name>.exe
-            asset_name: <name>-windows
+            artifact_name: crowbar.exe
+            asset_name: crowbar-x86_64-windows.exe
           - name: macos
             os: macos-latest
-            artifact_name: <name>
-            asset_name: <name>-macos
+            artifact_name: crowbar
+            asset_name: crowbar-x86_64-macos
 
     steps:
       - uses: actions/checkout@v2
