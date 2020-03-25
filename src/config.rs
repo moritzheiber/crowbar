@@ -2,8 +2,6 @@ pub mod app;
 pub mod aws;
 
 use crate::config::app::AppProfile;
-use crate::credentials::aws as AwsCredentialsOperator;
-use crate::credentials::config as ConfigCredentialsOperator;
 use anyhow::{anyhow, Result};
 use clap::crate_name;
 use std::default::Default;
@@ -36,7 +34,7 @@ impl Default for AppProfiles {
 
 impl CrowbarConfig {
     pub fn new() -> CrowbarConfig {
-        Default::default()
+        CrowbarConfig::default()
     }
 
     pub fn with_location(location: Option<String>) -> CrowbarConfig {
@@ -81,13 +79,6 @@ impl CrowbarConfig {
         let profile = profile.first().unwrap();
         let mut filter = self.profiles.clone();
         filter.retain(|p| p.to_string() == profile.to_string());
-
-        if filter.len() < 2 {
-            debug!("Removing provider credentials as well");
-            ConfigCredentialsOperator::delete(profile)?;
-        }
-
-        AwsCredentialsOperator::delete(&profile)?;
 
         self.profiles.retain(|p| p.name != profile.name);
 

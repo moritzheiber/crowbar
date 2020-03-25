@@ -35,8 +35,12 @@ mod utils;
 
 use crate::cli::{CliAction, CliSubAction};
 use crate::config::app::AppProfile;
-use crate::config::aws::AwsConfig;
-use crate::config::CrowbarConfig;
+use crate::config::{aws::AwsConfig, CrowbarConfig};
+use crate::credentials::aws::AwsCredentials;
+use crate::credentials::config::ConfigCredentials;
+use crate::credentials::Credential;
+use crate::providers::okta::OktaProvider;
+use crate::providers::{Provider, ProviderType};
 use anyhow::{anyhow, Result};
 use env_logger::{Builder, WriteStyle};
 use std::io::Write;
@@ -90,10 +94,26 @@ pub fn run() -> Result<()> {
                 None => Err(anyhow!("Unable to use parsed profile")),
             }?;
 
-            let aws_credentials = providers::fetch_credentials(profile, force_new_credentials);
+            if force_new_credentials {
+                let _creds = ConfigCredentials::load(profile)
+                    .map_err(|e| debug!("Couldn't reset credentials: {}", e))
+                    .and_then(|creds| creds.delete(profile).map_err(|e| debug!("{}", e)));
+            }
+
+            let mut aws_credentials = AwsCredentials::load(&profile).unwrap_or_default();
+
+            if !aws_credentials.valid() || aws_credentials.is_expired() {
+                let mut provider = match profile.provider {
+                    ProviderType::Okta => OktaProvider::new(profile),
+                };
+                let session = provider.new_session(profile)?;
+                aws_credentials = provider
+                    .fetch_aws_credentials(profile, &session)?
+                    .write(&profile)?;
+            }
 
             if print {
-                println!("{}", aws_credentials?);
+                println!("{}", aws_credentials);
             } else {
                 info!("Please run with the -p switch to print the credentials to stdout")
             }

@@ -1,4 +1,4 @@
-sudo: required
+dist: bionic
 language: rust
 cache: cargo
 env:
@@ -17,7 +17,7 @@ addons:
     packages:
     - libdbus-1-dev
     - dbus-x11
-matrix:
+jobs:
   fast_finish: true
   allow_failures:
   - rust: nightly
@@ -33,13 +33,13 @@ before_deploy:
 - ci/package.sh
 deploy:
   file_glob: true
-  files: target/package/*
+  file: target/package/*
   on:
     rust: stable
     tags: true
   provider: releases
-  skip_cleanup: true
-  api_key:
+  cleanup: false
+  token:
     secure: b7ODaED/GtZGrclbzk6SOFdAbDlt5DJzRovWcR0PKuTXabFL3exg6HKvGibzE7Y8+KcACiu4IlaIwakxXRD7iAA2lM45PxAaJ33njEBUay5ajnppKjx5ZMEdBDcwtZq5XSpnHyoF4bfyHWQtw3zlVNWjb/kopAtBdKGpBOpJkiz6Mb7wcodOcbIi2OC2mwUtxketz5w6YdHODUS69T9MVJZsS4wACvktsMQ4QMRnvclApq8CqKhZKlHqWFotFx4bBy/ijmzMTFWSgUtyfy3iW3sfbaJn4p8qFIV8R33mYvY34xYff4tPAd8mZ4lROO6HOjsf8b4nxqhhBiRoHJJcy6AjZb+TQyPrikK2EvMyZrnhh05tMvXfm5OLuOeXalJqjpdo5MfP0C6/EgPrgLq0Ka4kZE/NfYwkj/t0KhuzclnsKe3lmhLV5EDdM43gQOqH9bmwA4ptkLMiHt8eK7iqXtMMS4vfXduAMC0DLsG43bwnzyJu/bfjkzbYbchecM52LAQUtRsJqpF8tep4i9Y4ktdd3OVy18cC1TcZcx8TK5Q1NE0kmKrneyYMWCGWul/ZHKls7IwgogHX9x/xbnvbpcC3hxmbBWVsRroR189sE04OmXURbXq3PebhwVamibUXQBC8eEkRFKbo3htLXcVwxScjobNJ9sbZsoD7q7gOg/Y=
 branches:
   only:

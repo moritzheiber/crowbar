@@ -1,3 +1,6 @@
+use crate::config::app::AppProfile;
+use anyhow::Result;
+use dialoguer::PasswordInput;
 use log::LevelFilter as LogLevelFilter;
 use std::env::var;
 
@@ -35,4 +38,15 @@ pub fn non_empty_env_var(name: &str) -> Option<String> {
         }
         Err(_) => None,
     }
+}
+
+pub fn prompt_password(profile: &AppProfile) -> Result<String> {
+    PasswordInput::new()
+        .with_prompt(&format!(
+            "Password for {} at {}",
+            &profile.username,
+            profile.clone().base_url()?.host().unwrap()
+        ))
+        .interact()
+        .map_err(|e| e.into())
 }
