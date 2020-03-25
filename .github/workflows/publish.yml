@@ -50,7 +50,7 @@ jobs:
           components: rustfmt, clippy
       - name: Install dependencies
         run: sudo apt-get install -y libdbus-1-dev
-        if: matrix.os == 'Linux'
+        if: runner.os == 'Linux'
       - name: Build
         env:
           RUST_BACKTRACE: 1
