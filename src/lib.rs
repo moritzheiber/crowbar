@@ -65,12 +65,12 @@ pub fn run() -> Result<()> {
             match action {
                 CliSubAction::Add { profile } => {
                     crowbar_config.add_profile(&profile)?.write()?;
-                    aws_config.add_profile(&profile)?;
+                    aws_config.add_profile(&profile)?.write()?;
                     println!("Profile {} added successfully!", profile.name)
                 }
                 CliSubAction::Delete { profile_name } => {
                     crowbar_config.delete_profile(&profile_name)?.write()?;
-                    aws_config.delete_profile(&profile_name)?;
+                    aws_config.delete_profile(&profile_name)?.write()?;
                     println!("Profile {} deleted successfully", profile_name)
                 }
                 CliSubAction::List {} => crowbar_config.list_profiles()?,
