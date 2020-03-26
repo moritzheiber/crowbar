@@ -1,4 +1,5 @@
-[![Build Status](https://travis-ci.org/moritzheiber/crowbar.svg?branch=master)](https://travis-ci.org/moritzheiber/crowbar)
+[![Build Status](https://travis-ci.org/moritzheiber/crowbar.svg?branch=master)](https://travis-ci.org/moritzheiber/crowbar) ![Release](https://github.com/moritzheiber/crowbar/workflows/Release/badge.svg)
+
 # crowbar
 
 "**Your trusty tool for retrieving AWS credentials securely via SAML**"
