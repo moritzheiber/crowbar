@@ -3,6 +3,9 @@ use crate::utils;
 use anyhow::{anyhow, Context, Result};
 use dirs::home_dir;
 use ini::Ini;
+use std::fs;
+use std::fs::File;
+use std::io::ErrorKind;
 use std::path::PathBuf;
 
 pub const AWS_CONFIG_FILE: &str = "AWS_CONFIG_FILE";
@@ -17,8 +20,18 @@ pub struct AwsConfig {
 impl AwsConfig {
     pub fn new() -> Result<AwsConfig> {
         let location = default_config_location()?;
-        let profiles = Ini::load_from_file(&location)
-            .with_context(|| format!("Unable to read AWS configuration at {:?}", &location))?;
+        let profiles: Ini = match File::open(&location) {
+            Ok(mut file) => Ini::read_from(&mut file)?,
+            Err(ref e) if e.kind() == ErrorKind::NotFound => {
+                if let Some(parent) = location.parent() {
+                    fs::create_dir_all(parent).with_context(|| {
+                        format!("Unable to read configuration from {:?}", location)
+                    })?;
+                }
+                Ini::new()
+            }
+            Err(_e) => return Err(anyhow!("Unable to create configuration structure!")),
+        };
 
         Ok(AwsConfig { profiles, location })
     }
