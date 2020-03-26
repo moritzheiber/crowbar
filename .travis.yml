@@ -7,7 +7,6 @@ env:
     - RUSTFLAGS='-C link-arg=-s'
 rust:
   - stable
-  - 1.42.0
   - nightly
 os:
   - osx
@@ -23,11 +22,10 @@ jobs:
   allow_failures:
     - rust: nightly
 before_install:
-  - rustup component add rustfmt || cargo install --git https://github.com/rust-lang/rustfmt/ --force rustfmt
+  - rustup component add rustfmt || cargo install --git https://github.com/rust-lang/rustfmt/ --force rustfmt-nightly
   - rustup component add clippy || cargo install --git https://github.com/rust-lang/rust-clippy/ --force clippy
 script:
   - cargo fmt -- --check
-  - cargo build --release
   - cargo clippy --release
   - cargo test --release
 branches:
