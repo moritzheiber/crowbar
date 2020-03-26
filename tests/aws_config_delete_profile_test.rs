@@ -12,7 +12,7 @@ use tempfile::NamedTempFile;
 fn deletes_profile_key_from_file() -> Result<()> {
     let mut file = NamedTempFile::new()?;
     let location = file.path().to_path_buf();
-    let app_profile = common::short_app_profile();
+    let app_profile = common::short_app_profile_a();
 
     writeln!(file, "{}", common::long_aws_profile())?;
 
