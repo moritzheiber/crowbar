@@ -51,8 +51,8 @@ impl From<Credentials> for AwsCredentials {
     }
 }
 
-impl From<HashMap<&str, Option<String>>> for AwsCredentials {
-    fn from(mut map: HashMap<&str, Option<String>>) -> Self {
+impl From<HashMap<String, Option<String>>> for AwsCredentials {
+    fn from(mut map: HashMap<String, Option<String>>) -> Self {
         AwsCredentials {
             version: 1,
             access_key_id: map.remove("access_key_id").unwrap_or_default(),
@@ -102,15 +102,7 @@ impl Credential<AppProfile, AwsCredentials> for AwsCredentials {
     }
 
     fn load(profile: &AppProfile) -> Result<AwsCredentials> {
-        let mut credential_map: HashMap<&str, Option<String>> = [
-            ("access_key_id", None),
-            ("secret_key_id", None),
-            ("session_token", None),
-            ("expiration", None),
-        ]
-        .iter()
-        .cloned()
-        .collect();
+        let mut credential_map: HashMap<String, Option<String>> = AwsCredentials::default().into();
 
         let service = format!("crowbar::{}::{}", CredentialType::Aws, profile);
 
@@ -118,10 +110,13 @@ impl Credential<AppProfile, AwsCredentials> for AwsCredentials {
 
         for key in credential_map.clone().keys() {
             let _res = credential_map.insert(
-                key,
+                key.clone(),
                 match Keyring::new(&service, key).get_password() {
                     Ok(s) => Some(s),
-                    _ => None,
+                    Err(e) => {
+                        debug!("Error while fetching credentials: {}", e);
+                        None
+                    }
                 },
             );
         }
