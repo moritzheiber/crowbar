@@ -2,13 +2,15 @@ use crate::config::app::AppProfile;
 use crate::credentials::{Credential, CredentialType};
 
 use anyhow::{anyhow, Result};
-use base64::{decode, encode};
 use chrono::{DateTime, Utc};
 use keyring::Keyring;
 use rusoto_sts::Credentials;
+use std::collections::HashMap;
 use std::{fmt, str};
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+const SECONDS_TO_EXPIRATION: i64 = 900; // 15 minutes
+
+#[derive(Serialize, Deserialize, Debug, PartialEq, Hash, Eq, Clone)]
 #[serde(rename_all = "PascalCase")]
 pub struct AwsCredentials {
     version: i32,
@@ -23,7 +25,7 @@ impl AwsCredentials {
         match &self.expiration {
             Some(dt) => {
                 let expiration = DateTime::parse_from_rfc3339(&dt).unwrap();
-                expiration.signed_duration_since(Utc::now()).num_seconds() < 0
+                expiration.signed_duration_since(Utc::now()).num_seconds() < SECONDS_TO_EXPIRATION
             }
             _ => false,
         }
@@ -46,6 +48,32 @@ impl From<Credentials> for AwsCredentials {
             session_token: Some(creds.session_token),
             expiration: Some(creds.expiration),
         }
+    }
+}
+
+impl From<HashMap<&str, Option<String>>> for AwsCredentials {
+    fn from(mut map: HashMap<&str, Option<String>>) -> Self {
+        AwsCredentials {
+            version: 1,
+            access_key_id: map.remove("access_key_id").unwrap_or_default(),
+            secret_access_key: map.remove("secret_access_key").unwrap_or_default(),
+            session_token: map.remove("session_token").unwrap_or_default(),
+            expiration: map.remove("expiration").unwrap_or_default(),
+        }
+    }
+}
+
+impl Into<HashMap<String, Option<String>>> for AwsCredentials {
+    fn into(self) -> HashMap<String, Option<String>> {
+        [
+            ("access_key_id".to_string(), self.access_key_id),
+            ("secret_access_key".to_string(), self.secret_access_key),
+            ("session_token".to_string(), self.session_token),
+            ("expiration".to_string(), self.expiration),
+        ]
+        .iter()
+        .cloned()
+        .collect()
     }
 }
 
@@ -74,43 +102,43 @@ impl Credential<AppProfile, AwsCredentials> for AwsCredentials {
     }
 
     fn load(profile: &AppProfile) -> Result<AwsCredentials> {
-        let username = &profile.name;
+        let mut credential_map: HashMap<&str, Option<String>> = [
+            ("access_key_id", None),
+            ("secret_key_id", None),
+            ("session_token", None),
+            ("expiration", None),
+        ]
+        .iter()
+        .cloned()
+        .collect();
+
         let service = format!("crowbar::{}::{}", CredentialType::Aws, profile);
 
-        debug!(
-            "Trying to fetch cached AWS credentials for {} for ID {}",
-            username, service
-        );
+        debug!("Trying to fetch cached AWS credentials for ID {}", service);
 
-        let encoded_creds = match Keyring::new(&service, username).get_password() {
-            Ok(ec) => Some(ec),
-            Err(e) => {
-                debug!("Couldn't retrieve credentials: {}", e);
-                None
-            }
-        };
-
-        match encoded_creds {
-            None => Ok(AwsCredentials::default()),
-            Some(aws_creds) => {
-                let decoded_creds = decode(aws_creds).map_err(|e| anyhow!("{}", e))?;
-
-                match str::from_utf8(decoded_creds.as_slice()) {
-                    Ok(creds) => Ok(serde_json::from_str(creds).map_err(|e| anyhow!("{}", e))?),
-                    Err(e) => Err(e.into()),
-                }
-            }
+        for key in credential_map.clone().keys() {
+            let _res = credential_map.insert(
+                key,
+                match Keyring::new(&service, key).get_password() {
+                    Ok(s) => Some(s),
+                    _ => None,
+                },
+            );
         }
+
+        Ok(AwsCredentials::from(credential_map))
     }
 
     fn write(self, profile: &AppProfile) -> Result<AwsCredentials> {
-        let service = format!("crowbar::aws::{}", profile);
-        let username = &profile.name;
-        debug!("Saving AWS credentials for {}", username);
+        let credential_map: HashMap<String, Option<String>> = self.clone().into();
+        let service = format!("crowbar::{}::{}", CredentialType::Aws, profile);
+        debug!("Saving AWS credentials for {}", &service);
 
-        Keyring::new(&service, username)
-            .set_password(encode(&serde_json::to_string(&self)?).as_str())
-            .map_err(|e| anyhow!("{}", e))?;
+        for (key, secret) in credential_map.iter() {
+            Keyring::new(&service, key)
+                .set_password(&secret.clone().unwrap())
+                .map_err(|e| anyhow!("{}", e))?;
+        }
 
         Ok(self)
     }
