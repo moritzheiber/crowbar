@@ -27,7 +27,7 @@ extern crate whoami;
 mod aws;
 mod cli;
 pub mod config;
-mod credentials;
+pub mod credentials;
 pub mod exit;
 mod providers;
 mod saml;

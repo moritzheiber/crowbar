@@ -1,6 +1,7 @@
 dist: bionic
 language: rust
 cache: cargo
+services: xvfb
 env:
   global:
     - RUST_BACKTRACE=full
@@ -15,18 +16,25 @@ addons:
   apt:
     packages:
       - libdbus-1-dev
-      - dbus-x11
+      - gnome-keyring
+      - python3
 jobs:
   fast_finish: true
   allow_failures:
     - rust: nightly
+before_cache:
+  - chmod -R a+r $HOME/.cargo
+
+before_script:
+  - git clone https://gitlab.gnome.org/GNOME/libsecret.git
+
 before_install:
   - rustup component add rustfmt || cargo install --git https://github.com/rust-lang/rustfmt/ --force rustfmt-nightly
   - rustup component add clippy || cargo install --git https://github.com/rust-lang/rust-clippy/ --force clippy
 script:
   - cargo fmt -- --check
   - cargo clippy --release
-  - cargo test --release
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then dbus-run-session -- python3 libsecret/libsecret/mock-service-normal.py & cargo test --verbose; else cargo test --release; fi
 branches:
   only:
     - master

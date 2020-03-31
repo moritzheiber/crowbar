@@ -13,11 +13,11 @@ const SECONDS_TO_EXPIRATION: i64 = 900; // 15 minutes
 #[derive(Serialize, Deserialize, Debug, PartialEq, Hash, Eq, Clone)]
 #[serde(rename_all = "PascalCase")]
 pub struct AwsCredentials {
-    version: i32,
-    access_key_id: Option<String>,
-    secret_access_key: Option<String>,
-    session_token: Option<String>,
-    expiration: Option<String>,
+    pub version: i32,
+    pub access_key_id: Option<String>,
+    pub secret_access_key: Option<String>,
+    pub session_token: Option<String>,
+    pub expiration: Option<String>,
 }
 
 impl AwsCredentials {
@@ -103,10 +103,9 @@ impl Credential<AppProfile, AwsCredentials> for AwsCredentials {
 
     fn load(profile: &AppProfile) -> Result<AwsCredentials> {
         let mut credential_map: HashMap<String, Option<String>> = AwsCredentials::default().into();
+        let service = credentials_as_service(profile);
 
-        let service = format!("crowbar::{}::{}", CredentialType::Aws, profile);
-
-        debug!("Trying to fetch cached AWS credentials for ID {}", service);
+        debug!("Trying to fetch cached AWS credentials for ID {}", &service);
 
         for key in credential_map.clone().keys() {
             let _res = credential_map.insert(
@@ -126,7 +125,7 @@ impl Credential<AppProfile, AwsCredentials> for AwsCredentials {
 
     fn write(self, profile: &AppProfile) -> Result<AwsCredentials> {
         let credential_map: HashMap<String, Option<String>> = self.clone().into();
-        let service = format!("crowbar::{}::{}", CredentialType::Aws, profile);
+        let service = credentials_as_service(profile);
         debug!("Saving AWS credentials for {}", &service);
 
         for (key, secret) in credential_map.iter() {
@@ -139,20 +138,25 @@ impl Credential<AppProfile, AwsCredentials> for AwsCredentials {
     }
 
     fn delete(self, profile: &AppProfile) -> Result<AwsCredentials> {
-        let service = format!("crowbar::aws::{}", profile);
-        let username = &profile.name;
-        let keyring = Keyring::new(&service, &username);
+        let credential_map: HashMap<String, Option<String>> = self.clone().into();
+        let service = credentials_as_service(profile);
 
-        debug!("Deleting credentials for {} at {}", &username, service);
+        for (key, _) in credential_map.iter() {
+            let keyring = Keyring::new(&service, key);
+            let pass = keyring.get_password();
 
-        let pass = keyring.get_password();
-
-        if pass.is_ok() {
-            keyring.delete_password().map_err(|e| anyhow!("{}", e))?
+            if pass.is_ok() {
+                debug!("Deleting secret for {} at service {}", key, &service);
+                keyring.delete_password().map_err(|e| anyhow!("{}", e))?
+            }
         }
 
         Ok(self)
     }
+}
+
+pub fn credentials_as_service(profile: &AppProfile) -> String {
+    format!("crowbar::{}::{}", CredentialType::Aws, profile.name)
 }
 
 #[cfg(test)]
@@ -186,6 +190,20 @@ mod test {
         )
     }
 
+    #[test]
+    fn parses_aws_credentials_to_hashmap() {
+        let hash_map: HashMap<String, Option<String>> = create_credentials().into();
+        assert_eq!(hash_map, hashmap_credentials());
+    }
+
+    #[test]
+    fn creates_aws_credentials_from_hashmap() {
+        assert_eq!(
+            create_credentials(),
+            AwsCredentials::from(hashmap_credentials())
+        );
+    }
+
     fn create_credentials() -> AwsCredentials {
         AwsCredentials {
             version: 1,
@@ -213,5 +231,23 @@ mod test {
             session_token: "some_token".to_string(),
             expiration: "2038-01-01T10:10:10Z".to_string(),
         }
+    }
+
+    fn hashmap_credentials() -> HashMap<String, Option<String>> {
+        [
+            ("access_key_id".to_string(), Some("some_key".to_string())),
+            (
+                "secret_access_key".to_string(),
+                Some("some_secret".to_string()),
+            ),
+            ("session_token".to_string(), Some("some_token".to_string())),
+            (
+                "expiration".to_string(),
+                Some("2038-01-01T10:10:10Z".to_string()),
+            ),
+        ]
+        .iter()
+        .cloned()
+        .collect()
     }
 }
