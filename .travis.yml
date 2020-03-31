@@ -34,7 +34,7 @@ before_install:
 script:
   - cargo fmt -- --check
   - cargo clippy --release
-  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then dbus-run-session -- python3 libsecret/libsecret/mock-service-normal.py & cargo test --verbose; else cargo test --release; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then dbus-run-session -- python3 libsecret/libsecret/mock-service-normal.py & cargo test --release; else cargo test --release; fi
 branches:
   only:
     - master
