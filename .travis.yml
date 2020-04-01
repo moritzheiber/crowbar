@@ -26,7 +26,7 @@ before_script:
 
 before_install:
   - rustup component add rustfmt
-  - rustup component add clippyd
+  - rustup component add clippy
 script:
   - cargo fmt -- --check
   - cargo clippy --release
