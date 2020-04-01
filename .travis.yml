@@ -6,7 +6,6 @@ env:
     - RUST_BACKTRACE=full
 rust:
   - stable
-  - nightly
 os:
   - osx
   - windows
@@ -20,8 +19,6 @@ addons:
       - libssl-dev
 jobs:
   fast_finish: true
-  allow_failures:
-    - rust: nightly
 before_cache:
   - chmod -R a+r $HOME/.cargo
 
@@ -29,8 +26,8 @@ before_script:
   - git clone https://gitlab.gnome.org/GNOME/libsecret.git
 
 before_install:
-  - rustup component add rustfmt || cargo install --git https://github.com/rust-lang/rustfmt/ --force rustfmt-nightly
-  - rustup component add clippy || cargo install --git https://github.com/rust-lang/rust-clippy/ --force clippy
+  - rustup component add rustfmt
+  - rustup component add clippyd
 script:
   - cargo fmt -- --check
   - cargo clippy --release
