@@ -16,7 +16,7 @@ addons:
     packages:
       - libdbus-1-dev
       - gnome-keyring
-      - python3
+      - dbus-x11
       - libssl-dev
 jobs:
   fast_finish: true
