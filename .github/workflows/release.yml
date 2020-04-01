@@ -48,11 +48,10 @@ jobs:
           profile: minimal
           toolchain: stable
           components: rustfmt, clippy
-      - name: Install dependencies
+      - name: Install dependencies and set OS environment variable
         run: |
           sudo apt-get install -y libdbus-1-dev gnome-keyring dbus-x11 libssl-dev
           echo "::set-env name=GITHUB_ACTIONS_OS::linux"
-      - name: Set testing environment variable
         if: runner.os == 'Linux'
       - name: Build
         env:
