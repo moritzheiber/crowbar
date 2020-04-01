@@ -18,6 +18,7 @@ addons:
       - libdbus-1-dev
       - gnome-keyring
       - python3
+      - libssl-dev
 jobs:
   fast_finish: true
   allow_failures:
@@ -34,7 +35,7 @@ before_install:
 script:
   - cargo fmt -- --check
   - cargo clippy --release
-  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then dbus-run-session -- python3 libsecret/libsecret/mock-service-normal.py & cargo test --release; else cargo test --release; fi
+  - ci/test.sh
 branches:
   only:
     - master
