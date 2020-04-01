@@ -8,7 +8,6 @@ rust:
   - stable
 os:
   - osx
-  - windows
   - linux
 addons:
   apt:
