@@ -1,7 +1,6 @@
 dist: bionic
 language: rust
 cache: cargo
-services: xvfb
 env:
   global:
     - RUST_BACKTRACE=full
