@@ -2,7 +2,7 @@
 
 OS="${TRAVIS_OS_NAME:-linux}"
 
-if [ "${OS}" == "linux" ]; then
+if [ "${OS}" == "linux" ] || [ "${GITHUB_ACTIONS_OS}" == "linux" ]; then
     # https://unix.stackexchange.com/a/548005
     eval "$(dbus-launch --sh-syntax)" && \
     mkdir -p ~/.cache ~/.local/share/keyrings && \

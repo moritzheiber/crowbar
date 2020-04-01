@@ -49,7 +49,10 @@ jobs:
           toolchain: stable
           components: rustfmt, clippy
       - name: Install dependencies
-        run: sudo apt-get install -y libdbus-1-dev
+        run: |
+          sudo apt-get install -y libdbus-1-dev gnome-keyring dbus-x11 libssl-dev
+          echo "::set-env name=GITHUB_ACTIONS_OS::linux"
+      - name: Set testing environment variable
         if: runner.os == 'Linux'
       - name: Build
         env:
@@ -59,7 +62,7 @@ jobs:
           cargo fmt -- --check
           cargo build --release --locked
           cargo clippy --release
-          cargo test --release
+          ci/test.sh
 
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v1-release
