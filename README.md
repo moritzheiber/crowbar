@@ -33,17 +33,17 @@ Just download [the latest release](https://github.com/moritzheiber/crowbar/relea
 
 ### Prerequisites
 
-All environments need a *stable* version fo Rust to compile (it might also compile with nightly, but no guarantees). You can use [`rustup`](https://rustup.sh) to install it.
+All environments need a **stable** version fo Rust to compile (it might also compile with nightly, but no guarantees). You can use [`rustup`](https://rustup.sh) to install it.
 
-*Linux*
+**Linux**
 
 You have to have the DBus development headers (e.g. `libdbus-1-dev` on Ubuntu) installed to compile the crate.
 
-*macOS*
+**macOS**
 
 A recent version of [Apple's XCode](https://apps.apple.com/us/app/xcode/id497799835?mt=12).
 
-*Windows*
+**Windows**
 
 Rust needs a C++ build environment, which [`rustup`](https://rustup.sh) will help you install and configure.
 
