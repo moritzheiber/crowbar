@@ -27,7 +27,27 @@ _Note: In Okta you can hover over the chicklet that's associated with your accou
 
 ## Installation
 
-For now you need to install it using Cargo:
+Just download [the latest release](https://github.com/moritzheiber/crowbar/releases) and put it somewhere in your `PATH`. On Linux you'll have to have DBus installed (e.g. the `libdbus-1-3` package on Ubuntu), but most distributions are shipping with DBus pre-installed anyway.
+
+### Compiling your own binary
+
+### Prerequisites
+
+All environments need a *stable* version fo Rust to compile (it might also compile with nightly, but no guarantees). You can use [`rustup`](https://rustup.sh) to install it.
+
+*Linux*
+
+You have to have the DBus development headers (e.g. `libdbus-1-dev` on Ubuntu) installed to compile the crate.
+
+*macOS*
+
+A recent version of [Apple's XCode](https://apps.apple.com/us/app/xcode/id497799835?mt=12).
+
+*Windows*
+
+Rust needs a C++ build environment, which [`rustup`](https://rustup.sh) will help you install and configure.
+
+### Compiling the crate
 
 ```sh
 $ cargo install --git https://github.com/moritzheiber/crowbar.git crowbar
@@ -53,24 +73,19 @@ Adding the profile using crowbar will also configure the AWS CLI appropriately.
 
 You can also use `crowbar delete <profile-name>` to remove profiles and `crowbar list` to get and overview of all available profiles.
 
-### Setting up the AWS CLI
-
-Add the following to any profile in your `${HOME}/.aws/config` file that you wish to use crowbar for:
-
-```
-[profile my-profile]
-[...]
-credential_process = sh -c 'crowbar creds <your-crowbar-profile> -p 2> /dev/tty'
-```
-
-Don't forget about the `-p`, since crowbar, by default, doesn't expose your credentials to the command line.
-
 ## Usage
 
 You can now run any command that requires AWS credentials while having the profile name exported in your shell:
 
 ```sh
-$ AWS_PROFILE=my-profile aws ec2 describe-instances
+$ AWS_PROFILE=my-profile aws ec2 --region us-east-1 describe-instances
+```
+
+or, on Windows:
+
+```shell
+$ set AWS_PROFILE=my-profile
+$ aws ec2 --region us-east-1 describe-instances
 ```
 
 This will automatically authenticate you with your IdP, ask for your MFA if needed, and the present you with a selection of roles you're able to assume to get temporary AWS credentials. If there is just one role to assume crowbar will skip the selection and directly assume the single role.
@@ -93,7 +108,7 @@ For further information please consult `crowbar --help` or `crowbar creds --help
 
 ## FAQ
 
-**Why does the `credential_process` command look so weird?**
+**Why does the `credential_process` command added to the CLI configuration look so weird?**
 
 The `sh` workaround is needed because the AWS CLI captures `stderr` without forwarding it to the child process. crowbar uses `stderr` to ask for your IdP password, your selection of MFA and, if there are more than one, your selection of role to assume. [There's an open issue](https://github.com/boto/botocore/issues/1348#issue-284285273) and [several](https://github.com/boto/botocore/pull/1349) [PRs](https://github.com/boto/botocore/pull/1835). If you want to see this issue solved please show them some love.
 
