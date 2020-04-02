@@ -1,12 +1,23 @@
 [package]
 name = "crowbar"
-version = "0.0.1"
+version = "0.0.6"
 authors = [
 "Moritz Heiber <hello@heiber.im>",
 ]
 description = "Securily generates temporary AWS credentials through Identity Providers using SAML"
 edition = "2018"
 license = "Apache-2.0"
+homepage = "https://github.com/moritzheiber/crowbar"
+repository = "https://github.com/moritzheiber/crowbar"
+readme = "README.md"
+keywords = ["saml","okta","aws","security"]
+categories = ["command-line-utilities","authentication",]
+
+[badges]
+appveyor = { repository = "https://github.com/moritzheiber/crowbar", branch = "master", service = "github" }
+travis-ci = { repository = "https://github.com/moritzheiber/crowbar", branch = "master" }
+maintenance = { status = "actively-developed" }
+
 
 [profile.release]
 panic = "abort"
