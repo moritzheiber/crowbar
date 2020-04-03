@@ -1,6 +1,6 @@
 [![Build Status](https://travis-ci.org/moritzheiber/crowbar.svg?branch=master)](https://travis-ci.org/moritzheiber/crowbar) ![Release](https://github.com/moritzheiber/crowbar/workflows/Release/badge.svg)
 
-# <img src="images/crowbar-logo-full.svg" width="300">
+<img src="images/crowbar-logo-full.svg" width="300">
 
 "**Your trusty tool for retrieving AWS credentials securely via SAML**"
 
