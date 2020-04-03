@@ -53,7 +53,7 @@ Rust needs a C++ build environment, which [`rustup`](https://rustup.sh) will hel
 $ cargo install --git https://github.com/moritzheiber/crowbar.git crowbar
 ```
 
-I'm looking into getting the crate publish on crates.io and generating binaries for releases.
+I'm looking into getting the crate published on [crates.io](https://crates.io).
 
 ## User guide
 
@@ -88,7 +88,7 @@ $ set AWS_PROFILE=my-profile
 $ aws ec2 --region us-east-1 describe-instances
 ```
 
-This will automatically authenticate you with your IdP, ask for your MFA if needed, and the present you with a selection of roles you're able to assume to get temporary AWS credentials. If there is just one role to assume crowbar will skip the selection and directly assume the single role.
+This will automatically authenticate you with your IdP, ask for your MFA, if needed, and the present you with a selection of roles you're able to assume to get temporary AWS credentials. If there is just one role to assume crowbar will skip the selection and directly use it for fetching credentials.
 
 ### On the command line
 
