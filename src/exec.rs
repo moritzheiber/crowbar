@@ -89,7 +89,7 @@ mod test {
     fn removes_expiration() -> Result<()> {
         let variable = os_specific_var("AWS_EXPIRATION");
         let result = get_stdout_for_variable(variable)?;
-        assert_eq!("", result.trim());
+        assert_ne!("some_key", result.trim());
 
         Ok(())
     }
