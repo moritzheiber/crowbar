@@ -1,5 +1,10 @@
 use crate::config::app::AppProfile;
-use crate::credentials::{Credential, CredentialType};
+use crate::config::CrowbarConfig;
+use crate::credentials::config::ConfigCredentials;
+use crate::credentials::Credential;
+use crate::credentials::CredentialType;
+use crate::providers::okta::OktaProvider;
+use crate::providers::{Provider, ProviderType};
 
 use anyhow::{anyhow, Result};
 use chrono::{DateTime, Utc};
@@ -153,6 +158,48 @@ impl Credential<AppProfile, AwsCredentials> for AwsCredentials {
 
         Ok(self)
     }
+}
+
+pub fn fetch_aws_credentials(
+    profile: String,
+    crowbar_config: CrowbarConfig,
+    force_new_credentials: bool,
+) -> Result<AwsCredentials> {
+    let profiles = crowbar_config
+        .read()?
+        .profiles
+        .into_iter()
+        .filter(|p| p.clone().is_profile(&profile))
+        .collect::<Vec<AppProfile>>();
+
+    if profiles.is_empty() {
+        return Err(anyhow!("No profiles available or empty configuration."));
+    }
+
+    let profile = match profiles.first() {
+        Some(profile) => Ok(profile),
+        None => Err(anyhow!("Unable to use parsed profile")),
+    }?;
+
+    if force_new_credentials {
+        let _creds = ConfigCredentials::load(profile)
+            .map_err(|e| debug!("Couldn't reset credentials: {}", e))
+            .and_then(|creds| creds.delete(profile).map_err(|e| debug!("{}", e)));
+    }
+
+    let mut aws_credentials = AwsCredentials::load(&profile).unwrap_or_default();
+
+    if !aws_credentials.valid() || aws_credentials.is_expired() {
+        let mut provider = match profile.provider {
+            ProviderType::Okta => OktaProvider::new(profile),
+        };
+        let session = provider.new_session(profile)?;
+        aws_credentials = provider
+            .fetch_aws_credentials(profile, &session)?
+            .write(&profile)?;
+    }
+
+    Ok(aws_credentials)
 }
 
 pub fn credentials_as_service(profile: &AppProfile) -> String {

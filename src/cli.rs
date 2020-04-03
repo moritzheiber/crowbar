@@ -3,7 +3,7 @@ use crate::utils::LevelFilter;
 use anyhow::Result;
 use clap::{crate_description, crate_version, App, AppSettings, Arg, ArgMatches, SubCommand};
 
-#[derive(Deserialize, Serialize, Debug, Clone)]
+#[derive(Debug)]
 pub struct CliConfig {
     pub force: bool,
     pub location: Option<String>,
@@ -11,13 +11,22 @@ pub struct CliConfig {
     pub action: CliAction,
 }
 
-#[derive(Deserialize, Serialize, Debug, Clone)]
+#[derive(Debug)]
 pub enum CliAction {
-    Profiles { action: CliSubAction },
-    Creds { profile: String, print: bool },
+    Profiles {
+        action: CliSubAction,
+    },
+    Exec {
+        command: Vec<String>,
+        profile: String,
+    },
+    Creds {
+        profile: String,
+        print: bool,
+    },
 }
 
-#[derive(Deserialize, Serialize, Debug, Clone)]
+#[derive(Debug)]
 pub enum CliSubAction {
     Add { profile: AppProfile },
     Delete { profile_name: String },
@@ -126,7 +135,20 @@ fn get_matches() -> ArgMatches<'static> {
               Arg::with_name("profile").required(true)
           ),
       )
-      .get_matches()
+      .subcommand(
+        SubCommand::with_name("exec")
+        .about("Exposed temporary credentials on the command line by executing a child process with environment variables")
+        .arg(
+            Arg::with_name("profile").required(true)
+        )
+        .arg(
+            Arg::with_name("command")
+            .takes_value(true)
+            .last(true)
+            .multiple(true)
+        ),
+    )
+    .get_matches()
 }
 
 pub fn config() -> Result<CliConfig> {
@@ -148,6 +170,17 @@ pub fn config() -> Result<CliConfig> {
 
 fn select_action(matches: &ArgMatches) -> Result<CliAction> {
     match matches.subcommand() {
+        ("exec", Some(m)) => {
+            let parts: Vec<_> = m
+                .values_of("command")
+                .unwrap()
+                .map(|o| o.to_owned())
+                .collect();
+            Ok(CliAction::Exec {
+                command: parts,
+                profile: m.value_of("profile").unwrap().to_owned(),
+            })
+        }
         ("creds", Some(m)) => Ok(CliAction::Creds {
             print: m.is_present("print"),
             profile: m.value_of("profile").unwrap().to_owned(),

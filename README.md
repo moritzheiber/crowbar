@@ -9,6 +9,7 @@
 ```
 $ crowbar profiles add <profile-name> -u <my-okta-username> -p okta --url <okta-chicklet-url>
 $ AWS_PROFILE=<profile-name> aws ec2 describe-instances
+$ crowbar exec <profile-name> -- aws ec2 describe-instances
 ```
 
 It'll ask you for your IdP's password and to verify your credential request with [MFA](https://en.wikipedia.org/wiki/Multi-factor_authentication). The credentials you enter are cashed securely in your OS keystore.
@@ -75,6 +76,8 @@ You can also use `crowbar delete <profile-name>` to remove profiles and `crowbar
 
 ## Usage
 
+### Via AWS profiles
+
 You can now run any command that requires AWS credentials while having the profile name exported in your shell:
 
 ```sh
@@ -90,7 +93,26 @@ $ aws ec2 --region us-east-1 describe-instances
 
 This will automatically authenticate you with your IdP, ask for your MFA, if needed, and the present you with a selection of roles you're able to assume to get temporary AWS credentials. If there is just one role to assume crowbar will skip the selection and directly use it for fetching credentials.
 
-### On the command line
+### Via an execution environment
+
+You can have crowbar expose your AWS credentials to a process you want to run via environment variables:
+
+```sh
+$ crowbar exec <my-profile> -- <your-command-here>
+```
+
+For example
+
+```sh
+$ crowbar exec super-duper-profile - aws sts get-caller-identity
+{
+    "Account": "1234567890",
+    "UserId": "Some-User:johndoe@example.com",
+    "Arn": "arn:aws:sts::1234567890:assumed-role/SuperDuperUser/johndoe@example.com"
+}
+```
+
+### More options
 
 You can obviously also run crowbar directly:
 
@@ -128,10 +150,10 @@ There are a some things still left to do:
 
 ### Future
 
-- Add an `exec` mode for tools that don't support the AWS SharedProfileCredentials provider
+- ~~Add an `exec` mode for tools that don't support the AWS SharedProfileCredentials provider~~
 - Support for at least ADFS: As stated before, crowbar is supposed to be a general purpose tool, not just focusing on Okta. ADFS support is mandatory. However, other providers should be considered as well. The code will probably need major re-architecting for this to happen.
 - Support for WebAuthn: At least Okta supports WebAuthn on the command line and this tool should support it too. This largely depends on the maturity of [the Rust ecosystem around handling U2F/FIDO2 security keys](https://github.com/wisespace-io/u2f-rs) though.
-- Focus on cross-platform support: I'm running Linux, all of the code being tested on Linux. I want crowbar to be usable on all major operating systems (Linux, macOS, Windows).
+- ~~Focus on cross-platform support: I'm running Linux, all of the code being tested on Linux. I want crowbar to be usable on all major operating systems (Linux, macOS, Windows).~~
 
 ### Cosmetic
 
