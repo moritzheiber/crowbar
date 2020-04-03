@@ -77,38 +77,19 @@ mod test {
 
     #[test]
     fn runs_with_credentials() -> Result<()> {
-        let command = Some(vec![r#"echo "${AWS_ACCESS_KEY_ID}""#.to_owned()]);
-        let credentials = create_credentials();
-        let executor = Executor {
-            command,
-            credentials: credentials.clone(),
-            stdout: Stdio::piped(),
-            ..Default::default()
-        };
+        let variable = os_specific_var("AWS_ACCESS_KEY_ID");
+        let result = get_stdout_for_variable(variable)?;
 
-        let result = executor.run()?.wait_with_output()?;
-        let stdout = String::from_utf8_lossy(&result.stdout);
-
-        assert_eq!(credentials.access_key_id.unwrap(), stdout.trim());
+        assert_eq!(String::from("some_key"), result.trim());
 
         Ok(())
     }
 
     #[test]
     fn removes_expiration() -> Result<()> {
-        let command = Some(vec![r#"echo "${AWS_EXPIRATION}""#.to_owned()]);
-        let credentials = create_credentials();
-        let executor = Executor {
-            command,
-            credentials: credentials.clone(),
-            stdout: Stdio::piped(),
-            ..Default::default()
-        };
-
-        let result = executor.run()?.wait_with_output()?;
-        let stdout = String::from_utf8_lossy(&result.stdout);
-
-        assert_eq!("", stdout.trim());
+        let variable = os_specific_var("AWS_EXPIRATION");
+        let result = get_stdout_for_variable(variable)?;
+        assert_eq!("", result.trim());
 
         Ok(())
     }
@@ -121,5 +102,29 @@ mod test {
             session_token: Some("some_token".to_string()),
             expiration: Some("2038-01-01T10:10:10Z".to_string()),
         }
+    }
+
+    fn os_specific_var(s: &str) -> String {
+        if cfg!(windows) {
+            format!("%{}%", s)
+        } else {
+            format!("\"${{{}}}\"", s)
+        }
+    }
+
+    fn get_stdout_for_variable(variable: String) -> Result<String> {
+        let variable = format!("echo {}", variable);
+        let command = Some(vec![variable]);
+        let credentials = create_credentials();
+        let executor = Executor {
+            command,
+            credentials: credentials.clone(),
+            stdout: Stdio::piped(),
+            ..Default::default()
+        };
+
+        let result = executor.run()?.wait_with_output()?;
+
+        Ok(String::from_utf8_lossy(&result.stdout).into())
     }
 }
