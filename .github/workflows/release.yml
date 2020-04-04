@@ -56,7 +56,7 @@ jobs:
       - name: Build
         env:
           RUST_BACKTRACE: 1
-          RUSTFLAGS: "-C link-arg=-s"
+          RUSTFLAGS: "-C link-arg=-s -C target-feature=+crt-static"
         run: |
           cargo fmt -- --check
           cargo build --release --locked
