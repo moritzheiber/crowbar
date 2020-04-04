@@ -22,5 +22,4 @@ Vagrant.configure('2') do |config|
                         'stable && '\
                         'mkdir -p ~/.cache ~/.local/share/keyrings',
                       privileged: false
-  config.vm.provision "file", source: "ci/test.sh", destination: "test.sh"
 end
