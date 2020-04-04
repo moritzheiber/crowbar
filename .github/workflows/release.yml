@@ -85,7 +85,7 @@ jobs:
           download-url: "https://github.com/moritzheiber/crowbar/releases/download/v${{ steps.set_tag.outputs.RELEASE_TAG }}/crowbar-x86_64-macos"
         env:
           COMMITTER_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
-        if: runner.os = 'macOS'
+        if: runner.os == 'macOS'
       - name: Upload release to Chocolatey
         run: |
           mkdir -p chocolatey/release
