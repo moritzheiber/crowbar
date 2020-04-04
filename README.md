@@ -61,10 +61,10 @@ Rust needs a C++ build environment, which [`rustup`](https://rustup.sh) will hel
 ### Compiling the crate
 
 ```sh
-$ cargo install --git https://github.com/moritzheiber/crowbar.git crowbar
+$ cargo install crowbar
 ```
 
-I'm looking into getting the crate published on [crates.io](https://crates.io).
+If you have cargo's binary location in your `PATH` you should be able to run `crowbar` afterwards.
 
 ## User guide
 

@@ -1,6 +1,6 @@
 [package]
 name = "crowbar"
-version = "0.3.0"
+version = "0.3.1"
 authors = [
 "Moritz Heiber <hello@heiber.im>",
 ]
@@ -14,8 +14,8 @@ keywords = ["saml","okta","aws","security"]
 categories = ["command-line-utilities","authentication",]
 
 [badges]
-appveyor = { repository = "https://github.com/moritzheiber/crowbar", branch = "master", service = "github" }
-travis-ci = { repository = "https://github.com/moritzheiber/crowbar", branch = "master" }
+appveyor = { repository = "moritzheiber/crowbar", branch = "master", service = "github" }
+travis-ci = { repository = "moritzheiber/crowbar", branch = "master" }
 maintenance = { status = "actively-developed" }
 
 
