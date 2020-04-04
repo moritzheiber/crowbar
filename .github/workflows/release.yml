@@ -43,6 +43,8 @@ jobs:
         with:
           path: target
           key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+      - name: Set the release tag
+        run: echo ::set-env name=RELEASE_TAG::${GITHUB_REF/refs\/tags\/v/}
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
@@ -70,3 +72,13 @@ jobs:
           file: target/release/${{ matrix.artifact_name }}
           asset_name: ${{ matrix.asset_name }}
           tag: ${{ github.ref }}
+      - name: Upload release to Chocolatey
+        run: |
+          mkdir -p chocolatey/release
+          cp -v target/release/crowbar.exe chocolatey/release/
+          cp -v chocolatey/VERIFICATION.txt chocolatey/release/
+          cp -v LICENSE chocolatey/release/
+          cd chocolatey/
+          choco pack --version $RELEASE_TAG crowbar.nuspec
+          choco push crowbar.$RELEASE_TAG.nupkg -k ${{ secrets.CHOCOLATEY_API_KEY }} -s https://push.chocolatey.org/
+        if: runner.os == 'Windows'
