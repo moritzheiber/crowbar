@@ -64,7 +64,7 @@ jobs:
           cargo build --release --locked
           cargo clippy --release
           ci/test.sh
-
+          cargo publish -v --locked --token ${{ secrets.CRATES_IO_TOKEN }}
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v1-release
         with:

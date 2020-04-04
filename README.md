@@ -28,6 +28,16 @@ _Note: In Okta you can hover over the chicklet that's associated with your accou
 
 ## Installation
 
+### macOs
+
+You can install crowbar via [Homebrew](https://brew.sh):
+
+```sh
+$ brew install moritzheiber/tap/crowbar
+```
+
+### Binary releases for all supported operating systems
+
 Just download [the latest release](https://github.com/moritzheiber/crowbar/releases) and put it somewhere in your `PATH`. On Linux you'll have to have DBus installed (e.g. the `libdbus-1-3` package on Ubuntu), but most distributions are shipping with DBus pre-installed anyway.
 
 ### Compiling your own binary
