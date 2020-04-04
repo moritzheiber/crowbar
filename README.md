@@ -144,6 +144,8 @@ Crowbar is a fork of [oktaws](https://github.com/jonathanmorley/oktaws), written
 
 For the time being, only Okta is supported as an IdP, with other providers (ADFS being prioritized the highest) to be added as soon as capacity allows.
 
+Crowbar's name was formerly used by [an AWS Lambda runtime for Rust emulating a Python library](https://github.com/iliana/rust-crowbar) prior to native runtime support in Lambda. Crowbar 0.1.x and 0.2.x users should move to [the native runtime](https://github.com/awslabs/aws-lambda-rust-runtime).
+
 ## TODO
 
 There are a some things still left to do:
