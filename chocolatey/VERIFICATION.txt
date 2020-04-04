@@ -1,0 +1,12 @@
+VERIFICATION
+Verification is intended to assist the Chocolatey moderators and community
+in verifying that this package's contents are trustworthy.
+
+You can fetch the pre-built binary from <https://github.com/moritzheiber/crowbar/releases> and then use either of these two methods to verify its integrity:
+
+1. PowerShell with the 'Get-Filehash' function
+2. Chocolatey's 'checksum.exe' utility
+
+Then compare the checksum of the binary you downloaded from GitHub with the checksum of the binary in C:\ProgramData\Chocolatey\lib\crowbar\release\crowbar.exe
+
+The license file for the "Apache License 2.0" can be downloaded from <https://github.com/moritzheiber/crowbar/blob/master/LICENSE>.

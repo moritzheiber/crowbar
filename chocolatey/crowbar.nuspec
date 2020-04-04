@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Do not remove this test for UTF-8: if “Ω” doesn’t appear as greek uppercase omega letter enclosed in quotation marks, you should use an editor that supports UTF-8, not this one. -->
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+    <id>crowbar</id>
+    <version>$version$</version>
+    <packageSourceUrl>https://github.com/moritzheiber/crowbar</packageSourceUrl>
+    <title>crowbar (Install)</title>
+    <authors>Moritz Heiber, https://github.com/moritzheiber</authors>
+    <projectUrl>https://github.com/moritzheiber/crowbar</projectUrl>
+    <iconUrl>https://cdn.jsdelivr.net/gh/moritzheiber/crowbar@master/images/crowbar-monogram-icon.png</iconUrl>
+    <copyright>2020, Moritz Heiber</copyright>
+    <licenseUrl>https://raw.githubusercontent.com/moritzheiber/crowbar/master/LICENSE</licenseUrl>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <projectSourceUrl>https://github.com/moritzheiber/crowbar</projectSourceUrl>
+    <docsUrl>https://github.com/moritzheiber/crowbar/blob/master/README.md</docsUrl>
+    <bugTrackerUrl>https://github.com/moritzheiber/crowbar/issues</bugTrackerUrl>
+    <tags>crowbar aws saml idp authentication command-line-tools</tags>
+    <summary>Your trusty tool for retrieving AWS credentials securely via SAML</summary>
+    <description>Crowbar is designed to securely retrieve temporary AWS credentials using its STS service, utilizing SAML as a means for authenticating and authorizing requests. Its unique feature is that it doesn't write any sensitive data (passwords, session tokens, security keys) to disk, but rather stores them in the operating system's keystore which requires the user's consent to have them retrieved from.
+
+It is meant to be used with the AWS CLI's credential_process capabilities, to provide a seamless experience when it comes to using AWS resources on the command line.
+
+Crowbar is a fork of oktaws, written by Jonathan Morley, whereas the main differentiating factors for forking the original project were that it does write credentials to disk and it focuses solely on Okta. Both of these are not the intentions of this project.
+
+For the time being, only Okta is supported as an IdP, with other providers (ADFS being prioritized the highest) to be added as soon as capacity allows.</description>
+  </metadata>
+  <files>
+    <file src="release\**" target="release" />
+  </files>
+</package>
