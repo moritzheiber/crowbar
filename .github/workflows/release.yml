@@ -45,6 +45,7 @@ jobs:
           key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
       - name: Set the release tag
         run: echo ::set-env name=RELEASE_TAG::${GITHUB_REF/refs\/tags\/v/}
+        shell: bash
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
@@ -74,6 +75,18 @@ jobs:
           file: target/release/${{ matrix.artifact_name }}
           asset_name: ${{ matrix.asset_name }}
           tag: ${{ github.ref }}
+      - name: Bump Homebrew formula
+        uses: mislav/bump-homebrew-formula-action@v1
+        with:
+          formula-name: crowbar
+          homebrew-tap: moritzheiber/homebrew-tap
+          base-branch: master
+          download-url: https://github.com/moritzheiber/crowbar/releases/download/v$RELEASE_TAG/crowbar-x86_64-macos
+          commit-message: {{formulaName}} {{version}}
+        env:
+          COMMITTER_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        if: runner.os = 'macOS'
+        shell: bash
       - name: Upload release to Chocolatey
         run: |
           mkdir -p chocolatey/release
