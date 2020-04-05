@@ -7,8 +7,8 @@ on:
 
 jobs:
   build-test:
-    name: Build and test on macOS
-    runs-on: macos-latest
+    name: Build and test on Windows
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v2
       - name: Restore cargo registry cache
