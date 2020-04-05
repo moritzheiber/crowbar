@@ -1,0 +1,83 @@
+name: windows-release
+
+on:
+  push:
+    tags:
+      - "*"
+
+jobs:
+  build-test:
+    name: Build and test on macOS
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Restore cargo registry cache
+        uses: actions/cache@v1
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-registry-
+      - name: Restore cargo index cache
+        uses: actions/cache@v1
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-index-
+      - name: Restore cargo build cache
+        uses: actions/cache@v1
+        with:
+          path: target
+          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-build-target-
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          components: rustfmt, clippy
+      - name: Build
+        env:
+          RUSTFLAGS: "-C link-arg=-s -C target-feature=+crt-static"
+        run: |
+          cargo fmt -- --check
+          cargo build --release --locked
+          cargo clippy --release
+          cargo test --release --locked
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v1
+        with:
+          name: binary
+          path: target/release/crowbar.exe
+  release:
+    runs-on: windows-latest
+    needs: build-test
+    steps:
+      - name: Set the release tag
+        id: set_tag
+        run: echo ::set-output name=RELEASE_TAG::${GITHUB_REF/refs\/tags\/v/}
+        shell: bash
+      - uses: actions/checkout@v2
+      - name: Restore artifact from previous job
+        uses: actions/download-artifact@v1
+        with:
+          name: binary
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@v1-release
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: binary/crowbar.exe
+          asset_name: crowbar-x86_64-windows.exe
+          tag: ${{ github.ref }}
+      - name: Upload release to Chocolatey
+        # Let's not fail when Chocolatey is having a bad day
+        continue-on-error: true
+        run: |
+          mkdir -p chocolatey/release
+          cp -v binary/crowbar.exe chocolatey/release/
+          cp -v chocolatey/VERIFICATION.txt chocolatey/release/
+          cp -v LICENSE chocolatey/release/
+          cd chocolatey/
+          choco pack --version ${{ steps.set_tag.outputs.RELEASE_TAG }} crowbar.nuspec
+          choco push crowbar.${{ steps.set_tag.outputs.RELEASE_TAG }}.nupkg -k ${{ secrets.CHOCOLATEY_API_KEY }} -s https://push.chocolatey.org/
