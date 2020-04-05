@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/moritzheiber/crowbar.svg?branch=master)](https://travis-ci.org/moritzheiber/crowbar) ![Release](https://github.com/moritzheiber/crowbar/workflows/Release/badge.svg)
+![Crate version](https://img.shields.io/crates/v/crowbar) [![Build Status](https://travis-ci.org/moritzheiber/crowbar.svg?branch=master)](https://travis-ci.org/moritzheiber/crowbar) ![Release](https://github.com/moritzheiber/crowbar/workflows/Release/badge.svg) ![License](https://img.shields.io/crates/l/crowbar)
 
 <img src="images/crowbar-logo-full.svg" width="300">
 
