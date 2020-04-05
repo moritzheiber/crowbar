@@ -30,7 +30,7 @@ before_install:
 script:
   - cargo fmt -- --check
   - cargo clippy --release
-  - ci/test.sh
+  - ci/test-linux.sh
 branches:
   only:
     - master
