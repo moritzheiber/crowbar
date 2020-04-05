@@ -28,7 +28,7 @@ _Note: In Okta you can hover over the chicklet that's associated with your accou
 
 ## Installation
 
-### macOs
+### macOS
 
 You can install crowbar via [Homebrew](https://brew.sh):
 
