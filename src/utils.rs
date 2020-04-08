@@ -1,7 +1,11 @@
+use crate::aws::role::Role as AwsRole;
 use crate::config::app::AppProfile;
-use anyhow::Result;
-use dialoguer::PasswordInput;
+
+use anyhow::{anyhow, Result};
+use dialoguer::{theme::SimpleTheme, Select};
+use dialoguer::{Input, PasswordInput};
 use log::LevelFilter as LogLevelFilter;
+use std::collections::HashSet;
 use std::env::var;
 
 #[derive(Deserialize, Serialize, Debug, Clone, Eq, PartialEq, Hash)]
@@ -49,4 +53,32 @@ pub fn prompt_password(profile: &AppProfile) -> Result<String> {
         ))
         .interact()
         .map_err(|e| e.into())
+}
+
+pub fn prompt_mfa() -> Result<String> {
+    let mut input = Input::new();
+    let input = input.with_prompt("MFA response");
+
+    match input.interact() {
+        Ok(mfa) => Ok(mfa),
+        Err(e) => Err(anyhow!("Failed to get MFA input: {}", e)),
+    }
+}
+
+pub fn select_role(roles: HashSet<AwsRole>) -> Result<AwsRole> {
+    let selection = match roles.clone() {
+        r if r.len() < 2 => 0,
+        r => Select::with_theme(&SimpleTheme)
+            .with_prompt("Select the role to assume:")
+            .default(0)
+            .items(
+                &r.iter()
+                    .map(|r| r.clone().role_arn)
+                    .collect::<Vec<String>>(),
+            )
+            .interact()
+            .unwrap(),
+    };
+
+    Ok(roles.iter().collect::<Vec<&AwsRole>>()[selection].to_owned())
 }

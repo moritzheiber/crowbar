@@ -1,3 +1,4 @@
+pub mod jumpcloud;
 pub mod okta;
 
 use anyhow::{anyhow, Result};
@@ -7,23 +8,23 @@ use std::str::FromStr;
 pub enum ProviderType {
     #[serde(alias = "okta", alias = "OKTA")]
     Okta,
+    #[serde(alias = "Jumpcloud", alias = "JUMPCLOUD", alias = "JumpCloud")]
+    Jumpcloud,
 }
 
-pub struct ProviderSession<T> {
-    session: T,
-}
-
-pub trait Provider<T, U, C> {
-    fn new_session(&self, profile: &T) -> Result<U>;
-    fn fetch_aws_credentials(&mut self, profile: &T, session: &U) -> Result<C>;
+pub trait Provider<C> {
+    fn new_session(&mut self) -> Result<&Self>;
+    fn fetch_aws_credentials(&self) -> Result<C>;
 }
 
 impl FromStr for ProviderType {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "okta" | "OKTA" | "Okta" => Ok(ProviderType::Okta),
+        let s = s.to_lowercase();
+        match s.as_str() {
+            "okta" => Ok(ProviderType::Okta),
+            "jumpcloud" => Ok(ProviderType::Jumpcloud),
             _ => Err(anyhow!("Unable to determine provider type")),
         }
     }

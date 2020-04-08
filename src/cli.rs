@@ -80,7 +80,7 @@ fn get_matches() -> ArgMatches<'static> {
                       .value_name("PROVIDER")
                       .required(true)
                       .help("The name of the provider to use")
-                      .possible_values(&["okta"])
+                      .possible_values(&["okta","jumpcloud"])
                       .takes_value(true),
               )
               .arg(

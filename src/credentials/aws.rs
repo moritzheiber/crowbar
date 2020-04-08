@@ -3,6 +3,7 @@ use crate::config::CrowbarConfig;
 use crate::credentials::config::ConfigCredentials;
 use crate::credentials::Credential;
 use crate::credentials::CredentialType;
+use crate::providers::jumpcloud::JumpcloudProvider;
 use crate::providers::okta::OktaProvider;
 use crate::providers::{Provider, ProviderType};
 
@@ -119,7 +120,7 @@ impl Credential<AppProfile, AwsCredentials> for AwsCredentials {
                     Ok(s) => Some(s),
                     Err(e) => {
                         debug!("Error while fetching credentials: {}", e);
-                        None
+                        break;
                     }
                 },
             );
@@ -190,13 +191,20 @@ pub fn fetch_aws_credentials(
     let mut aws_credentials = AwsCredentials::load(&profile).unwrap_or_default();
 
     if !aws_credentials.valid() || aws_credentials.is_expired() {
-        let mut provider = match profile.provider {
-            ProviderType::Okta => OktaProvider::new(profile),
+        aws_credentials = match profile.provider {
+            ProviderType::Okta => {
+                let mut provider = OktaProvider::new(profile)?;
+                provider.new_session()?;
+                provider.fetch_aws_credentials()?
+            }
+            ProviderType::Jumpcloud => {
+                let mut provider = JumpcloudProvider::new(profile)?;
+                provider.new_session()?;
+                provider.fetch_aws_credentials()?
+            }
         };
-        let session = provider.new_session(profile)?;
-        aws_credentials = provider
-            .fetch_aws_credentials(profile, &session)?
-            .write(&profile)?;
+
+        aws_credentials = aws_credentials.write(profile)?;
     }
 
     Ok(aws_credentials)

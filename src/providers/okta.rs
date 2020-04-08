@@ -1,114 +1,75 @@
 pub mod auth;
 pub mod client;
 pub mod factors;
-pub mod sessions;
-pub mod structure;
-pub mod users;
+pub mod login;
+pub mod response;
+pub mod verification;
 
-use crate::aws::role as RoleManager;
-use crate::aws::role::Role as AwsRole;
 use crate::config::app::AppProfile;
 use crate::credentials::aws::AwsCredentials;
 use crate::credentials::config::ConfigCredentials;
 use crate::credentials::Credential;
-use crate::providers::okta::auth::LoginRequest;
 use crate::providers::okta::client::Client;
-use crate::providers::{Provider, ProviderSession};
+use crate::providers::okta::login::LoginRequest;
+use crate::providers::Provider;
+use crate::saml;
+
 use anyhow::{Context, Result};
-use dialoguer::{theme::SimpleTheme, Select};
-use std::collections::HashSet;
+
+const API_AUTHN_PATH: &str = "api/v1/authn";
 
 pub struct OktaProvider {
     client: Client,
-}
-
-pub struct OktaSessionId {
-    id: String,
+    profile: AppProfile,
 }
 
 impl OktaProvider {
-    pub fn new(profile: &AppProfile) -> OktaProvider {
-        OktaProvider {
-            client: Client::new(profile.clone()),
-        }
+    pub fn new(profile: &AppProfile) -> Result<OktaProvider> {
+        Ok(OktaProvider {
+            client: Client::new(profile.clone())?,
+            profile: profile.clone(),
+        })
     }
 }
 
-impl Provider<AppProfile, ProviderSession<OktaSessionId>, AwsCredentials> for OktaProvider {
-    fn new_session(&self, profile: &AppProfile) -> Result<ProviderSession<OktaSessionId>> {
+impl Provider<AwsCredentials> for OktaProvider {
+    fn new_session(&mut self) -> Result<&Self> {
+        let profile = &self.profile;
         let config_credentials =
             ConfigCredentials::load(profile).or_else(|_| ConfigCredentials::new(profile))?;
 
         let username = &profile.username;
         let password = &config_credentials.password;
-        let session_id = self
+        let login_response = self
             .client
-            .new_session(
-                self.client
-                    .get_session_token(&LoginRequest::from_credentials(
-                        username.clone(),
-                        password.clone(),
-                    ))?,
-                &HashSet::new(),
-            )?
-            .id;
+            .login(&LoginRequest::from_credentials(
+                username.clone(),
+                password.clone(),
+            ))
+            .with_context(|| "Unable to login")?;
 
-        let session = OktaSessionId { id: session_id };
+        trace!("Login response: {:?}", login_response);
+
+        let session_token = self.client.get_session_token(login_response)?;
 
         config_credentials.write(profile)?;
 
-        Ok(ProviderSession { session })
+        self.client.session_token = Some(session_token);
+        Ok(self)
     }
 
-    fn fetch_aws_credentials(
-        &mut self,
-        profile: &AppProfile,
-        provider_session: &ProviderSession<OktaSessionId>,
-    ) -> Result<AwsCredentials> {
-        self.client
-            .set_session_id(provider_session.session.id.clone());
-
+    fn fetch_aws_credentials(&self) -> Result<AwsCredentials> {
+        let profile = &self.profile;
         debug!("Requesting temporary STS credentials for {}", &profile.name);
 
         let url = profile.clone().request_url().unwrap();
-        let saml = self
+        let input = self
             .client
-            .get_saml_response(url)
-            .with_context(|| format!("Error getting SAML response for profile {}", profile.name))?;
+            .get(url)
+            .with_context(|| format!("Error getting SAML response for profile {}", profile.name))?
+            .text()?;
 
-        trace!("SAML response: {:?}", saml);
-
-        let roles = saml.roles;
-
-        debug!("SAML Roles: {:?}", &roles);
-
-        let selection = match roles.clone() {
-            r if r.len() < 2 => 0,
-            r => Select::with_theme(&SimpleTheme)
-                .with_prompt("Select the role to assume:")
-                .default(0)
-                .items(
-                    &r.iter()
-                        .map(|r| r.clone().role_arn)
-                        .collect::<Vec<String>>(),
-                )
-                .interact()
-                .unwrap(),
-        };
-
-        let role: &AwsRole = roles.iter().collect::<Vec<&AwsRole>>()[selection];
-
-        debug!("Found role: {} for profile {}", &role, &profile.name);
-
-        let assumption_response = RoleManager::assume_role(role, saml.raw)
-            .with_context(|| format!("Error assuming role for profile {}", profile.name))?;
-
-        let credentials = AwsCredentials::from(
-            assumption_response
-                .credentials
-                .with_context(|| "Error fetching credentials from assumed AWS role")?,
-        );
-
+        let credentials = saml::get_credentials_from_saml(input)?;
         trace!("Credentials: {:?}", credentials);
         Ok(credentials)
     }

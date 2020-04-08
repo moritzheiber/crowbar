@@ -1,5 +1,3 @@
-use crate::config::app::AppProfile;
-
 use anyhow::Result;
 use reqwest::blocking::Client as HttpClient;
 use reqwest::blocking::Response;
@@ -8,25 +6,20 @@ use reqwest::Url;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
+const TOKEN: &str = "X-Xsrftoken";
+
 pub struct Client {
     client: HttpClient,
-    pub base_url: Url,
-    pub session_token: Option<String>,
 }
 
 impl Client {
-    pub fn new(profile: AppProfile) -> Result<Client> {
+    pub fn new() -> Result<Self> {
         Ok(Client {
             client: HttpClient::builder().cookie_store(true).build()?,
-            base_url: profile.base_url()?,
-            session_token: None,
         })
     }
 
-    pub fn get(&self, mut url: Url) -> Result<Response> {
-        if let Some(token) = &self.session_token {
-            url.query_pairs_mut().append_pair("sessionToken", token);
-        }
+    pub fn get(&self, url: Url) -> Result<Response> {
         self.client
             .get(url)
             .send()?
@@ -34,18 +27,19 @@ impl Client {
             .map_err(|e| e.into())
     }
 
-    pub fn post<I, O>(&self, url: Url, body: &I) -> Result<O>
+    pub fn post<I, O>(&self, url: Url, body: &I, token: &str) -> Result<O, reqwest::Error>
     where
         I: Serialize,
         O: DeserializeOwned,
     {
+        let json = HeaderValue::from_static("application/json");
         self.client
             .post(url)
             .json(body)
-            .header(ACCEPT, HeaderValue::from_static("application/json"))
+            .header(ACCEPT, &json)
+            .header(TOKEN, token)
             .send()?
             .error_for_status()?
             .json()
-            .map_err(|e| e.into())
     }
 }

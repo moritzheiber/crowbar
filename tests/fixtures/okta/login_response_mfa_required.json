@@ -1,0 +1,167 @@
+{
+    "_embedded": {
+        "factorTypes": [
+            {
+                "_links": {
+                    "next": {
+                        "hints": {
+                            "allow": [
+                                "POST"
+                            ]
+                        },
+                        "href": "https://example.okta.com/api/v1/authn/factors/webauthn/verify",
+                        "name": "verify"
+                    }
+                },
+                "factorType": "webauthn"
+            }
+        ],
+        "factors": [
+            {
+                "_links": {
+                    "verify": {
+                        "hints": {
+                            "allow": [
+                                "POST"
+                            ]
+                        },
+                        "href": "https://example.okta.com/api/v1/authn/factors/factor-id-webauthn/verify"
+                    }
+                },
+                "factorType": "webauthn",
+                "id": "factor-id-webauthn",
+                "profile": {
+                    "appId": null,
+                    "authenticatorName": "YubiKey",
+                    "credentialId": "credential-id",
+                    "version": null
+                },
+                "provider": "FIDO",
+                "vendorName": "FIDO"
+            },
+            {
+                "_links": {
+                    "verify": {
+                        "hints": {
+                            "allow": [
+                                "POST"
+                            ]
+                        },
+                        "href": "https://example.okta.com/api/v1/authn/factors/factor-id-totp-software/verify"
+                    }
+                },
+                "factorType": "token:software:totp",
+                "id": "factor-id-totp-software",
+                "profile": {
+                    "credentialId": "jdoe@example.com"
+                },
+                "provider": "GOOGLE",
+                "vendorName": "GOOGLE"
+            },
+            {
+                "_links": {
+                    "verify": {
+                        "hints": {
+                            "allow": [
+                                "POST"
+                            ]
+                        },
+                        "href": "https://example.okta.com/api/v1/authn/factors/factor-id-sms/verify"
+                    }
+                },
+                "factorType": "sms",
+                "id": "factor-id-sms",
+                "profile": {
+                    "phoneNumber": "+49 XXXX XXX1234"
+                },
+                "provider": "OKTA",
+                "vendorName": "OKTA"
+            },
+            {
+                "_links": {
+                    "verify": {
+                        "hints": {
+                            "allow": [
+                                "POST"
+                            ]
+                        },
+                        "href": "https://example.okta.com/api/v1/authn/factors/factor-id-push/verify"
+                    }
+                },
+                "factorType": "push",
+                "id": "factor-id-push",
+                "profile": {
+                    "credentialId": "jdoe@example.com",
+                    "deviceType": "SmartPhone_Android",
+                    "keys": [
+                        {
+                            "e": "AQAB",
+                            "kid": "default",
+                            "kty": "RSA",
+                            "n": "public-key",
+                            "use": "sig"
+                        }
+                    ],
+                    "name": "Android-Phone",
+                    "platform": "ANDROID",
+                    "version": "28"
+                },
+                "provider": "OKTA",
+                "vendorName": "OKTA"
+            },
+            {
+                "_links": {
+                    "verify": {
+                        "hints": {
+                            "allow": [
+                                "POST"
+                            ]
+                        },
+                        "href": "https://example.okta.com/api/v1/authn/factors/factor-id-totp-software/verify"
+                    }
+                },
+                "factorType": "token:software:totp",
+                "id": "factor-id-totp-software",
+                "profile": {
+                    "credentialId": "jdoe@example.com"
+                },
+                "provider": "OKTA",
+                "vendorName": "OKTA"
+            }
+        ],
+        "policy": {
+            "allowRememberDevice": true,
+            "factorsPolicyInfo": {
+                "factor-id-push": {
+                    "autoPushEnabled": false
+                }
+            },
+            "rememberDeviceByDefault": false,
+            "rememberDeviceLifetimeInMinutes": 10080
+        },
+        "user": {
+            "id": "user-id",
+            "profile": {
+                "firstName": "John",
+                "lastName": "Doe",
+                "locale": "en",
+                "login": "jdoe@example.com",
+                "timeZone": "America/Los_Angeles"
+            }
+        }
+    },
+    "_links": {
+        "cancel": {
+            "hints": {
+                "allow": [
+                    "POST"
+                ]
+            },
+            "href": "https://example.okta.com/api/v1/authn/cancel"
+        }
+    },
+    "expiresAt": "2020-04-05T19:44:51.000Z",
+    "factorResult": "SUCCESS",
+    "stateToken": "state-token",
+    "status": "MFA_REQUIRED"
+}

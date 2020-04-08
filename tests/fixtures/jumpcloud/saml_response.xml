@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<saml2p:Response xmlns:saml2p="urn:oasis:names:tc:SAML:2.0:protocol" Consent="urn:oasis:names:tc:SAML:2.0:consent:unspecified" Destination="https://signin.aws.amazon.com/saml" ID="QP7V8K5O7CUVVMRBQVAL6LHJB8MOVJZYKJ6FJ4K6" IssueInstant="2020-04-10T19:48:08.317Z" Version="2.0">
+    <saml2:Issuer xmlns:saml2="urn:oasis:names:tc:SAML:2.0:assertion" Format="urn:oasis:names:tc:SAML:2.0:nameid-format:entity">JumpCloud</saml2:Issuer>
+    <saml2p:Status>
+        <saml2p:StatusCode Value="urn:oasis:names:tc:SAML:2.0:status:Success" />
+    </saml2p:Status>
+    <saml2:Assertion xmlns:saml2="urn:oasis:names:tc:SAML:2.0:assertion" xmlns:xs="http://www.w3.org/2001/XMLSchema" ID="LWHKSJ1ZA0CM01QEZKF9Q54T2GVRR7ASV6GFETF2" IssueInstant="2020-04-10T19:48:08.317Z" Version="2.0">
+        <saml2:Issuer Format="urn:oasis:names:tc:SAML:2.0:nameid-format:entity">JumpCloud</saml2:Issuer>
+        <ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+            <ds:SignedInfo>
+                <ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#" />
+                <ds:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1" />
+                <ds:Reference URI="#LWHKSJ1ZA0CM01QEZKF9Q54T2GVRR7ASV6GFETF2">
+                    <ds:Transforms>
+                        <ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature" />
+                        <ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#">
+                            <ec:InclusiveNamespaces xmlns:ec="http://www.w3.org/2001/10/xml-exc-c14n#" PrefixList="xs" />
+                        </ds:Transform>
+                    </ds:Transforms>
+                    <ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" />
+                    <ds:DigestValue>IqALmV+ROFTkTj0+YjzWrtpmvHI=</ds:DigestValue>
+                </ds:Reference>
+            </ds:SignedInfo>
+            <ds:SignatureValue>FwZWlckURTjVjWa1WbSZnsKEgja+08cI8ILa9ZEZsHswNH1iaISJLk4fmMwNCYeYwviysl1BIaxC753yBNORG9tf8ZHQIkEeYV/slcHNSQaWJIRlvk1ikSoJUR3PCif8wB43tUCrOHfs00vNdKuCpYXbhN+sbYg3hFxRnwnX69P6ijPfVfhoGYXvELiD3JktLshDZTGYflo83MLWwwYekjCnWLIq3ohNrdB1danlJnedT18/ugJh+1khH+Z1XcXgatLKJdHyCKPSU3O46OFSLJJdRsy4kjyLNmCUnWuao5faRLqtC9bb+U1PYqhGEEGkvA6bdmVBey/LWzD7zfeqJOYlWSf9ZDMNETcbokR1ROkdMCzU/KQGVW1w3ab7KHpitlFGn0QaWCAmNF287tlAJ7jLRyAqk5aUrwrVTdJ5/NqfR6/Y14jw6WVd6/4pZnM2v78whxpAaIL4KCDUG7j1obzIjdEWSmze9R/IBJRir60CdIP6YV8HDJcfSBCds9Q13/LcDAerB7hFOpCZ7M3CrNoxyReQZOso2sGkD4tc9grayU8fNl/8m6UNzKph0Rjsc5C7ANBnKgTTpqI/zg1Den324d0IBI2rloA23VJYjSDOEP3atJeg+wtHt5LyMBYcU4Q96LgdO8CX+WhVgVBIUESAU6mxU2vNNNZZ1+DM6HM=</ds:SignatureValue>
+            <ds:KeyInfo>
+                <ds:X509Data>
+                    <ds:X509Certificate>MIIE8DCCAtigAwIBAgIRALr61VYMrWmy5C+uifmBGVQwDQYJKoZIhvcNAQELBQAwGDEWMBQGA1UEAxMNTW9yaXR6IEhlaWJlcjAeFw0xODA5MTMwOTE2MjZaFw0yMTA5MTIwOTE2MjZaMBgxFjAUBgNVBAMTDU1vcml0eiBIZWliZXIwggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQC/JNtv4mmqtwwWIwoaOKrC6Oa/jajVRR7gIcq8i+rkxUeeYmOdSy0ZzmOiiurtqhzByR4GMAzKF8NrZsynLSp4kIUBcct7rz34luVWb211peLolmaZeESeaJ0NK3ub64ycRSx7yRSK/uS3Hp2wTprfZ6+ieXqCBc8EMEeddxdP//pR98YqdTT18H6hlxOgYUmcUHtbTGgMZNHlV/KCi+FibPhBCk5b59Eq8dpXg2dzBfHMxikphHQPLB3j48sLlS2m/BcQNGWM/Y3xXTMD8ByR3ZAshGQ9XomnEDbZubyi0LB1PnI03s/QZohUWfFveNhrpf9NGKIU71yhxt1VtOUbx0fahvkzLubBVgDDxIR+FVMtAfk7fmIfjJV+Ijr8e/kTyj0727BBXHQorMg0TQXtQA+wMXjrFtxABtOrFvLdmXn0Cab5oGGvhjBDFVSATGH+zsTiAlYR6s6cVdCkr1kx/EbWEhoWwk9Mp9QNC/agomAdHWOvntTc/gkRc3/2u18+5xTjOM3mojzY3+cXCHUIhwZk+IkUPia6GAzgc/SU8wQPl6kpgU8pT4VsSrywaG+HfHtpY+V7WT6gl7FRYQF/exWbNyNoabNglgHfgcFrDOFVhZkOrhpL7N+hs+XgAr97wa/7qmWYrImZOyOLeignJF2aZ75rVb4lUCP3nUorFQIDAQABozUwMzAOBgNVHQ8BAf8EBAMCBaAwEwYDVR0lBAwwCgYIKwYBBQUHAwEwDAYDVR0TAQH/BAIwADANBgkqhkiG9w0BAQsFAAOCAgEAIzrJBZa3FaZ8QDwmJzL4QnxgO39yw9i8rVMlPTVjKvcTfB4XxmL7v9d2ue/9PZEeUDsz/rLuH/xYgdwpIRi/Tr5HvEDkeffqoOzp8qbTQ4djf1/rzS576WOQVhkIpgw3+RJLqUoeBzXVqrjOmFx8W35ZQPkhRzfX2CgqeUdpUlyCZ1qgCHfMRW1UarJs9cTAGpf0w7HC3BOcEJJ+IiRsXfUlKhwHB17X8/pZ4S/Joen3y/FetYsg3ZIhQSdFHoCuOPGtWuIO9NYHnAUA9kXe2t5ZngeEKvs+y+RQ5qdHYcKleuSItlLMxDYPe8M5XyBlEEzBZNci6j44DxLdGlUHYHyBSxp2r5tA0ftgr0CLcvKEUdPBdDxjIBJZkXgZzSEp9gzIZzZ15UmxA2H8Y19x+GkbMYgAKjqMCoSsPp2AlyG6WsLwJwMrvZHAs7giouuRDKbgjVqJIx66HsWObNNp/rmDi/P3T2xT3ANR8AScNcejHEp/RxdMxf/eMq8Ag3In0vE4pA39KsLtUab7I6ellHs9T7ejSFIfFK7KrQ+AyWG5n7KuVkQyQkdFOHcC8/yy2135GhxrMQMZXZkyNOBg1ZIR+WrK8VBAGErVNXadI5TBwqnLPrHKyZzRZFGOTGJIxpYnteDsZ/iK5iOhbNo5BRZy+QfIFZmRnDX++L/rSpU=</ds:X509Certificate>
+                </ds:X509Data>
+            </ds:KeyInfo>
+        </ds:Signature>
+        <saml2:Subject>
+            <saml2:NameID Format="urn:oasis:names:tc:SAML:2.0:nameid-format:persistent">mheiber</saml2:NameID>
+            <saml2:SubjectConfirmation Method="urn:oasis:names:tc:SAML:2.0:cm:bearer">
+                <saml2:SubjectConfirmationData NotOnOrAfter="2020-04-10T19:53:08.317Z" Recipient="https://signin.aws.amazon.com/saml" />
+            </saml2:SubjectConfirmation>
+        </saml2:Subject>
+        <saml2:Conditions NotBefore="2020-04-10T19:43:08.317Z" NotOnOrAfter="2020-04-10T19:53:08.317Z">
+            <saml2:AudienceRestriction>
+                <saml2:Audience>urn:amazon:webservices</saml2:Audience>
+            </saml2:AudienceRestriction>
+        </saml2:Conditions>
+        <saml2:AttributeStatement>
+            <saml2:Attribute Name="https://aws.amazon.com/SAML/Attributes/SessionDuration">
+                <saml2:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">21600</saml2:AttributeValue>
+            </saml2:Attribute>
+            <saml2:Attribute Name="surname" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:unspecified">
+                <saml2:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">Doe</saml2:AttributeValue>
+            </saml2:Attribute>
+            <saml2:Attribute Name="givenName" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:unspecified">
+                <saml2:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">John</saml2:AttributeValue>
+            </saml2:Attribute>
+            <saml2:Attribute Name="https://aws.amazon.com/SAML/Attributes/RoleSessionName" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:unspecified">
+                <saml2:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">jdoe@example.com</saml2:AttributeValue>
+            </saml2:Attribute>
+            <saml2:Attribute Name="https://aws.amazon.com/SAML/Attributes/Role">
+                <saml2:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">arn:aws:iam::000000000000:role/jumpcloud-admin,arn:aws:iam::000000000000:saml-provider/jumpcloud</saml2:AttributeValue>
+                <saml2:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">arn:aws:iam::000000000000:role/jumpcloud-user,arn:aws:iam::000000000000:saml-provider/jumpcloud</saml2:AttributeValue>
+            </saml2:Attribute>
+        </saml2:AttributeStatement>
+        <saml2:AuthnStatement AuthnInstant="2020-04-10T19:48:08.317Z" SessionIndex="2d79fd7f-750f-4220-9f84-77d393d6dd27">
+            <saml2:AuthnContext>
+                <saml2:AuthnContextClassRef>urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport</saml2:AuthnContextClassRef>
+            </saml2:AuthnContext>
+        </saml2:AuthnStatement>
+    </saml2:Assertion>
+</saml2p:Response>

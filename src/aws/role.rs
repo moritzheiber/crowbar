@@ -21,16 +21,17 @@ impl fmt::Display for Role {
 }
 
 impl FromStr for Role {
-    type Err = Error;
+    type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let splitted: Vec<&str> = s.split(',').collect();
+        let mut splitted: Vec<&str> = s.split(',').collect();
+        splitted.sort();
 
         match splitted.len() {
             0 | 1 => Err(anyhow!("Not enough elements in {}", s)),
             2 => Ok(Role {
-                provider_arn: String::from(splitted[0]),
-                role_arn: String::from(splitted[1]),
+                role_arn: String::from(splitted[0]),
+                provider_arn: String::from(splitted[1]),
             }),
             _ => Err(anyhow!("Too many elements in {}", s)),
         }
