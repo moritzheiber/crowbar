@@ -7,24 +7,25 @@
 ## Quickstart
 
 ```
-$ crowbar profiles add <profile-name> -u <my-okta-username> -p okta --url <okta-chicklet-url>
+$ crowbar profiles add <profile-name> -u <my-okta-username> -p okta --url <okta-app-url>
 $ AWS_PROFILE=<profile-name> aws ec2 describe-instances
 $ crowbar exec <profile-name> -- aws ec2 describe-instances
 ```
 
 It'll ask you for your IdP's password and to verify your credential request with [MFA](https://en.wikipedia.org/wiki/Multi-factor_authentication). The credentials you enter are cashed securely in your OS keystore.
 
-_Note: In Okta you can hover over the chicklet that's associated with your account and copy its link._
+_Note: In Okta you can hover over the app that's associated with your AWS account and copy its link._
 
 ## Supported IdPs
 
-- Okta with MFA factors Push, TOTP, SMS
+- [Okta](https://www.okta.com), with MFA factors Push, TOTP, SMS
   - _Note: the MFA selection screen will present all available methods, however, only Push, TOTP and SMS are implemented at this point_
+- [JumpCloud](https://jumpcloud.com), with MFA factor TOTP (Duo is not supported for now)
 
 ### Planned
 
 - ADFS
-- Jumpcloud
+- Google
 
 ## Installation
 
@@ -163,8 +164,8 @@ There are a some things still left to do:
 ### Future
 
 - ~~Add an `exec` mode for tools that don't support the AWS SharedProfileCredentials provider~~
-- Support for at least ADFS: As stated before, crowbar is supposed to be a general purpose tool, not just focusing on Okta. ADFS support is mandatory. However, other providers should be considered as well. The code will probably need major re-architecting for this to happen.
-- Support for WebAuthn: At least Okta supports WebAuthn on the command line and this tool should support it too. This largely depends on the maturity of [the Rust ecosystem around handling U2F/FIDO2 security keys](https://github.com/wisespace-io/u2f-rs) though.
+- Support for at least ADFS: As stated before, crowbar is supposed to be a general purpose tool, not just focusing on Okta. ADFS support is mandatory. ~~However, other providers should be considered as well. The code will probably need major re-architecting for this to happen.~~
+- Support for WebAuthn: At least Okta supports WebAuthn on the command line and this tool should support it too. This largely depends on the maturity of [the Rust ecosystem around handling FIDO2 security keys](https://github.com/wisespace-io/u2f-rs) though. CTAP2 protocol support is mandatory to work with Okta.
 - ~~Focus on cross-platform support: I'm running Linux, all of the code being tested on Linux. I want crowbar to be usable on all major operating systems (Linux, macOS, Windows).~~
 
 ### Cosmetic
