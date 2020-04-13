@@ -2,7 +2,8 @@ use crate::providers::okta::response::Links;
 use std::collections::HashMap;
 use std::fmt;
 
-#[derive(Deserialize, Debug, Clone)]
+#[allow(clippy::large_enum_variant)]
+#[derive(Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "lowercase", tag = "factorType")]
 pub enum Factor {
     #[serde(rename_all = "camelCase")]
@@ -41,17 +42,25 @@ pub enum Factor {
         #[serde(rename = "_links")]
         links: Option<HashMap<String, Links>>,
         #[serde(rename = "_embedded")]
-        embedded: Option<FactorChallenge>,
+        embedded: Option<FactorEmbedded>,
     },
+    #[serde(other)]
+    Unimplemented,
 }
 
-#[derive(Deserialize, Debug, Clone)]
-#[serde(tag = "")]
+#[derive(Deserialize, Debug, Clone, PartialEq)]
+#[serde(tag = "challenge")]
+pub struct FactorEmbedded {
+    pub challenge: FactorChallenge,
+}
+
+#[derive(Deserialize, Debug, Clone, PartialEq)]
+#[serde(tag = "challenge")]
 pub struct FactorChallenge {
     pub challenge: String,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum FactorProvider {
     Okta,
@@ -59,7 +68,7 @@ pub enum FactorProvider {
     Fido,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum FactorStatus {
     NotSetup,
@@ -70,20 +79,13 @@ pub enum FactorStatus {
     Expired,
 }
 
-#[derive(Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct FactorVerification {
-    pass_code: String,
-    next_pass_code: Option<String>,
-}
-
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct SmsFactorProfile {
-    phone_number: String,
+    pub phone_number: String,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct PushFactorProfile {
     credential_id: String,
@@ -93,38 +95,17 @@ pub struct PushFactorProfile {
     version: String,
 }
 
-#[derive(Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct CallFactorProfile {
-    phone_number: String,
-    phone_extension: Option<String>,
-}
-
-#[derive(Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct QuestionFactorProfile {
-    question: String,
-    question_text: String,
-    answer: Option<String>,
-}
-
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct TokenFactorProfile {
     credential_id: String,
 }
 
-#[derive(Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct WebFactorProfile {
-    credential_id: String,
-}
-
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct WebAuthnFactorProfile {
-    credential_id: String,
-    authenticator_name: String,
+    pub credential_id: String,
+    pub authenticator_name: String,
 }
 
 impl fmt::Display for Factor {
@@ -141,6 +122,7 @@ impl fmt::Display for Factor {
             Factor::WebAuthn { ref profile, .. } => {
                 write!(f, "WebAuthn with {}", profile.authenticator_name)
             }
+            _ => write!(f, "Unimplemented factor"),
         }
     }
 }

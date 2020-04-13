@@ -1,0 +1,125 @@
+{
+    "stateToken": "007ucIX7PATyn94hsHfOLVaXAmOBkKHWnOOLG43bsb",
+    "factorResult": "SUCCESS",
+    "expiresAt": "2015-11-03T10:15:57.000Z",
+    "status": "MFA_REQUIRED",
+    "_embedded": {
+        "user": {
+            "id": "00ub0oNGTSWTBKOLGLNR",
+            "passwordChanged": "2015-09-08T20:14:45.000Z",
+            "profile": {
+                "login": "dade.murphy@example.com",
+                "firstName": "Dade",
+                "lastName": "Murphy",
+                "locale": "en_US",
+                "timeZone": "America/Los_Angeles"
+            }
+        },
+        "factors": [
+            {
+                "id": "rsalhpMQVYKHZKXZJQEW",
+                "factorType": "token",
+                "provider": "RSA",
+                "profile": {
+                    "credentialId": "dade.murphy@example.com"
+                },
+                "_links": {
+                    "verify": {
+                        "href": "https://example.okta.com/api/v1/authn/factors/rsalhpMQVYKHZKXZJQEW/verify",
+                        "hints": {
+                            "allow": [
+                                "POST"
+                            ]
+                        }
+                    }
+                }
+            },
+            {
+                "id": "ostfm3hPNYSOIOIVTQWY",
+                "factorType": "token:software:totp",
+                "provider": "OKTA",
+                "profile": {
+                    "credentialId": "dade.murphy@example.com"
+                },
+                "_links": {
+                    "verify": {
+                        "href": "https://example.okta.com/api/v1/authn/factors/ostfm3hPNYSOIOIVTQWY/verify",
+                        "hints": {
+                            "allow": [
+                                "POST"
+                            ]
+                        }
+                    }
+                }
+            },
+            {
+                "id": "sms193zUBEROPBNZKPPE",
+                "factorType": "sms",
+                "provider": "OKTA",
+                "profile": {
+                    "phoneNumber": "+1 XXX-XXX-1337"
+                },
+                "_links": {
+                    "verify": {
+                        "href": "https://example.okta.com/api/v1/authn/factors/sms193zUBEROPBNZKPPE/verify",
+                        "hints": {
+                            "allow": [
+                                "POST"
+                            ]
+                        }
+                    }
+                }
+            },
+            {
+                "id": "clf193zUBEROPBNZKPPE",
+                "factorType": "call",
+                "provider": "OKTA",
+                "profile": {
+                    "phoneNumber": "+1 XXX-XXX-1337"
+                },
+                "_links": {
+                    "verify": {
+                        "href": "https://example.okta.com/api/v1/authn/factors/clf193zUBEROPBNZKPPE/verify",
+                        "hints": {
+                            "allow": [
+                                "POST"
+                            ]
+                        }
+                    }
+                }
+            },
+            {
+                "id": "opf3hkfocI4JTLAju0g4",
+                "factorType": "push",
+                "provider": "OKTA",
+                "profile": {
+                    "credentialId": "dade.murphy@example.com",
+                    "deviceType": "SmartPhone_IPhone",
+                    "name": "Gibson",
+                    "platform": "IOS",
+                    "version": "9.0"
+                },
+                "_links": {
+                    "verify": {
+                        "href": "https://example.okta.com/api/v1/authn/factors/opf3hkfocI4JTLAju0g4/verify",
+                        "hints": {
+                            "allow": [
+                                "POST"
+                            ]
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "_links": {
+        "cancel": {
+            "href": "https://example.okta.com/api/v1/authn/cancel",
+            "hints": {
+                "allow": [
+                    "POST"
+                ]
+            }
+        }
+    }
+}

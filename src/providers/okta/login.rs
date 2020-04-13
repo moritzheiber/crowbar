@@ -53,32 +53,3 @@ impl Client {
         self.post(url, req)
     }
 }
-
-#[cfg(test)]
-mod test {
-    use super::*;
-    use crate::providers::okta::response::{FactorResult, Status};
-    use std::fs;
-
-    #[test]
-    fn parses_login_response() -> Result<()> {
-        let response = serde_json::de::from_str::<Response>(&fs::read_to_string(
-            "tests/fixtures/okta/login_response_mfa_required.json",
-        )?)?;
-
-        let factor_result = &response.factor_result.unwrap();
-        let status = &response.status;
-        let embedded = &response.embedded.unwrap();
-        let factor = embedded.factors.clone().unwrap();
-        let id = match factor.first().unwrap() {
-            Factor::WebAuthn { ref id, .. } => Some(id),
-            _ => None,
-        };
-
-        assert_eq!(factor_result, &FactorResult::Success);
-        assert_eq!(status, &Status::MfaRequired);
-        assert_eq!(id.unwrap(), "factor-id-webauthn");
-
-        Ok(())
-    }
-}

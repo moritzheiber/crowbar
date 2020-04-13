@@ -70,14 +70,14 @@ pub struct Embedded {
     user: User,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone, PartialEq)]
 #[serde(untagged)]
 pub enum Links {
     Single(Link),
     Multi(Vec<Link>),
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct Link {
     name: Option<String>,
@@ -86,20 +86,20 @@ pub struct Link {
     hints: Hint,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct Hint {
     allow: Vec<String>,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct User {
     id: String,
     profile: UserProfile,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct UserProfile {
     login: String,
@@ -107,4 +107,73 @@ pub struct UserProfile {
     last_name: String,
     locale: String,
     time_zone: String,
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use anyhow::Result;
+    use claim::assert_ok;
+    use std::fs;
+
+    #[test]
+    fn parses_login_response() -> Result<()> {
+        let response = serde_json::de::from_str::<Response>(&fs::read_to_string(
+            "tests/fixtures/okta/login_response_mfa_required.json",
+        )?)?;
+
+        let factor_result = &response.factor_result.unwrap();
+        let status = &response.status;
+        let embedded = &response.embedded.unwrap();
+        let factor = embedded.factors.clone().unwrap();
+        let id = match factor.first().unwrap() {
+            Factor::WebAuthn { ref id, .. } => Some(id),
+            _ => None,
+        };
+
+        assert_eq!(factor_result, &FactorResult::Success);
+        assert_eq!(status, &Status::MfaRequired);
+        assert_eq!(id.unwrap(), "factor-id-webauthn");
+
+        Ok(())
+    }
+
+    #[test]
+    fn parses_webauthn_challenge_response() -> Result<()> {
+        let response = serde_json::de::from_str::<Response>(&fs::read_to_string(
+            "tests/fixtures/okta/challenge_response_webauthn.json",
+        )?)?;
+
+        let factor_result = &response.factor_result.unwrap();
+        let status = &response.status;
+        let embedded = &response.embedded.unwrap();
+        let factor = embedded.factor.clone().unwrap();
+        let (id, factor_embedded, profile) = match factor {
+            Factor::WebAuthn {
+                ref id,
+                ref embedded,
+                ref profile,
+                ..
+            } => (id, embedded.clone().unwrap(), profile),
+            _ => panic!("Didn't find the expected factor!"),
+        };
+
+        assert_eq!(factor_result, &FactorResult::Challenge);
+        assert_eq!(status, &Status::MfaChallenge);
+        assert_eq!(factor_embedded.challenge.challenge, "challenge");
+        assert_eq!(profile.credential_id, "credential-id");
+        assert_eq!(id, "factor-id-webauthn");
+
+        Ok(())
+    }
+
+    #[test]
+    fn parses_login_response_with_unknown_factors() -> Result<()> {
+        let response = serde_json::de::from_str::<Response>(&fs::read_to_string(
+            "tests/fixtures/okta/login_response_unimplemented_factors.json",
+        )?);
+
+        assert_ok!(response);
+        Ok(())
+    }
 }

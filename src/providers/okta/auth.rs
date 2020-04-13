@@ -21,17 +21,21 @@ impl Client {
             Status::Unauthenticated => Err(anyhow!(
                 "Username or password wrong. Please check them and try again"
             )),
-            Status::Success => Ok(response.session_token.clone().unwrap()),
+            Status::Success => Ok(response
+                .session_token
+                .expect("The session token is missing from the success response")),
             Status::MfaRequired => {
                 let state_token = response
                     .state_token
                     .clone()
                     .with_context(|| "Missing state token in response")?;
-                let factors = response
-                    .embedded
-                    .expect("Missing embedded information for MFA challenge")
-                    .factors
-                    .expect("Missing factor for MFA challenge");
+                let factors = filter_factors(
+                    response
+                        .embedded
+                        .expect("Missing embedded information for MFA challenge")
+                        .factors
+                        .expect("Missing factor for MFA challenge"),
+                );
 
                 let factor = select_factor(factors)?;
 
@@ -55,6 +59,7 @@ impl Client {
                         signature_data: None,
                         client_data: None,
                     },
+                    _ => return Err(anyhow!("The selected factor isn't implemented")),
                 };
 
                 let verification_response = self.verify(&factor, &verification_request)?;
@@ -172,9 +177,19 @@ fn timeout_not_reached(time: DateTime<Utc>) -> bool {
     time.signed_duration_since(Utc::now()).num_seconds() < PUSH_WAIT_TIMEOUT
 }
 
+fn filter_factors(factors: Vec<Factor>) -> Vec<Factor> {
+    factors
+        .iter()
+        .filter(|f| **f != Factor::Unimplemented)
+        .cloned()
+        .collect()
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::providers::okta::factors::FactorProvider;
+    use crate::providers::okta::factors::{Factor, SmsFactorProfile};
     use chrono::NaiveDateTime;
 
     #[test]
@@ -192,6 +207,33 @@ mod test {
         let dt = Utc::now();
         thread::sleep(Duration::from_secs(3));
         assert_eq!(true, timeout_not_reached(dt));
+        Ok(())
+    }
+
+    #[test]
+    fn filters_unknown_factors() -> Result<()> {
+        let sms_factor = Factor::Sms {
+            id: "id".to_string(),
+            links: None,
+            profile: SmsFactorProfile {
+                phone_number: "12345".to_string(),
+            },
+            status: None,
+            provider: FactorProvider::Okta,
+        };
+
+        let factors = vec![
+            Factor::Unimplemented,
+            sms_factor.clone(),
+            Factor::Unimplemented,
+        ];
+
+        let filtered = filter_factors(factors);
+        assert_eq!(filtered.len(), 1);
+
+        let factor = filtered.first().unwrap().to_owned();
+        assert_eq!(factor, sms_factor);
+
         Ok(())
     }
 }

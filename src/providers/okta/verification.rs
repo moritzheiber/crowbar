@@ -51,6 +51,9 @@ impl Client {
                     Err(anyhow!("Missing verification link in factor"))
                 }
             }
+            _ => Err(anyhow!(
+                "The factor cannot be verified since it isn't implemented"
+            )),
         }
     }
 
