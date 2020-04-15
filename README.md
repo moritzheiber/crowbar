@@ -1,4 +1,4 @@
-![Crate version](https://img.shields.io/crates/v/crowbar) ![linux-release](https://github.com/moritzheiber/crowbar/workflows/linux-release/badge.svg) ![macos-release](https://github.com/moritzheiber/crowbar/workflows/macos-release/badge.svg) ![windows-release](https://github.com/moritzheiber/crowbar/workflows/windows-release/badge.svg) ![License](https://img.shields.io/crates/l/crowbar)
+[![Crate version](https://img.shields.io/crates/v/crowbar)](https://crates.io/crates/crowbar) ![linux-release](https://github.com/moritzheiber/crowbar/workflows/linux-release/badge.svg) ![macos-release](https://github.com/moritzheiber/crowbar/workflows/macos-release/badge.svg) ![windows-release](https://github.com/moritzheiber/crowbar/workflows/windows-release/badge.svg) ![License](https://img.shields.io/crates/l/crowbar)
 
 <img src="images/crowbar-logo-full.svg" width="300">
 
