@@ -48,7 +48,7 @@ jobs:
           cargo fmt -- --check
           cargo build --release --locked
           cargo clippy --release
-          ci/test-linux.sh
+          ci/test.sh
       - name: Publish to crates.io
         run: cargo publish -v --locked --token ${{ secrets.CRATES_IO_TOKEN }}
       - name: Upload build artifact
