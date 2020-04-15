@@ -70,6 +70,7 @@ jobs:
           file: binary/crowbar.exe
           asset_name: crowbar-x86_64-windows.exe
           tag: ${{ github.ref }}
+          overwrite: true
       - name: Upload release to Chocolatey
         # Let's not fail when Chocolatey is having a bad day
         continue-on-error: true

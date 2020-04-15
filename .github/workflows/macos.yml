@@ -69,6 +69,7 @@ jobs:
           file: binary/crowbar
           asset_name: crowbar-x86_64-macos
           tag: ${{ github.ref }}
+          overwrite: true
       - name: Bump Homebrew formula
         uses: mislav/bump-homebrew-formula-action@v1
         with:
