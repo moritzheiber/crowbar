@@ -11,6 +11,7 @@ on:
 
 jobs:
   test:
+    if: "!contains(github.event.commits[0].message, '[ci skip]')"
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: true
