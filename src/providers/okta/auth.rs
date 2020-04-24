@@ -86,6 +86,16 @@ impl Client {
                     .clone()
                     .expect("Missing verification links for factor");
 
+                if let Some(fr) = response.factor_result {
+                    match fr {
+                        FactorResult::Rejected | FactorResult::Timeout => {
+                            eprintln!("{}", fr);
+                            return Err(anyhow!("Authentication failed"));
+                        }
+                        _ => (),
+                    }
+                };
+
                 let factor_verification_request = match factor {
                     Factor::Sms { .. } => {
                         let mfa_code = utils::prompt_mfa()?;
@@ -155,13 +165,10 @@ impl Client {
                     thread::sleep(BACKOFF_TIMEOUT);
                     continue;
                 }
-                _ => {
-                    break;
-                }
+                _ => break,
             }
         }
 
-        eprintln!();
         Ok(verification_response)
     }
 }
