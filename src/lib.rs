@@ -14,6 +14,7 @@ extern crate rusoto_credential;
 extern crate rusoto_sts;
 #[macro_use]
 extern crate serde_derive;
+extern crate console;
 extern crate dirs;
 extern crate itertools;
 extern crate serde;

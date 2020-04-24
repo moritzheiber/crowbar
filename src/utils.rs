@@ -1,7 +1,7 @@
 use crate::aws::role::Role as AwsRole;
 use crate::config::app::AppProfile;
 
-use anyhow::{anyhow, Result};
+use anyhow::{Context, Result};
 use dialoguer::{theme::SimpleTheme, Select};
 use dialoguer::{Input, PasswordInput};
 use log::LevelFilter as LogLevelFilter;
@@ -56,13 +56,10 @@ pub fn prompt_password(profile: &AppProfile) -> Result<String> {
 }
 
 pub fn prompt_mfa() -> Result<String> {
-    let mut input = Input::new();
-    let input = input.with_prompt("MFA response");
-
-    match input.interact() {
-        Ok(mfa) => Ok(mfa),
-        Err(e) => Err(anyhow!("Failed to get MFA input: {}", e)),
-    }
+    Input::new()
+        .with_prompt("Enter MFA code")
+        .interact()
+        .with_context(|| "Failed to get MFA input")
 }
 
 pub fn select_role(roles: HashSet<AwsRole>) -> Result<AwsRole> {

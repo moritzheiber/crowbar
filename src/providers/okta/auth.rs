@@ -6,6 +6,7 @@ use crate::utils;
 
 use anyhow::{anyhow, Context, Result};
 use chrono::{DateTime, Utc};
+use console::Term;
 use dialoguer;
 use std::collections::HashMap;
 use std::{thread, time::Duration};
@@ -21,9 +22,12 @@ impl Client {
             Status::Unauthenticated => Err(anyhow!(
                 "Username or password wrong. Please check them and try again"
             )),
-            Status::Success => Ok(response
-                .session_token
-                .expect("The session token is missing from the success response")),
+            Status::Success => {
+                eprintln!("Authentication successful!");
+                Ok(response
+                    .session_token
+                    .expect("The session token is missing from the success response"))
+            }
             Status::MfaRequired => {
                 let state_token = response
                     .state_token
@@ -61,6 +65,8 @@ impl Client {
                     },
                     _ => return Err(anyhow!("The selected factor isn't implemented")),
                 };
+
+                debug!("Verification request: {:#?}", &verification_request);
 
                 let verification_response = self.verify(&factor, &verification_request)?;
                 self.get_session_token(verification_response)
@@ -124,28 +130,39 @@ impl Client {
         links: &HashMap<String, Links>,
         req: &VerificationRequest,
     ) -> Result<Response> {
-        let mut response = self.poll(links, &req)?;
+        let mut verification_response = self.poll(links, &req)?;
         let time_at_execution = Utc::now();
-
-        eprint!("Waiting for confirmation");
+        let mut tick = String::new();
+        let term = Term::stderr();
 
         while timeout_not_reached(time_at_execution) {
-            let verification_response = self.poll(links, &req)?;
-            match verification_response.factor_result {
+            verification_response = self.poll(links, &req)?;
+            term.clear_last_lines(1)?;
+
+            match verification_response.factor_result.clone() {
                 Some(r) if r == FactorResult::Waiting || r == FactorResult::Challenge => {
-                    eprint!("{}", r.to_string());
+                    let answer = fetch_correct_push_answer(&verification_response);
+
+                    if let Some(a) = answer {
+                        let message = format!("The correct answer is: {}. {}{}", a, r, tick);
+                        term.write_line(&message)?;
+                    } else {
+                        let message = format!("{}{}", r, tick);
+                        term.write_line(&message)?;
+                    };
+
+                    tick.push('.');
                     thread::sleep(BACKOFF_TIMEOUT);
                     continue;
                 }
                 _ => {
-                    response = verification_response;
                     break;
                 }
             }
         }
 
         eprintln!();
-        Ok(response)
+        Ok(verification_response)
     }
 }
 
@@ -185,12 +202,30 @@ fn filter_factors(factors: Vec<Factor>) -> Vec<Factor> {
         .collect()
 }
 
+fn fetch_correct_push_answer(response: &Response) -> Option<u64> {
+    match response.embedded.clone().unwrap().factor.unwrap() {
+        Factor::Push { ref embedded, .. } => {
+            if let Some(factor_embedded) = embedded.to_owned() {
+                if let Some(challenge) = factor_embedded.challenge {
+                    challenge.correct_answer
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        }
+        _ => None,
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
     use crate::providers::okta::factors::FactorProvider;
     use crate::providers::okta::factors::{Factor, SmsFactorProfile};
     use chrono::NaiveDateTime;
+    use std::fs;
 
     #[test]
     fn should_reach_timeout() -> Result<()> {
@@ -233,6 +268,17 @@ mod test {
 
         let factor = filtered.first().unwrap().to_owned();
         assert_eq!(factor, sms_factor);
+
+        Ok(())
+    }
+
+    #[test]
+    fn parses_push_challenge_response() -> Result<()> {
+        let response = serde_json::de::from_str::<Response>(&fs::read_to_string(
+            "tests/fixtures/okta/challenge_response_push.json",
+        )?)?;
+
+        assert_eq!(fetch_correct_push_answer(&response).unwrap(), 44);
 
         Ok(())
     }

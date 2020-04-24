@@ -24,7 +24,7 @@ impl FromStr for Role {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut splitted: Vec<&str> = s.split(',').collect();
+        let mut splitted: Vec<&str> = s.split(',').map(|s| s.trim()).collect();
         splitted.sort();
 
         match splitted.len() {

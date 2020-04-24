@@ -14,6 +14,8 @@ pub enum Factor {
         profile: PushFactorProfile,
         #[serde(rename = "_links")]
         links: Option<HashMap<String, Links>>,
+        #[serde(rename = "_embedded")]
+        embedded: Option<FactorEmbedded>,
     },
     #[serde(rename_all = "camelCase")]
     Sms {
@@ -49,15 +51,16 @@ pub enum Factor {
 }
 
 #[derive(Deserialize, Debug, Clone, PartialEq)]
-#[serde(tag = "challenge")]
+#[serde(rename_all = "camelCase")]
 pub struct FactorEmbedded {
-    pub challenge: FactorChallenge,
+    pub challenge: Option<FactorChallenge>,
 }
 
 #[derive(Deserialize, Debug, Clone, PartialEq)]
-#[serde(tag = "challenge")]
+#[serde(rename_all = "camelCase")]
 pub struct FactorChallenge {
-    pub challenge: String,
+    pub challenge: Option<String>,
+    pub correct_answer: Option<u64>,
 }
 
 #[derive(Deserialize, Debug, Clone, PartialEq)]

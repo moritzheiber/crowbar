@@ -58,6 +58,7 @@ chrono = { version = "~0.4", features = ["serde"] }
 itertools = "~0.9"
 confy = "~0.4"
 tokio = "~0.2"
+console = "~0.10"
 
 [dev-dependencies]
 tempfile = "3"

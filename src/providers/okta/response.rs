@@ -38,7 +38,7 @@ pub enum Status {
     Success,
 }
 
-#[derive(Deserialize, PartialEq, Debug)]
+#[derive(Deserialize, PartialEq, Clone, Debug)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum FactorResult {
     Challenge,
@@ -51,7 +51,9 @@ pub enum FactorResult {
 impl fmt::Display for FactorResult {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            FactorResult::Waiting { .. } | FactorResult::Challenge => write!(f, "."),
+            FactorResult::Waiting { .. } | FactorResult::Challenge => {
+                write!(f, "Waiting for confirmation")
+            }
             FactorResult::Timeout => {
                 write!(f, "No verification after {} seconds", PUSH_WAIT_TIMEOUT)
             }
@@ -66,6 +68,7 @@ impl fmt::Display for FactorResult {
 pub struct Embedded {
     #[serde(default)]
     pub factors: Option<Vec<Factor>>,
+    #[serde(default)]
     pub factor: Option<Factor>,
     user: User,
 }
@@ -160,7 +163,10 @@ mod test {
 
         assert_eq!(factor_result, &FactorResult::Challenge);
         assert_eq!(status, &Status::MfaChallenge);
-        assert_eq!(factor_embedded.challenge.challenge, "challenge");
+        assert_eq!(
+            factor_embedded.challenge.unwrap().challenge.unwrap(),
+            "challenge"
+        );
         assert_eq!(profile.credential_id, "credential-id");
         assert_eq!(id, "factor-id-webauthn");
 
