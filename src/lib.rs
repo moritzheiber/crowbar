@@ -1,6 +1,7 @@
 extern crate base64;
 extern crate clap;
 extern crate confy;
+extern crate console;
 extern crate dialoguer;
 extern crate keyring;
 extern crate kuchiki;
@@ -14,9 +15,9 @@ extern crate rusoto_credential;
 extern crate rusoto_sts;
 #[macro_use]
 extern crate serde_derive;
-extern crate console;
 extern crate dirs;
 extern crate itertools;
+extern crate select;
 extern crate serde;
 extern crate serde_str;
 extern crate sxd_document;

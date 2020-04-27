@@ -110,21 +110,11 @@ pub fn get_credentials_from_saml(input: String) -> Result<AwsCredentials> {
 mod tests {
     use super::*;
     use base64::encode;
-    use std::fs::File;
-    use std::io::Read;
+    use std::fs;
 
     #[test]
-    fn parse_okta_response() {
-        let mut f = File::open("tests/fixtures/okta/saml_response.xml").expect("file not found");
-
-        let mut saml_xml = String::new();
-        f.read_to_string(&mut saml_xml)
-            .expect("something went wrong reading the file");
-
-        let saml_base64 = encode(&saml_xml);
-
-        let response: Response = saml_base64.parse().unwrap();
-
+    fn parse_okta_response() -> Result<()> {
+        let response = get_response("tests/fixtures/okta/saml_response.xml")?;
         let expected_roles = vec![
             Role {
                 provider_arn: String::from("arn:aws:iam::123456789012:saml-provider/okta-idp"),
@@ -139,20 +129,13 @@ mod tests {
         .collect::<HashSet<Role>>();
 
         assert_eq!(response.roles, expected_roles);
+
+        Ok(())
     }
 
     #[test]
-    fn parse_jumpcloud_response() {
-        let mut f =
-            File::open("tests/fixtures/jumpcloud/saml_response.xml").expect("file not found");
-
-        let mut saml_xml = String::new();
-        f.read_to_string(&mut saml_xml)
-            .expect("something went wrong reading the file");
-
-        let saml_base64 = encode(&saml_xml);
-
-        let response: Response = saml_base64.parse().unwrap();
+    fn parse_jumpcloud_response() -> Result<()> {
+        let response = get_response("tests/fixtures/jumpcloud/saml_response.xml")?;
         let expected_roles = vec![
             Role {
                 provider_arn: String::from("arn:aws:iam::000000000000:saml-provider/jumpcloud"),
@@ -167,24 +150,21 @@ mod tests {
         .collect::<HashSet<Role>>();
 
         assert_eq!(response.roles, expected_roles);
+
+        Ok(())
     }
 
     #[test]
+    #[should_panic(
+        expected = "Not enough elements in arn:aws:iam::123456789012:saml-provider/okta-idp"
+    )]
     fn parse_response_invalid_no_role() {
-        let mut f = File::open("tests/fixtures/okta/saml_response_invalid_no_role.xml")
-            .expect("file not found");
+        get_response("tests/fixtures/okta/saml_response_invalid_no_role.xml").unwrap();
+    }
 
-        let mut saml_xml = String::new();
-        f.read_to_string(&mut saml_xml)
-            .expect("something went wrong reading the file");
-
+    fn get_response(path: &str) -> Result<Response> {
+        let saml_xml: String = fs::read_to_string(path)?;
         let saml_base64 = encode(&saml_xml);
-
-        let response: anyhow::Error = saml_base64.parse::<Response>().unwrap_err();
-
-        assert_eq!(
-            response.to_string(),
-            "Not enough elements in arn:aws:iam::123456789012:saml-provider/okta-idp"
-        );
+        saml_base64.parse()
     }
 }

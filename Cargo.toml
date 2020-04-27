@@ -14,8 +14,6 @@ keywords = ["saml","okta","aws","security"]
 categories = ["command-line-utilities","authentication",]
 
 [badges]
-appveyor = { repository = "moritzheiber/crowbar", branch = "master", service = "github" }
-travis-ci = { repository = "moritzheiber/crowbar", branch = "master" }
 maintenance = { status = "actively-developed" }
 
 
@@ -37,7 +35,7 @@ rusoto_sts = "~0.43"
 rusoto_credential = "~0.43"
 base64 = "~0.12"
 log = "~0.4"
-keyring = "~0.8"
+keyring = "~0.9"
 whoami = "~0.8"
 dialoguer = "~0.5"
 sxd-document = "~0.3"
@@ -59,6 +57,7 @@ itertools = "~0.9"
 confy = "~0.4"
 tokio = "~0.2"
 console = "~0.10"
+select = "~0.4"
 
 [dev-dependencies]
 tempfile = "3"

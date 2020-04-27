@@ -1,3 +1,4 @@
+pub mod adfs;
 pub mod jumpcloud;
 pub mod okta;
 
