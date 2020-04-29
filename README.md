@@ -78,12 +78,12 @@ For crowbar to be useful you have to install the [AWS CLI](https://docs.aws.amaz
 You can use `crowbar profiles` to manage profiles:
 
 ```
-$ crowbar profiles add my-profile -u my-username -p okta --url "https://example.com/example/saml"
+$ crowbar profiles add my-profile -u my-username -p okta --url "https://example.okta.com/example/saml"
 ```
 
-Adding the profile using crowbar will also configure the AWS CLI appropriately.
+To get your respective URL, hover over the app that's associated with your AWS account in your Okta dashboard and copy its link. You can strip away the `?fromHome=true` part at the end. Adding the profile using crowbar will also configure the AWS CLI appropriately.
 
-You can also use `crowbar delete <profile-name>` to remove profiles and `crowbar list` to get and overview of all available profiles.
+You can also use `crowbar profiles delete <profile-name>` to remove profiles and `crowbar profiles list` to get and overview of all available profiles.
 
 ## Usage
 
