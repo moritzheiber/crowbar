@@ -11,7 +11,6 @@ use crate::credentials::config::ConfigCredentials;
 use crate::credentials::Credential;
 use crate::providers::okta::client::Client;
 use crate::providers::okta::login::LoginRequest;
-use crate::providers::Provider;
 use crate::saml;
 
 use anyhow::{Context, Result};
@@ -30,10 +29,8 @@ impl OktaProvider {
             profile: profile.clone(),
         })
     }
-}
 
-impl Provider<AwsCredentials> for OktaProvider {
-    fn new_session(&mut self) -> Result<&Self> {
+    pub fn new_session(&mut self) -> Result<&Self> {
         let profile = &self.profile;
         let config_credentials =
             ConfigCredentials::load(profile).or_else(|_| ConfigCredentials::new(profile))?;
@@ -58,7 +55,7 @@ impl Provider<AwsCredentials> for OktaProvider {
         Ok(self)
     }
 
-    fn fetch_aws_credentials(&self) -> Result<AwsCredentials> {
+    pub fn fetch_aws_credentials(&self) -> Result<AwsCredentials> {
         let profile = &self.profile;
         debug!("Requesting temporary STS credentials for {}", &profile.name);
 
@@ -73,13 +70,4 @@ impl Provider<AwsCredentials> for OktaProvider {
         trace!("Credentials: {:?}", credentials);
         Ok(credentials)
     }
-}
-
-#[cfg(test)]
-mod test {
-    #[test]
-    fn can_extract_state_token() {}
-
-    #[test]
-    fn can_extract_saml_response() {}
 }

@@ -3,9 +3,10 @@ use crate::config::CrowbarConfig;
 use crate::credentials::config::ConfigCredentials;
 use crate::credentials::Credential;
 use crate::credentials::CredentialType;
+use crate::providers::adfs::AdfsProvider;
 use crate::providers::jumpcloud::JumpcloudProvider;
 use crate::providers::okta::OktaProvider;
-use crate::providers::{Provider, ProviderType};
+use crate::providers::ProviderType;
 
 use anyhow::{anyhow, Result};
 use chrono::{DateTime, Utc};
@@ -200,6 +201,10 @@ pub fn fetch_aws_credentials(
             ProviderType::Jumpcloud => {
                 let mut provider = JumpcloudProvider::new(profile)?;
                 provider.new_session()?;
+                provider.fetch_aws_credentials()?
+            }
+            ProviderType::Adfs => {
+                let mut provider = AdfsProvider::new(profile)?;
                 provider.fetch_aws_credentials()?
             }
         };

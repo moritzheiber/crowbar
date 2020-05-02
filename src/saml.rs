@@ -5,32 +5,17 @@ use crate::utils;
 
 use anyhow::{anyhow, Context as AnyhowContext, Result};
 use base64::decode;
-use kuchiki;
-use kuchiki::traits::TendrilSink;
+use select::document::Document;
+use select::predicate::Attr;
 use std::collections::HashSet;
 use std::str::FromStr;
 use sxd_document::parser;
 use sxd_xpath::{Context, Factory, Value};
-use thiserror::Error as DeriveError;
 
-#[derive(Debug)]
+#[derive(PartialEq, Debug)]
 pub struct Response {
     pub raw: String,
     pub roles: HashSet<Role>,
-}
-
-#[derive(DeriveError, Debug)]
-pub enum ExtractSamlResponseError {
-    #[error("No SAML found")]
-    NotFound,
-    #[error("Invalid")]
-    Invalid(anyhow::Error),
-}
-
-impl From<anyhow::Error> for ExtractSamlResponseError {
-    fn from(e: anyhow::Error) -> ExtractSamlResponseError {
-        ExtractSamlResponseError::Invalid(e)
-    }
 }
 
 impl FromStr for Response {
@@ -66,29 +51,10 @@ impl FromStr for Response {
     }
 }
 
-pub fn extract_saml_response(text: String) -> Result<Response, ExtractSamlResponseError> {
-    let doc = kuchiki::parse_html().one(text);
-    let input_node = doc
-        .select("input[name='SAMLResponse']")
-        .map_err(|_| ExtractSamlResponseError::NotFound)?
-        .next()
-        .ok_or(ExtractSamlResponseError::NotFound)?;
-
-    let attributes = &input_node.attributes.borrow();
-    let saml = attributes
-        .get("value")
-        .ok_or(ExtractSamlResponseError::NotFound)?;
-
-    saml.parse().map_err(|e: anyhow::Error| e.into())
-}
-
 pub fn get_credentials_from_saml(input: String) -> Result<AwsCredentials> {
-    let saml = match extract_saml_response(input) {
-        Err(_e) => Err(anyhow!("Error extracting SAML response")),
-        Ok(saml) => Ok(saml),
-    }?;
+    let saml = extract_saml_assertion(&input)?;
 
-    debug!("SAML response: {:?}", saml);
+    debug!("SAML response: {:?}", &saml);
 
     let roles = saml.roles;
 
@@ -100,10 +66,20 @@ pub fn get_credentials_from_saml(input: String) -> Result<AwsCredentials> {
         RoleManager::assume_role(&role, saml.raw).with_context(|| "Error assuming role")?;
 
     Ok(AwsCredentials::from(
-        assumption_response
-            .credentials
-            .with_context(|| "Error fetching credentials from assumed AWS role")?,
+        assumption_response.credentials.with_context(|| {
+            "Error fetching credentials for selected AWS role from assumption response"
+        })?,
     ))
+}
+pub fn extract_saml_assertion(text: &str) -> Result<Response> {
+    let document = Document::from(text);
+    let saml_response = document.find(Attr("name", "SAMLResponse")).next();
+
+    if let Some(response) = saml_response {
+        response.text().parse()
+    } else {
+        Err(anyhow!("Missing SAML assertion in response"))
+    }
 }
 
 #[cfg(test)]

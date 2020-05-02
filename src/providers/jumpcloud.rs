@@ -5,7 +5,6 @@ use crate::credentials::aws::AwsCredentials;
 use crate::credentials::config::ConfigCredentials;
 use crate::credentials::Credential;
 use crate::providers::jumpcloud::client::Client;
-use crate::providers::Provider;
 use crate::saml;
 use crate::utils;
 
@@ -65,8 +64,8 @@ impl JumpcloudProvider {
     }
 }
 
-impl Provider<AwsCredentials> for JumpcloudProvider {
-    fn new_session(&mut self) -> Result<&Self> {
+impl JumpcloudProvider {
+    pub fn new_session(&mut self) -> Result<&Self> {
         let profile = &self.profile;
 
         let config_credentials =
@@ -109,7 +108,7 @@ impl Provider<AwsCredentials> for JumpcloudProvider {
         Ok(self)
     }
 
-    fn fetch_aws_credentials(&self) -> Result<AwsCredentials> {
+    pub fn fetch_aws_credentials(&self) -> Result<AwsCredentials> {
         let profile = &self.profile;
         let url = self.redirect_to.clone().expect("Missing SAML redirect URL");
 

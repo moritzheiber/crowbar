@@ -7,14 +7,14 @@
 ## Quickstart
 
 ```
-$ crowbar profiles add <profile-name> -u <my-okta-username> -p okta --url <okta-app-url>
+$ crowbar profiles add <profile-name> -u <my-username> -p <idp> --url <idp-app-url>
 $ AWS_PROFILE=<profile-name> aws ec2 describe-instances
 $ crowbar exec <profile-name> -- aws ec2 describe-instances
 ```
 
 It'll ask you for your IdP's password and to verify your credential request with [MFA](https://en.wikipedia.org/wiki/Multi-factor_authentication). The credentials you enter are cashed securely in your OS keystore.
 
-_Note: In Okta you can hover over the app that's associated with your AWS account and copy its link._
+_Note: Hover over the app that's associated with your AWS account in your IdP's dashboard and copy its link._
 
 ## Supported IdPs
 
@@ -25,7 +25,6 @@ _Note: In Okta you can hover over the app that's associated with your AWS accoun
 ### Planned
 
 - ADFS
-- Google
 
 ## Installation
 

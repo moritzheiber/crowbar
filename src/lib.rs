@@ -4,7 +4,6 @@ extern crate confy;
 extern crate console;
 extern crate dialoguer;
 extern crate keyring;
-extern crate kuchiki;
 #[macro_use]
 extern crate log;
 extern crate env_logger;

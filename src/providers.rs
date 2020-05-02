@@ -9,13 +9,10 @@ use std::str::FromStr;
 pub enum ProviderType {
     #[serde(alias = "okta", alias = "OKTA")]
     Okta,
-    #[serde(alias = "Jumpcloud", alias = "JUMPCLOUD", alias = "JumpCloud")]
+    #[serde(alias = "jumpcloud", alias = "JUMPCLOUD", alias = "JumpCloud")]
     Jumpcloud,
-}
-
-pub trait Provider<C> {
-    fn new_session(&mut self) -> Result<&Self>;
-    fn fetch_aws_credentials(&self) -> Result<C>;
+    #[serde(alias = "ADFS", alias = "adfs")]
+    Adfs,
 }
 
 impl FromStr for ProviderType {
@@ -26,6 +23,7 @@ impl FromStr for ProviderType {
         match s.as_str() {
             "okta" => Ok(ProviderType::Okta),
             "jumpcloud" => Ok(ProviderType::Jumpcloud),
+            "adfs" => Ok(ProviderType::Adfs),
             _ => Err(anyhow!("Unable to determine provider type")),
         }
     }
