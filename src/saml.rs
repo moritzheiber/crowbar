@@ -90,8 +90,8 @@ pub fn extract_saml_assertion(text: &str) -> Result<Response> {
 mod tests {
     use super::*;
     use base64::encode;
-    use std::fs;
     use claim::assert_ok;
+    use std::fs;
 
     #[test]
     fn parse_okta_response() -> Result<()> {
