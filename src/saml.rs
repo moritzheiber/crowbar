@@ -73,12 +73,16 @@ pub fn get_credentials_from_saml(input: String) -> Result<AwsCredentials> {
 }
 pub fn extract_saml_assertion(text: &str) -> Result<Response> {
     let document = Document::from(text);
-    let saml_response = document.find(Attr("name", "SAMLResponse")).next();
+    let node = document.find(Attr("name", "SAMLResponse")).next();
 
-    if let Some(response) = saml_response {
-        response.text().parse()
+    if let Some(element) = node {
+        if let Some(value) = element.attr("value") {
+            value.parse()
+        } else {
+            Err(anyhow!("Missing SAML response in assertion element"))
+        }
     } else {
-        Err(anyhow!("Missing SAML assertion in response"))
+        Err(anyhow!("Could not find SAML element in HTML response"))
     }
 }
 
@@ -87,6 +91,7 @@ mod tests {
     use super::*;
     use base64::encode;
     use std::fs;
+    use claim::assert_ok;
 
     #[test]
     fn parse_okta_response() -> Result<()> {
@@ -136,6 +141,16 @@ mod tests {
     )]
     fn parse_response_invalid_no_role() {
         get_response("tests/fixtures/okta/saml_response_invalid_no_role.xml").unwrap();
+    }
+
+    #[test]
+    fn can_parse_html_text_response() -> Result<()> {
+        let html: String = fs::read_to_string("tests/fixtures/jumpcloud/html_saml_response.html")?;
+        let saml_response = extract_saml_assertion(&html);
+
+        assert_ok!(saml_response);
+
+        Ok(())
     }
 
     fn get_response(path: &str) -> Result<Response> {

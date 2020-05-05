@@ -66,6 +66,8 @@ impl OktaProvider {
             .with_context(|| format!("Error getting SAML response for profile {}", profile.name))?
             .text()?;
 
+        debug!("Text for SAML response: {:#?}", input);
+
         let credentials = saml::get_credentials_from_saml(input)?;
         trace!("Credentials: {:?}", credentials);
         Ok(credentials)
