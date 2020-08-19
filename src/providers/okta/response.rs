@@ -2,7 +2,6 @@ use crate::providers::okta::auth::PUSH_WAIT_TIMEOUT;
 use crate::providers::okta::factors::Factor;
 
 use reqwest::Url;
-use serde_str;
 use std::collections::HashMap;
 use std::fmt;
 

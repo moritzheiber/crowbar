@@ -4,13 +4,10 @@ use crate::credentials::config::ConfigCredentials;
 use crate::credentials::Credential;
 use crate::providers::adfs::client::Client;
 use crate::saml;
-use crate::utils;
 
 use anyhow::{anyhow, Context, Result};
 use regex::Regex;
-use reqwest::Response;
 use select::document::Document;
-use select::node::Node;
 use select::predicate::{Attr, Name};
 use std::collections::HashMap;
 
@@ -153,7 +150,11 @@ fn evaluate_response_state(response: String) -> Result<AdfsResponse> {
                     }
                     _ => (),
                 }
-            } else if let Some(_) = document.find(Attr("name", "VerificationCode")).next() {
+            } else if document
+                .find(Attr("name", "VerificationCode"))
+                .next()
+                .is_some()
+            {
                 adfs_response.state = ResponseState::MfaPrompt
             }
         }

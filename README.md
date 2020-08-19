@@ -36,6 +36,14 @@ You can install crowbar via [Homebrew](https://brew.sh):
 $ brew install moritzheiber/tap/crowbar
 ```
 
+## Windows
+
+You can install crowbar via [Chocolatey](https://chocolatey.org/):
+
+```sh
+$ choco install crowbar
+```
+
 ### Binary releases for all supported operating systems
 
 Just download [the latest release](https://github.com/moritzheiber/crowbar/releases) and put it somewhere in your `PATH`. On Linux you'll have to have DBus installed (e.g. the `libdbus-1-3` package on Ubuntu), but most distributions are shipping with DBus pre-installed anyway.

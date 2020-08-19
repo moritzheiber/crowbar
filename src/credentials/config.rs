@@ -57,7 +57,7 @@ impl Credential<AppProfile, ConfigCredentials> for ConfigCredentials {
 
     fn delete(self, profile: &AppProfile) -> Result<ConfigCredentials> {
         let service = format!("crowbar::{}::{}", self.credential_type, profile);
-        let username = &profile.name;
+        let username = &profile.username;
         let keyring = Keyring::new(&service, username);
 
         debug!("Deleting credentials for {} at {}", username, &service);

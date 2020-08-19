@@ -7,7 +7,6 @@ use crate::utils;
 use anyhow::{anyhow, Context, Result};
 use chrono::{DateTime, Utc};
 use console::Term;
-use dialoguer;
 use std::collections::HashMap;
 use std::{thread, time::Duration};
 
