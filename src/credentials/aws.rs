@@ -109,12 +109,13 @@ impl Credential<AppProfile, AwsCredentials> for AwsCredentials {
     }
 
     fn load(profile: &AppProfile) -> Result<AwsCredentials> {
+        let default_map: HashMap<String, Option<String>> = AwsCredentials::default().into();
         let mut credential_map: HashMap<String, Option<String>> = AwsCredentials::default().into();
         let service = credentials_as_service(profile);
 
         debug!("Trying to fetch cached AWS credentials for ID {}", &service);
 
-        for key in credential_map.clone().keys() {
+        for key in default_map.keys() {
             let _res = credential_map.insert(
                 key.clone(),
                 match Keyring::new(&service, key).get_password() {

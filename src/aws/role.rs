@@ -25,7 +25,7 @@ impl FromStr for Role {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut splitted: Vec<&str> = s.split(',').map(|s| s.trim()).collect();
-        splitted.sort();
+        splitted.sort_unstable();
 
         match splitted.len() {
             0 | 1 => Err(anyhow!("Not enough elements in {}", s)),
