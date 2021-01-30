@@ -68,8 +68,12 @@ impl JumpcloudProvider {
     pub fn new_session(&mut self) -> Result<&Self> {
         let profile = &self.profile;
 
-        let config_credentials =
+        let mut config_credentials =
             ConfigCredentials::load(profile).or_else(|_| ConfigCredentials::new(profile))?;
+
+        if !config_credentials.valid() {
+            config_credentials = config_credentials.ask_password(profile)?
+        };
 
         let response: XsrfResponse = self
             .client
@@ -78,11 +82,11 @@ impl JumpcloudProvider {
             .json()?;
 
         let token = response.xsrf;
-        let username = &profile.username;
-        let password = &config_credentials.password;
+        let username = profile.username.to_owned();
+        let password = config_credentials.password.to_owned().unwrap_or_default();
         let redirect_to = create_redirect_to(&profile.url)?;
         let mut login_request =
-            LoginRequest::from_credentials(username.clone(), password.clone(), redirect_to);
+            LoginRequest::from_credentials(username, password, redirect_to);
 
         debug!("Login request: {:?}", login_request);
 

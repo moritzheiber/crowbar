@@ -32,17 +32,18 @@ impl OktaProvider {
 
     pub fn new_session(&mut self) -> Result<&Self> {
         let profile = &self.profile;
-        let config_credentials =
+        let mut config_credentials =
             ConfigCredentials::load(profile).or_else(|_| ConfigCredentials::new(profile))?;
 
-        let username = &profile.username;
-        let password = &config_credentials.password;
+        if !config_credentials.valid() {
+            config_credentials = config_credentials.ask_password(profile)?
+        };
+
+        let username = profile.username.to_owned();
+        let password = config_credentials.password.to_owned().unwrap_or_default();
         let login_response = self
             .client
-            .login(&LoginRequest::from_credentials(
-                username.clone(),
-                password.clone(),
-            ))
+            .login(&LoginRequest::from_credentials(username, password))
             .with_context(|| "Unable to login")?;
 
         trace!("Login response: {:?}", login_response);

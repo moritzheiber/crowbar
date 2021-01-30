@@ -1,9 +1,9 @@
-extern crate crowbar;
 extern crate keyring;
 
 use crowbar::config::app::AppProfile;
 use crowbar::credentials::aws;
 use crowbar::credentials::aws::AwsCredentials;
+use crowbar::credentials::config::ConfigCredentials;
 use keyring::Keyring;
 use std::collections::HashMap;
 
@@ -57,7 +57,7 @@ pub fn short_aws_profile() -> String {
 }
 
 #[allow(dead_code)]
-pub fn create_credentials() -> AwsCredentials {
+pub fn create_aws_credentials() -> AwsCredentials {
     AwsCredentials {
         version: 1,
         access_key_id: Some("some_key".to_string()),
@@ -68,13 +68,27 @@ pub fn create_credentials() -> AwsCredentials {
 }
 
 #[allow(dead_code)]
-pub fn empty_credentials() -> AwsCredentials {
+pub fn empty_aws_credentials() -> AwsCredentials {
     AwsCredentials {
         version: 1,
         access_key_id: None,
         secret_access_key: None,
         session_token: None,
         expiration: None,
+    }
+}
+
+#[allow(dead_code)]
+pub fn create_config_credentials() -> ConfigCredentials {
+    ConfigCredentials {
+        password: Some(String::from("password")),
+    }
+}
+
+#[allow(dead_code)]
+pub fn empty_config_credentials() -> ConfigCredentials {
+    ConfigCredentials {
+        password: None,
     }
 }
 

@@ -1,5 +1,3 @@
-extern crate crowbar;
-
 mod common;
 
 use anyhow::Result;

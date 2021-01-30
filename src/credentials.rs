@@ -10,6 +10,8 @@ pub enum CredentialType {
     Aws,
 }
 
+pub struct Service {}
+
 impl fmt::Display for CredentialType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {

@@ -4,70 +4,75 @@ use crate::utils;
 use anyhow::{anyhow, Result};
 use keyring::Keyring;
 
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ConfigCredentials {
-    credential_type: CredentialType,
-    pub password: String,
+    pub password: Option<String>,
+}
+
+impl Default for ConfigCredentials {
+    fn default() -> Self {
+        ConfigCredentials { password: None }
+    }
 }
 
 impl Credential<AppProfile, ConfigCredentials> for ConfigCredentials {
     fn new(profile: &AppProfile) -> Result<ConfigCredentials> {
-        let credential_type = CredentialType::Config;
-        let password = utils::prompt_password(profile)?;
-
-        Ok(ConfigCredentials {
-            credential_type,
-            password,
-        })
+        ConfigCredentials::default().ask_password(profile)
     }
 
     fn load(profile: &AppProfile) -> Result<ConfigCredentials> {
-        let credential_type = CredentialType::Config;
-        let service = format!("crowbar::{}::{}", &credential_type, profile);
+        let service = profile_as_service(profile);
         let username = &profile.username;
 
         debug!("Trying to load credentials from ID {}", &service);
 
-        let password = Keyring::new(&service, &username)
-            .get_password()
-            .map_err(|e| anyhow!("{}", e))?;
+        let password = Keyring::new(&service, &username).get_password().ok();
 
-        Ok(ConfigCredentials {
-            credential_type,
-            password,
-        })
+        Ok(ConfigCredentials { password })
     }
 
     fn write(self, profile: &AppProfile) -> Result<ConfigCredentials> {
-        let service = &format!("crowbar::{}::{}", self.credential_type, profile);
+        let service = profile_as_service(profile);
         let username = &profile.username;
-        let password = &self.password;
+        let password = self.password.to_owned().unwrap_or_default();
 
-        debug!(
-            "Saving Okta credentials for {}",
-            profile.base_url()?.host().unwrap()
-        );
+        debug!("Saving configuration credentials for {} at {}", username, &service);
 
         Keyring::new(&service, &username)
-            .set_password(password)
+            .set_password(&password)
             .map_err(|e| anyhow!("{}", e))?;
 
         Ok(self)
     }
 
     fn delete(self, profile: &AppProfile) -> Result<ConfigCredentials> {
-        let service = format!("crowbar::{}::{}", self.credential_type, profile);
+        let service = format!("crowbar::{}::{}", CredentialType::Config, profile);
         let username = &profile.username;
         let keyring = Keyring::new(&service, username);
 
-        debug!("Deleting credentials for {} at {}", username, &service);
+        debug!("Deleting configuration credentials for {} at {}", username, &service);
 
-        let pass = keyring.get_password();
+        let credential = keyring.get_password();
 
-        if pass.is_ok() {
+        if credential.is_ok() {
             keyring.delete_password().map_err(|e| anyhow!("{}", e))?
         }
 
         Ok(self)
     }
+}
+
+impl ConfigCredentials {
+    pub fn ask_password(mut self, profile: &AppProfile) -> Result<ConfigCredentials> {
+        self.password = utils::prompt_password(profile).ok();
+        Ok(self)
+    }
+
+    pub fn valid(&self) -> bool {
+        self.password.is_some()
+    }
+}
+
+pub fn profile_as_service(profile: &AppProfile) -> String {
+    format!("crowbar::{}::{}", CredentialType::Config, profile)
 }

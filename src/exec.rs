@@ -118,7 +118,7 @@ mod test {
         let credentials = create_credentials();
         let executor = Executor {
             command,
-            credentials: credentials.clone(),
+            credentials,
             stdout: Stdio::piped(),
             ..Default::default()
         };

@@ -3,7 +3,7 @@ use crate::config::CrowbarConfig;
 use crate::credentials::config::ConfigCredentials;
 use crate::credentials::Credential;
 use crate::credentials::CredentialType;
-use crate::providers::adfs::AdfsProvider;
+// use crate::providers::adfs::AdfsProvider;
 use crate::providers::jumpcloud::JumpcloudProvider;
 use crate::providers::okta::OktaProvider;
 use crate::providers::ProviderType;
@@ -109,13 +109,14 @@ impl Credential<AppProfile, AwsCredentials> for AwsCredentials {
     }
 
     fn load(profile: &AppProfile) -> Result<AwsCredentials> {
-        let mut credential_map: HashMap<String, Option<String>> = AwsCredentials::default().into();
+        let credential_map: HashMap<String, Option<String>> = AwsCredentials::default().into();
+        let mut result_map = credential_map.clone();
         let service = credentials_as_service(profile);
 
         debug!("Trying to fetch cached AWS credentials for ID {}", &service);
 
-        for key in credential_map.clone().keys() {
-            let _res = credential_map.insert(
+        for key in credential_map.keys() {
+            let _res = result_map.insert(
                 key.clone(),
                 match Keyring::new(&service, key).get_password() {
                     Ok(s) => Some(s),
@@ -127,7 +128,7 @@ impl Credential<AppProfile, AwsCredentials> for AwsCredentials {
             );
         }
 
-        Ok(AwsCredentials::from(credential_map))
+        Ok(AwsCredentials::from(result_map))
     }
 
     fn write(self, profile: &AppProfile) -> Result<AwsCredentials> {
@@ -203,10 +204,10 @@ pub fn fetch_aws_credentials(
                 provider.new_session()?;
                 provider.fetch_aws_credentials()?
             }
-            ProviderType::Adfs => {
+            /* ProviderType::Adfs => {
                 let mut provider = AdfsProvider::new(profile)?;
                 provider.fetch_aws_credentials()?
-            }
+            } */
         };
 
         aws_credentials = aws_credentials.write(profile)?;

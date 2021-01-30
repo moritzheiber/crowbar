@@ -3,17 +3,16 @@ extern crate keyring;
 mod common;
 
 use anyhow::{anyhow, Result};
-use crowbar::credentials::aws;
-use crowbar::credentials::aws::AwsCredentials;
+use crowbar::credentials::config::ConfigCredentials;
 use crowbar::credentials::Credential;
 use keyring::Keyring;
 
 #[test]
 fn load_non_existing_credentials() -> Result<()> {
     let app_profile = common::short_app_profile_a();
-    let creds = AwsCredentials::load(&app_profile)?;
+    let creds = ConfigCredentials::load(&app_profile)?;
 
-    assert_eq!(creds, common::empty_aws_credentials());
+    assert_eq!(creds, common::empty_config_credentials());
 
     Ok(())
 }
@@ -21,7 +20,7 @@ fn load_non_existing_credentials() -> Result<()> {
 #[test]
 fn handles_credentials_with_keystore() -> Result<()> {
     let app_profile = common::short_app_profile_b();
-    let creds = common::create_aws_credentials();
+    let creds = common::create_config_credentials();
 
     let creds = creds.write(&app_profile)?;
 
@@ -32,15 +31,15 @@ fn handles_credentials_with_keystore() -> Result<()> {
 
     assert_eq!(creds.access_key_id.unwrap(), value);
 
-    let mock_creds = common::create_aws_credentials();
-    let creds = AwsCredentials::load(&app_profile)?;
+    let mock_creds = common::create_config_credentials();
+    let creds = ConfigCredentials::load(&app_profile)?;
 
     assert_eq!(creds, mock_creds);
 
     let _res = creds.delete(&app_profile)?;
-    let empty_creds = AwsCredentials::load(&app_profile)?;
+    let empty_creds = ConfigCredentials::load(&app_profile)?;
 
-    assert_eq!(AwsCredentials::default(), empty_creds);
+    assert_eq!(ConfigCredentials::default(), empty_creds);
 
     Ok(())
 }
