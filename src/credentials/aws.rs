@@ -109,14 +109,14 @@ impl Credential<AppProfile, AwsCredentials> for AwsCredentials {
     }
 
     fn load(profile: &AppProfile) -> Result<AwsCredentials> {
-        let credential_map: HashMap<String, Option<String>> = AwsCredentials::default().into();
-        let mut result_map = credential_map.clone();
+        let default_map: HashMap<String, Option<String>> = AwsCredentials::default().into();
+        let mut credential_map: HashMap<String, Option<String>> = AwsCredentials::default().into();
         let service = credentials_as_service(profile);
 
         debug!("Trying to fetch cached AWS credentials for ID {}", &service);
 
-        for key in credential_map.keys() {
-            let _res = result_map.insert(
+        for key in default_map.keys() {
+            let _res = credential_map.insert(
                 key.clone(),
                 match Keyring::new(&service, key).get_password() {
                     Ok(s) => Some(s),
@@ -128,7 +128,7 @@ impl Credential<AppProfile, AwsCredentials> for AwsCredentials {
             );
         }
 
-        Ok(AwsCredentials::from(result_map))
+        Ok(AwsCredentials::from(credential_map))
     }
 
     fn write(self, profile: &AppProfile) -> Result<AwsCredentials> {
@@ -203,11 +203,10 @@ pub fn fetch_aws_credentials(
                 let mut provider = JumpcloudProvider::new(profile)?;
                 provider.new_session()?;
                 provider.fetch_aws_credentials()?
-            }
-            /* ProviderType::Adfs => {
-                let mut provider = AdfsProvider::new(profile)?;
-                provider.fetch_aws_credentials()?
-            } */
+            } /* ProviderType::Adfs => {
+                  let mut provider = AdfsProvider::new(profile)?;
+                  provider.fetch_aws_credentials()?
+              } */
         };
 
         aws_credentials = aws_credentials.write(profile)?;

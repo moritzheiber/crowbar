@@ -35,7 +35,7 @@ jobs:
       - name: Install dependencies and set OS environment variable
         run: |
           sudo apt-get install -y libdbus-1-dev gnome-keyring dbus-x11 libssl-dev
-          echo "::set-env name=GITHUB_ACTIONS_OS::linux"
+          echo "GITHUB_ACTIONS_OS=linux" >> $GITHUB_ENV
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
@@ -44,6 +44,7 @@ jobs:
       - name: Build
         env:
           RUSTFLAGS: "-C link-arg=-s"
+          GITHUB_ACTIONS_OS: "${{ env.GITHUB_ACTIONS_OS }}"
         run: |
           cargo fmt -- --check
           cargo build --release --locked
