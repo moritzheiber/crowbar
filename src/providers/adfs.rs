@@ -70,20 +70,23 @@ impl AdfsProvider {
         let response = self
             .client
             .get(&url)
-            .with_context(|| "Unable to reach login form")?;
+            .with_context(|| "Unable to reach login form")?
+            .text()?;
 
-        let document = Document::from(response.text()?.as_str());
+        debug!("ADFS login response document: {:?}", &response);
 
-        debug!("ADFS login response document: {:?}", &document);
-
+        let document = Document::from(response.as_str());
         let form_content = build_login_form_elements(&username, &password, &document);
+
+        debug!("ADFS form content: {:?}", &form_content);
+
         let submit_url = fetch_submit_url(&document);
 
-        let response = self.client.post(submit_url, &form_content)?;
+        let response = self.client.post(submit_url, &form_content)?.text()?;
 
         debug!("ADFS form submission response document: {:?}", &response);
 
-        let adfs_response = evaluate_response_state(response.text()?)?;
+        let adfs_response = evaluate_response_state(response)?;
 
         debug!("ADFS SAML Response document: {:?}", &adfs_response);
 
