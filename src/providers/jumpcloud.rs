@@ -68,8 +68,7 @@ impl JumpcloudProvider {
     pub fn new_session(&mut self) -> Result<&Self> {
         let profile = &self.profile;
 
-        let mut config_credentials =
-            ConfigCredentials::load(profile).or_else(|_| ConfigCredentials::new(profile))?;
+        let mut config_credentials = ConfigCredentials::load(profile).unwrap_or_default();
 
         if !config_credentials.valid() {
             config_credentials = config_credentials.ask_password(profile)?
@@ -85,8 +84,7 @@ impl JumpcloudProvider {
         let username = profile.username.to_owned();
         let password = config_credentials.password.to_owned().unwrap_or_default();
         let redirect_to = create_redirect_to(&profile.url)?;
-        let mut login_request =
-            LoginRequest::from_credentials(username, password, redirect_to);
+        let mut login_request = LoginRequest::from_credentials(username, password, redirect_to);
 
         debug!("Login request: {:?}", login_request);
 

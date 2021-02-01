@@ -16,8 +16,8 @@ impl Default for ConfigCredentials {
 }
 
 impl Credential<AppProfile, ConfigCredentials> for ConfigCredentials {
-    fn new(profile: &AppProfile) -> Result<ConfigCredentials> {
-        ConfigCredentials::default().ask_password(profile)
+    fn new() -> ConfigCredentials {
+        ConfigCredentials::default()
     }
 
     fn load(profile: &AppProfile) -> Result<ConfigCredentials> {
@@ -36,7 +36,10 @@ impl Credential<AppProfile, ConfigCredentials> for ConfigCredentials {
         let username = &profile.username;
         let password = self.password.to_owned().unwrap_or_default();
 
-        debug!("Saving configuration credentials for {} at {}", username, &service);
+        debug!(
+            "Saving configuration credentials for {} at {}",
+            username, &service
+        );
 
         Keyring::new(&service, &username)
             .set_password(&password)
@@ -50,7 +53,10 @@ impl Credential<AppProfile, ConfigCredentials> for ConfigCredentials {
         let username = &profile.username;
         let keyring = Keyring::new(&service, username);
 
-        debug!("Deleting configuration credentials for {} at {}", username, &service);
+        debug!(
+            "Deleting configuration credentials for {} at {}",
+            username, &service
+        );
 
         let credential = keyring.get_password();
 

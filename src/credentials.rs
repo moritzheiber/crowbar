@@ -22,7 +22,7 @@ impl fmt::Display for CredentialType {
 }
 
 pub trait Credential<T, U> {
-    fn new(profile: &T) -> Result<U>;
+    fn new() -> Self;
     fn load(profile: &T) -> Result<U>;
     fn write(self, profile: &T) -> Result<U>;
     fn delete(self, profile: &T) -> Result<U>;

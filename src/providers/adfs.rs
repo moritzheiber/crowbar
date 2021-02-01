@@ -54,11 +54,14 @@ impl AdfsProvider {
     pub fn fetch_aws_credentials(&mut self) -> Result<AwsCredentials> {
         let profile = &self.profile;
 
-        let config_credentials =
-            ConfigCredentials::load(profile).or_else(|_| ConfigCredentials::new(profile))?;
+        let mut config_credentials = ConfigCredentials::load(profile).unwrap_or_default();
+
+        if !config_credentials.valid() {
+            config_credentials = config_credentials.ask_password(profile)?
+        };
 
         let username = self.profile.username.clone();
-        let password = config_credentials.password.unwrap();
+        let password = config_credentials.password.unwrap_or_default();
         let mut url = self.profile.url.clone();
         url.push_str(ADFS_URL_SUFFIX);
 

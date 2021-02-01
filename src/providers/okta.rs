@@ -32,8 +32,7 @@ impl OktaProvider {
 
     pub fn new_session(&mut self) -> Result<&Self> {
         let profile = &self.profile;
-        let mut config_credentials =
-            ConfigCredentials::load(profile).or_else(|_| ConfigCredentials::new(profile))?;
+        let mut config_credentials = ConfigCredentials::load(profile).unwrap_or_default();
 
         if !config_credentials.valid() {
             config_credentials = config_credentials.ask_password(profile)?
