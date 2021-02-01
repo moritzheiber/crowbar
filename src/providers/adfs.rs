@@ -65,17 +65,27 @@ impl AdfsProvider {
         let mut url = self.profile.url.clone();
         url.push_str(ADFS_URL_SUFFIX);
 
+        debug!("Trying to get credentials for {} from {}", &username, &url);
+
         let response = self
             .client
             .get(&url)
             .with_context(|| "Unable to reach login form")?;
 
         let document = Document::from(response.text()?.as_str());
+
+        debug!("ADFS login response document: {:?}", &document);
+
         let form_content = build_login_form_elements(&username, &password, &document);
         let submit_url = fetch_submit_url(&document);
 
         let response = self.client.post(submit_url, &form_content)?;
+
+        debug!("ADFS form submission response document: {:?}", &response);
+
         let adfs_response = evaluate_response_state(response.text()?)?;
+
+        debug!("ADFS SAML Response document: {:?}", &adfs_response);
 
         let credentials = match adfs_response.state {
             ResponseState::Success => adfs_response.credentials.unwrap(),
