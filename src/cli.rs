@@ -46,7 +46,7 @@ fn get_matches() -> ArgMatches<'static> {
               .short("f")
               .takes_value(false)
               .long("force")
-              .help("Forces re-entering of your Okta credentials"),
+              .help("Forces re-entering of your IdP credentials"),
       )
       .arg(
           Arg::with_name("log-level")
@@ -80,7 +80,7 @@ fn get_matches() -> ArgMatches<'static> {
                       .value_name("PROVIDER")
                       .required(true)
                       .help("The name of the provider to use")
-                      .possible_values(&["okta","jumpcloud"])
+                      .possible_values(&["okta","jumpcloud","adfs"])
                       .takes_value(true),
               )
               .arg(

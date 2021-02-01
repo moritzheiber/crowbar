@@ -58,7 +58,7 @@ impl AdfsProvider {
             ConfigCredentials::load(profile).or_else(|_| ConfigCredentials::new(profile))?;
 
         let username = self.profile.username.clone();
-        let password = config_credentials.password;
+        let password = config_credentials.password.unwrap();
         let mut url = self.profile.url.clone();
         url.push_str(ADFS_URL_SUFFIX);
 

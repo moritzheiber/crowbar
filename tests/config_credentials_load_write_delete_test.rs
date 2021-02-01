@@ -2,13 +2,14 @@ extern crate keyring;
 
 mod common;
 
-use anyhow::{anyhow, Result};
+use anyhow::Result;
+use crowbar::credentials::config;
 use crowbar::credentials::config::ConfigCredentials;
 use crowbar::credentials::Credential;
 use keyring::Keyring;
 
 #[test]
-fn load_non_existing_credentials() -> Result<()> {
+fn load_non_existing_config_credentials() -> Result<()> {
     let app_profile = common::short_app_profile_a();
     let creds = ConfigCredentials::load(&app_profile)?;
 
@@ -18,18 +19,18 @@ fn load_non_existing_credentials() -> Result<()> {
 }
 
 #[test]
-fn handles_credentials_with_keystore() -> Result<()> {
+fn handles_config_credentials_with_keystore() -> Result<()> {
     let app_profile = common::short_app_profile_b();
     let creds = common::create_config_credentials();
 
     let creds = creds.write(&app_profile)?;
 
-    let service = aws::credentials_as_service(&app_profile);
-    let value = Keyring::new(&service, "access_key_id")
+    let service = config::profile_as_service(&app_profile);
+    let value = Keyring::new(&service, &app_profile.username)
         .get_password()
-        .map_err(|_e| anyhow!("Test failed!"))?;
+        .ok();
 
-    assert_eq!(creds.access_key_id.unwrap(), value);
+    assert_eq!(creds.password, value);
 
     let mock_creds = common::create_config_credentials();
     let creds = ConfigCredentials::load(&app_profile)?;

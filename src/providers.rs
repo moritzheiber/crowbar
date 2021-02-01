@@ -1,4 +1,5 @@
 // pub mod adfs;
+pub mod adfs;
 pub mod jumpcloud;
 pub mod okta;
 
@@ -11,8 +12,8 @@ pub enum ProviderType {
     Okta,
     #[serde(alias = "jumpcloud", alias = "JUMPCLOUD", alias = "JumpCloud")]
     Jumpcloud,
-    /* #[serde(alias = "ADFS", alias = "adfs")]
-    Adfs, */
+    #[serde(alias = "ADFS", alias = "adfs")]
+    Adfs,
 }
 
 impl FromStr for ProviderType {
@@ -23,7 +24,7 @@ impl FromStr for ProviderType {
         match s.as_str() {
             "okta" => Ok(ProviderType::Okta),
             "jumpcloud" => Ok(ProviderType::Jumpcloud),
-            // "adfs" => Ok(ProviderType::Adfs),
+            "adfs" => Ok(ProviderType::Adfs),
             _ => Err(anyhow!("Unable to determine provider type")),
         }
     }

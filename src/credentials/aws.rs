@@ -3,7 +3,7 @@ use crate::config::CrowbarConfig;
 use crate::credentials::config::ConfigCredentials;
 use crate::credentials::Credential;
 use crate::credentials::CredentialType;
-// use crate::providers::adfs::AdfsProvider;
+use crate::providers::adfs::AdfsProvider;
 use crate::providers::jumpcloud::JumpcloudProvider;
 use crate::providers::okta::OktaProvider;
 use crate::providers::ProviderType;
@@ -203,10 +203,11 @@ pub fn fetch_aws_credentials(
                 let mut provider = JumpcloudProvider::new(profile)?;
                 provider.new_session()?;
                 provider.fetch_aws_credentials()?
-            } /* ProviderType::Adfs => {
-                  let mut provider = AdfsProvider::new(profile)?;
-                  provider.fetch_aws_credentials()?
-              } */
+            }
+            ProviderType::Adfs => {
+                let mut provider = AdfsProvider::new(profile)?;
+                provider.fetch_aws_credentials()?
+            }
         };
 
         aws_credentials = aws_credentials.write(profile)?;

@@ -9,7 +9,7 @@ use crowbar::credentials::Credential;
 use keyring::Keyring;
 
 #[test]
-fn load_non_existing_credentials() -> Result<()> {
+fn load_non_existing_aws_credentials() -> Result<()> {
     let app_profile = common::short_app_profile_a();
     let creds = AwsCredentials::load(&app_profile)?;
 
@@ -19,7 +19,7 @@ fn load_non_existing_credentials() -> Result<()> {
 }
 
 #[test]
-fn handles_credentials_with_keystore() -> Result<()> {
+fn handles_aws_credentials_with_keystore() -> Result<()> {
     let app_profile = common::short_app_profile_b();
     let creds = common::create_aws_credentials();
 
