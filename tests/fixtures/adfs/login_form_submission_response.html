@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=1"
+    />
+    <meta http-equiv="content-type" content="text/html;charset=UTF-8" />
+    <meta http-equiv="cache-control" content="no-cache,no-store" />
+    <meta http-equiv="pragma" content="no-cache" />
+    <meta http-equiv="expires" content="-1" />
+    <meta name="mswebdialog-title" content="Connecting to ADFS" />
+    <title>Authentication Options</title>
+    <link rel="stylesheet" type="text/css" href="/adfs/portal/css/style.css" />
+    <!-- Style removed-->
+  </head>
+  <body dir="ltr" class="body">
+    <!-- noScript reference removed -->
+    <div id="fullPage">
+      <div id="brandingWrapper" class="float"><div id="branding"></div></div>
+      <div id="contentWrapper" class="float">
+        <div id="content">
+          <div id="header">
+            <img
+              class="logoImage"
+              id="companyLogo"
+              src="/adfs/portal/logo/logo.png"
+              alt="ACME Corp"
+            />
+          </div>
+          <div id="workArea">
+            <div id="authArea" class="groupMargin">
+              <div id="mfaGreeting" class="fieldMargin bigText hidden">
+                Welcome, jdoe@example.com.
+              </div>
+              <div id="mfaGreetingDescription" class="groupMargin">
+                MFA reminder text
+              </div>
+              <div id="loginArea">
+                <div id="introduction" class="groupMargin"></div>
+                <div id="authOptions">
+                  <form
+                    id="options"
+                    method="post"
+                    action="https://adfs.acmecorp.com:443/adfs/ls/IdpInitiatedSignOn.aspx?loginToRp=urn:amazon:webservices&client-request-id=5b1b4e3a-64b4-11eb-8188-3380cae36b1c"
+                  >
+                    <script type="text/javascript">
+                      function SelectOption(option) {
+                        var i = document.getElementById("optionSelection");
+                        i.value = option;
+                        document.forms["options"].submit();
+                        return false;
+                      }
+                    </script>
+                    <input
+                      id="optionSelection"
+                      type="hidden"
+                      name="AuthMethod"
+                    />
+                    <div id="authOptionLinks" class="groupMargin">
+                      <a
+                        class="actionLink"
+                        href="#"
+                        id="AzureMfaAuthentication"
+                        onclick="SelectOption('AzureMfaAuthentication'); return false;"
+                        >Azure Multi-Factor Authentication</a
+                      ><a
+                        class="actionLink"
+                        href="#"
+                        id="AzureMfaServerAuthentication"
+                        onclick="SelectOption('AzureMfaServerAuthentication'); return false;"
+                        >Multi-Factor Authentication</a
+                      >
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div id="footerPlaceholder"></div>
+        </div>
+        <div id="footer">
+          <div id="footerLinks" class="floatReverse">
+            <div><span id="copyright">&#169; 2016 Microsoft</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- JavaScript removed -->
+  </body>
+</html>

@@ -8,7 +8,7 @@ use crate::saml;
 use anyhow::{anyhow, Context, Result};
 use regex::Regex;
 use select::document::Document;
-use select::predicate::{Attr, Name};
+use select::predicate::{Attr, Class, Name};
 use std::collections::HashMap;
 
 mod client;
@@ -77,9 +77,6 @@ impl AdfsProvider {
 
         let document = Document::from(response.as_str());
         let form_content = build_login_form_elements(&username, &password, &document);
-
-        debug!("ADFS form content: {:?}", &form_content);
-
         let submit_url = fetch_submit_url(&document);
 
         let response = self.client.post(submit_url, &form_content)?.text()?;
@@ -156,9 +153,10 @@ fn evaluate_response_state(response: String) -> Result<AdfsResponse> {
         Err(_) => {
             let document = Document::from(response.as_str());
 
-            if let Some(node) = document.find(Attr("name", "AuthMethod")).next() {
-                match node.attr("value") {
-                    Some("VIPAuthenticationProviderWindowsAccountName") => {
+            if let Some(node) = document.find(Class("actionLink")).next() {
+                match node.attr("id") {
+                    Some("VIPAuthenticationProviderWindowsAccountName")
+                    | Some("VIPAuthenticationProviderUPN") => {
                         adfs_response.state = ResponseState::MfaPrompt
                     }
                     Some("AzureMfaAuthentication") | Some("AzureMfaServerAuthentication") => {
@@ -234,9 +232,20 @@ mod test {
     }
 
     #[test]
+    fn extract_mfa_authmethod() -> Result<()> {
+        let response =
+            fs::read_to_string("tests/fixtures/adfs/login_form_submission_response.html")?;
+        let adfs_response = evaluate_response_state(response)?;
+
+        assert_eq!(adfs_response.state, ResponseState::MfaWait);
+
+        Ok(())
+    }
+
+    #[test]
     fn filters_input_params() -> Result<()> {
         let response = r#"
-            <input name="AuthMethod" value="VIPAuthenticationProviderWindowsAccountName" />
+            <input name="AuthMethod" /><div><a class="actionLink" id="VIPAuthenticationProviderWindowsAccountName">MFA text</a></div>
         "#
         .to_string();
 
@@ -244,7 +253,14 @@ mod test {
         assert_eq!(adfs_response.state, ResponseState::MfaPrompt);
 
         let response = r#"
-            <input name="AuthMethod" value="AzureMfaAuthentication" />
+            <input name="AuthMethod" /><div><a class="actionLink" id="VIPAuthenticationProviderUPN">MFA text</a></div>
+        "#.to_string();
+
+        let adfs_response = evaluate_response_state(response)?;
+        assert_eq!(adfs_response.state, ResponseState::MfaPrompt);
+
+        let response = r#"
+            <input name="AuthMethod" /><div><a class="actionLink" id="AzureMfaAuthentication">MFA text</a></div>
         "#
         .to_string();
 
@@ -252,7 +268,7 @@ mod test {
         assert_eq!(adfs_response.state, ResponseState::MfaWait);
 
         let response = r#"
-            <input name="AuthMethod" value="AzureMfaServerAuthentication" />
+            <input name="AuthMethod" /><div><a class="actionLink" id="AzureMfaServerAuthentication">MFA text</a></div>
         "#
         .to_string();
 
@@ -260,7 +276,7 @@ mod test {
         assert_eq!(adfs_response.state, ResponseState::MfaWait);
 
         let response = r#"
-            <input name="VerificationCode" value="" />
+            <input name="VerificationCode" />
         "#
         .to_string();
 
@@ -268,7 +284,7 @@ mod test {
         assert_eq!(adfs_response.state, ResponseState::MfaPrompt);
 
         let response = r#"
-            <input name="SomeOtherInput" value="Value" />
+            <input name="SomeOtherInput" /><div><a class="actionLink" id="Value">Some text</a></div>
         "#
         .to_string();
 
