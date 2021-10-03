@@ -72,7 +72,7 @@ impl AdfsProvider {
         let submit_url = fetch_submit_url(&document);
 
         let response = self.client.post(submit_url, &form_content)?;
-        let adfs_response = evaluate_response_state(response.text()?)?;
+        let adfs_response = evaluate_response_state(response.text()?, profile.role.clone())?;
 
         let credentials = match adfs_response.state {
             ResponseState::Success => adfs_response.credentials.unwrap(),
@@ -129,10 +129,10 @@ fn fetch_submit_url(document: &Document) -> &str {
     url.expect("Missing submission URL for authentication form")
 }
 
-fn evaluate_response_state(response: String) -> Result<AdfsResponse> {
+fn evaluate_response_state(response: String, role: Option<String>) -> Result<AdfsResponse> {
     let mut adfs_response = AdfsResponse::default();
 
-    match saml::get_credentials_from_saml(response.clone()) {
+    match saml::get_credentials_from_saml(response.clone(), role) {
         Ok(credentials) => {
             adfs_response.credentials = Some(credentials);
             adfs_response.state = ResponseState::Success;
@@ -224,7 +224,7 @@ mod test {
         "#
         .to_string();
 
-        let adfs_response = evaluate_response_state(response)?;
+        let adfs_response = evaluate_response_state(response, None)?;
         assert_eq!(adfs_response.state, ResponseState::MfaPrompt);
 
         let response = r#"
@@ -232,7 +232,7 @@ mod test {
         "#
         .to_string();
 
-        let adfs_response = evaluate_response_state(response)?;
+        let adfs_response = evaluate_response_state(response, None)?;
         assert_eq!(adfs_response.state, ResponseState::MfaWait);
 
         let response = r#"
@@ -240,7 +240,7 @@ mod test {
         "#
         .to_string();
 
-        let adfs_response = evaluate_response_state(response)?;
+        let adfs_response = evaluate_response_state(response, None)?;
         assert_eq!(adfs_response.state, ResponseState::MfaWait);
 
         let response = r#"
@@ -248,7 +248,7 @@ mod test {
         "#
         .to_string();
 
-        let adfs_response = evaluate_response_state(response)?;
+        let adfs_response = evaluate_response_state(response, None)?;
         assert_eq!(adfs_response.state, ResponseState::MfaPrompt);
 
         let response = r#"
@@ -256,7 +256,7 @@ mod test {
         "#
         .to_string();
 
-        let adfs_response = evaluate_response_state(response)?;
+        let adfs_response = evaluate_response_state(response, None)?;
         assert_eq!(adfs_response.state, ResponseState::Error);
 
         Ok(())

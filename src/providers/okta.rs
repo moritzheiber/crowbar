@@ -68,7 +68,7 @@ impl OktaProvider {
 
         debug!("Text for SAML response: {:#?}", input);
 
-        let credentials = saml::get_credentials_from_saml(input)?;
+        let credentials = saml::get_credentials_from_saml(input, profile.role.clone())?;
         trace!("Credentials: {:?}", credentials);
         Ok(credentials)
     }

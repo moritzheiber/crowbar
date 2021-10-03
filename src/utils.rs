@@ -62,19 +62,29 @@ pub fn prompt_mfa() -> Result<String> {
         .with_context(|| "Failed to get MFA input")
 }
 
-pub fn select_role(roles: HashSet<AwsRole>) -> Result<AwsRole> {
-    let selection = match roles.clone() {
-        r if r.len() < 2 => 0,
-        r => Select::with_theme(&SimpleTheme)
-            .with_prompt("Select the role to assume:")
-            .default(0)
-            .items(
-                &r.iter()
-                    .map(|r| r.clone().role_arn)
-                    .collect::<Vec<String>>(),
-            )
-            .interact()
-            .unwrap(),
+pub fn select_role(roles: HashSet<AwsRole>, role: Option<String>) -> Result<AwsRole> {
+    let selection = match role {
+        None => match roles.clone() {
+            r if r.len() < 2 => 0,
+            r => Select::with_theme(&SimpleTheme)
+                .with_prompt("Select the role to assume:")
+                .default(0)
+                .items(&r.iter().map(|r| r.clone().role_arn) .collect::<Vec<String>>())
+                .interact()
+                .unwrap(),
+        },
+        Some(role) => match roles.iter().position(|r| r.role_arn == role) {
+            None => match roles.clone() {
+                r if r.len() < 2 => 0,
+                r => Select::with_theme(&SimpleTheme)
+                    .with_prompt(&format!("Role {} not found; select the role to assume:", role).to_string())
+                    .default(0)
+                    .items(&r.iter().map(|r| r.clone().role_arn) .collect::<Vec<String>>())
+                    .interact()
+                    .unwrap(),
+            },
+            Some(selection) => selection,
+        },
     };
 
     Ok(roles.iter().collect::<Vec<&AwsRole>>()[selection].to_owned())
