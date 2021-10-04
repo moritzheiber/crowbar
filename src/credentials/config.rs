@@ -28,7 +28,7 @@ impl Credential<AppProfile, ConfigCredentials> for ConfigCredentials {
 
         debug!("Trying to load credentials from ID {}", &service);
 
-        let password = Keyring::new(&service, &username)
+        let password = Keyring::new(&service, username)
             .get_password()
             .map_err(|e| anyhow!("{}", e))?;
 
@@ -48,7 +48,7 @@ impl Credential<AppProfile, ConfigCredentials> for ConfigCredentials {
             profile.base_url()?.host().unwrap()
         );
 
-        Keyring::new(&service, &username)
+        Keyring::new(service, username)
             .set_password(password)
             .map_err(|e| anyhow!("{}", e))?;
 

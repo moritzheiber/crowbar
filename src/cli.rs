@@ -154,10 +154,7 @@ fn get_matches() -> ArgMatches<'static> {
 pub fn config() -> Result<CliConfig> {
     let matches = get_matches();
     let cli_action = select_action(&matches);
-    let location = match matches.value_of("config") {
-        Some(c) => Some(c.to_owned()),
-        _ => None,
-    };
+    let location = matches.value_of("config").map(|c| c.to_owned());
     let log_level_from_matches = matches.value_of("log-level").unwrap();
 
     Ok(CliConfig {

@@ -31,7 +31,7 @@ impl AwsCredentials {
     pub fn is_expired(&self) -> bool {
         match &self.expiration {
             Some(dt) => {
-                let expiration = DateTime::parse_from_rfc3339(&dt).unwrap();
+                let expiration = DateTime::parse_from_rfc3339(dt).unwrap();
                 expiration.signed_duration_since(Utc::now()).num_seconds() < SECONDS_TO_EXPIRATION
             }
             _ => false,
@@ -70,13 +70,13 @@ impl From<HashMap<String, Option<String>>> for AwsCredentials {
     }
 }
 
-impl Into<HashMap<String, Option<String>>> for AwsCredentials {
-    fn into(self) -> HashMap<String, Option<String>> {
+impl From<AwsCredentials> for HashMap<String, Option<String>> {
+    fn from(creds: AwsCredentials) -> HashMap<String, Option<String>> {
         [
-            ("access_key_id".to_string(), self.access_key_id),
-            ("secret_access_key".to_string(), self.secret_access_key),
-            ("session_token".to_string(), self.session_token),
-            ("expiration".to_string(), self.expiration),
+            ("access_key_id".to_string(), creds.access_key_id),
+            ("secret_access_key".to_string(), creds.secret_access_key),
+            ("session_token".to_string(), creds.session_token),
+            ("expiration".to_string(), creds.expiration),
         ]
         .iter()
         .cloned()
@@ -190,7 +190,7 @@ pub fn fetch_aws_credentials(
             .and_then(|creds| creds.delete(profile).map_err(|e| debug!("{}", e)));
     }
 
-    let mut aws_credentials = AwsCredentials::load(&profile).unwrap_or_default();
+    let mut aws_credentials = AwsCredentials::load(profile).unwrap_or_default();
 
     if !aws_credentials.valid() || aws_credentials.is_expired() {
         aws_credentials = match profile.provider {

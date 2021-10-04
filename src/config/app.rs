@@ -35,10 +35,7 @@ impl<'a> From<&ArgMatches<'a>> for AppProfile {
             name: action.value_of("profile").unwrap().to_owned(),
             username: action.value_of("username").unwrap().to_owned(),
             url: action.value_of("url").unwrap().to_owned(),
-            role: match action.value_of("role") {
-                Some(r) => Some(r.to_owned()),
-                None => None,
-            },
+            role: action.value_of("role").map(|r| r.to_owned()),
             provider: ProviderType::from_str(action.value_of("provider").unwrap()).unwrap(),
         }
     }
