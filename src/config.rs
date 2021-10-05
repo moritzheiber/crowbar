@@ -56,7 +56,7 @@ impl CrowbarConfig {
     pub fn add_profile(mut self, profile: &AppProfile) -> Result<CrowbarConfig> {
         // We use our own function here instead of contains() to only
         // filter on the name attribute
-        if find_duplicate(&self.profiles, &profile) {
+        if find_duplicate(&self.profiles, profile) {
             return Err(anyhow!(
                 "Profile with the name {} already exists",
                 profile.name

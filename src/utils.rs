@@ -18,9 +18,9 @@ pub enum LevelFilter {
     Trace,
 }
 
-impl Into<LogLevelFilter> for LevelFilter {
-    fn into(self) -> LogLevelFilter {
-        match self {
+impl From<LevelFilter> for LogLevelFilter {
+    fn from(level_filter: LevelFilter) -> LogLevelFilter {
+        match level_filter {
             LevelFilter::Debug => LogLevelFilter::Debug,
             LevelFilter::Warn => LogLevelFilter::Warn,
             LevelFilter::Error => LogLevelFilter::Error,

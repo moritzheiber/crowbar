@@ -33,7 +33,7 @@ impl OktaProvider {
     pub fn new_session(&mut self) -> Result<&Self> {
         let profile = &self.profile;
         let config_credentials =
-            ConfigCredentials::load(profile).or_else(|_| ConfigCredentials::new(profile))?;
+            ConfigCredentials::load(profile).or_else(|_| ConfigCredentials::create(profile))?;
 
         let username = &profile.username;
         let password = &config_credentials.password;

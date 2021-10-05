@@ -139,13 +139,13 @@ impl Client {
         links: &HashMap<String, Links>,
         req: &VerificationRequest,
     ) -> Result<Response> {
-        let mut verification_response = self.poll(links, &req)?;
+        let mut verification_response = self.poll(links, req)?;
         let time_at_execution = Utc::now();
         let mut tick = String::new();
         let term = Term::stderr();
 
         while timeout_not_reached(time_at_execution) {
-            verification_response = self.poll(links, &req)?;
+            verification_response = self.poll(links, req)?;
             term.clear_last_lines(1)?;
 
             match verification_response.factor_result.clone() {
