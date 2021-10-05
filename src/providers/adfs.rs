@@ -55,7 +55,7 @@ impl AdfsProvider {
         let profile = &self.profile;
 
         let config_credentials =
-            ConfigCredentials::load(profile).or_else(|_| ConfigCredentials::new(profile))?;
+            ConfigCredentials::load(profile).or_else(|_| ConfigCredentials::create(profile))?;
 
         let username = self.profile.username.clone();
         let password = config_credentials.password;

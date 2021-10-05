@@ -69,7 +69,7 @@ impl JumpcloudProvider {
         let profile = &self.profile;
 
         let config_credentials =
-            ConfigCredentials::load(profile).or_else(|_| ConfigCredentials::new(profile))?;
+            ConfigCredentials::load(profile).or_else(|_| ConfigCredentials::create(profile))?;
 
         let response: XsrfResponse = self
             .client

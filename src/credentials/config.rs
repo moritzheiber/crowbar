@@ -11,7 +11,7 @@ pub struct ConfigCredentials {
 }
 
 impl Credential<AppProfile, ConfigCredentials> for ConfigCredentials {
-    fn new(profile: &AppProfile) -> Result<ConfigCredentials> {
+    fn create(profile: &AppProfile) -> Result<ConfigCredentials> {
         let credential_type = CredentialType::Config;
         let password = utils::prompt_password(profile)?;
 

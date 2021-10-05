@@ -104,7 +104,7 @@ impl fmt::Display for AwsCredentials {
 }
 
 impl Credential<AppProfile, AwsCredentials> for AwsCredentials {
-    fn new(_profile: &AppProfile) -> Result<AwsCredentials> {
+    fn create(_profile: &AppProfile) -> Result<AwsCredentials> {
         Ok(AwsCredentials::default())
     }
 
