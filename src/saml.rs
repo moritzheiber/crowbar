@@ -51,7 +51,7 @@ impl FromStr for Response {
     }
 }
 
-pub fn get_credentials_from_saml(input: String) -> Result<AwsCredentials> {
+pub fn get_credentials_from_saml(input: String, role: Option<String>) -> Result<AwsCredentials> {
     let saml = extract_saml_assertion(&input)?;
 
     debug!("SAML response: {:?}", &saml);
@@ -60,7 +60,7 @@ pub fn get_credentials_from_saml(input: String) -> Result<AwsCredentials> {
 
     debug!("SAML Roles: {:?}", &roles);
 
-    let role = utils::select_role(roles)?;
+    let role = utils::select_role(roles, role)?;
 
     let assumption_response =
         RoleManager::assume_role(&role, saml.raw).with_context(|| "Error assuming role")?;
@@ -71,6 +71,7 @@ pub fn get_credentials_from_saml(input: String) -> Result<AwsCredentials> {
         })?,
     ))
 }
+
 pub fn extract_saml_assertion(text: &str) -> Result<Response> {
     let document = Document::from(text);
     let node = document.find(Attr("name", "SAMLResponse")).next();
