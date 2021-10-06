@@ -69,7 +69,11 @@ pub fn select_role(roles: HashSet<AwsRole>, role: Option<String>) -> Result<AwsR
             r => Select::with_theme(&SimpleTheme)
                 .with_prompt("Select the role to assume:")
                 .default(0)
-                .items(&r.iter().map(|r| r.clone().role_arn) .collect::<Vec<String>>())
+                .items(
+                    &r.iter()
+                        .map(|r| r.clone().role_arn)
+                        .collect::<Vec<String>>(),
+                )
                 .interact()
                 .unwrap(),
         },
@@ -77,9 +81,15 @@ pub fn select_role(roles: HashSet<AwsRole>, role: Option<String>) -> Result<AwsR
             None => match roles.clone() {
                 r if r.len() < 2 => 0,
                 r => Select::with_theme(&SimpleTheme)
-                    .with_prompt(&format!("Role {} not found; select the role to assume:", role).to_string())
+                    .with_prompt(
+                        &format!("Role {} not found; select the role to assume:", role).to_string(),
+                    )
                     .default(0)
-                    .items(&r.iter().map(|r| r.clone().role_arn) .collect::<Vec<String>>())
+                    .items(
+                        &r.iter()
+                            .map(|r| r.clone().role_arn)
+                            .collect::<Vec<String>>(),
+                    )
                     .interact()
                     .unwrap(),
             },
