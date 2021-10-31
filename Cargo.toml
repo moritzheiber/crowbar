@@ -1,6 +1,6 @@
 [package]
 name = "crowbar"
-version = "0.3.7"
+version = "0.3.9"
 authors = [
 "Moritz Heiber <hello@heiber.im>",
 ]
