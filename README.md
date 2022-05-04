@@ -12,7 +12,7 @@ $ AWS_PROFILE=<profile-name> aws ec2 describe-instances
 $ crowbar exec <profile-name> -- aws ec2 describe-instances
 ```
 
-It'll ask you for your IdP's password and to verify your credential request with [MFA](https://en.wikipedia.org/wiki/Multi-factor_authentication). The credentials you enter are cashed securely in your OS keystore.
+It'll ask you for your IdP's password and to verify your credential request with [MFA](https://en.wikipedia.org/wiki/Multi-factor_authentication). The credentials you enter are cached securely in your OS keystore.
 
 _Note: Hover over the app that's associated with your AWS account in your IdP's dashboard and copy its link._
 
