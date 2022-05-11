@@ -7,8 +7,8 @@ on:
 
 jobs:
   build:
-    name: Build on macOS
-    runs-on: macos-latest
+    name: Build on Windows
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v3
       - name: Install Rust stable
@@ -28,8 +28,8 @@ jobs:
           name: binary
           path: target/release/crowbar.exe
   test:
-    name: Test on macOS
-    runs-on: macos-latest
+    name: Test on Windows
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v3
       - name: Install Rust stable
@@ -47,7 +47,7 @@ jobs:
           cargo test --release --locked
   release:
     runs-on: windows-latest
-    needs: build-test
+    needs: [build, test]
     steps:
       - name: Set the release tag
         id: set_tag
