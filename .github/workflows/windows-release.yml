@@ -10,7 +10,7 @@ jobs:
     name: Build and test on Windows
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Restore cargo registry cache
         uses: actions/cache@v1
         with:
@@ -58,7 +58,7 @@ jobs:
         id: set_tag
         run: echo ::set-output name=RELEASE_TAG::${GITHUB_REF/refs\/tags\/v/}
         shell: bash
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Restore artifact from previous job
         uses: actions/download-artifact@v1
         with:
