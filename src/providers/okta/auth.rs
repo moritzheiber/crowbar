@@ -239,7 +239,7 @@ mod test {
             NaiveDateTime::parse_from_str("2038-01-01T10:10:10", "%Y-%m-%dT%H:%M:%S")?,
             Utc,
         );
-        assert_eq!(false, timeout_not_reached(dt));
+        assert!(!timeout_not_reached(dt));
         Ok(())
     }
 
@@ -247,7 +247,7 @@ mod test {
     fn should_not_reach_timeout() -> Result<()> {
         let dt = Utc::now();
         thread::sleep(Duration::from_secs(3));
-        assert_eq!(true, timeout_not_reached(dt));
+        assert!(timeout_not_reached(dt));
         Ok(())
     }
 

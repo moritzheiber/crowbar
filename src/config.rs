@@ -126,8 +126,8 @@ mod test {
     #[test]
     fn should_detect_profile_duplicate() {
         let profile_a_vec = vec![profile_a()];
-        assert_eq!(true, find_duplicate(&profile_a_vec, &profile_a()));
-        assert_eq!(false, find_duplicate(&profile_a_vec, &profile_b()))
+        assert!(find_duplicate(&profile_a_vec, &profile_a()));
+        assert!(!find_duplicate(&profile_a_vec, &profile_b()))
     }
 
     #[test]

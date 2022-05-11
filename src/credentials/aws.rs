@@ -120,7 +120,7 @@ impl Credential<AppProfile, AwsCredentials> for AwsCredentials {
         for key in default_map.keys() {
             let _res = credential_map.insert(
                 key.clone(),
-                match keyring::Entry::new(&service, &key).get_password() {
+                match keyring::Entry::new(&service, key).get_password() {
                     Ok(s) => Some(s),
                     Err(e) => {
                         debug!("Error while fetching credentials: {}", e);
@@ -140,8 +140,8 @@ impl Credential<AppProfile, AwsCredentials> for AwsCredentials {
 
         for (key, secret) in credential_map.iter() {
             if let Some(s) = secret {
-                keyring::Entry::new(&service, &key)
-                    .set_password(&s)
+                keyring::Entry::new(&service, key)
+                    .set_password(s)
                     .map_err(|e| anyhow!("{}", e))?;
             }
         }
@@ -154,7 +154,7 @@ impl Credential<AppProfile, AwsCredentials> for AwsCredentials {
         let service = credentials_as_service(profile);
 
         for (key, _) in credential_map.iter() {
-            let keyring = keyring::Entry::new(&service, &key);
+            let keyring = keyring::Entry::new(&service, key);
             let pass = keyring.get_password();
 
             if pass.is_ok() {
@@ -233,15 +233,15 @@ mod test {
 
     #[test]
     fn shows_if_expired() {
-        assert_eq!(false, create_credentials().is_expired());
-        assert_eq!(true, create_expired_credentials().is_expired())
+        assert!(!create_credentials().is_expired());
+        assert!(create_expired_credentials().is_expired())
     }
 
     #[test]
     #[should_panic]
     fn shows_if_not_expired() {
-        assert_eq!(true, create_credentials().is_expired());
-        assert_eq!(false, create_credentials().is_expired())
+        assert!(create_credentials().is_expired());
+        assert!(!create_credentials().is_expired())
     }
 
     #[test]
