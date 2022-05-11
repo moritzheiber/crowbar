@@ -23,7 +23,7 @@ jobs:
         run: |
           cargo build --release --locked
       - name: Upload build artifact
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v3
         with:
           name: binary
           path: target/release/crowbar.exe
@@ -55,14 +55,14 @@ jobs:
         shell: bash
       - uses: actions/checkout@v3
       - name: Restore artifact from previous job
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v3
         with:
           name: binary
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v1-release
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: binary/crowbar.exe
+          file: crowbar.exe
           asset_name: crowbar-x86_64-windows.exe
           tag: ${{ github.ref }}
           overwrite: true

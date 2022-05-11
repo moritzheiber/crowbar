@@ -72,7 +72,7 @@ jobs:
         uses: svenstaro/upload-release-action@v1-release
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: binary/crowbar
+          file: crowbar
           asset_name: crowbar-x86_64-linux
           tag: ${{ github.ref }}
           overwrite: true

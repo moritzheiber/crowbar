@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -Eeux -o pipefail
+
 if [ "${GITHUB_ACTIONS_OS}" == "linux" ] ; then
     # https://unix.stackexchange.com/a/548005
     eval "$(dbus-launch --sh-syntax)" && \

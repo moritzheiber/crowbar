@@ -23,7 +23,7 @@ jobs:
         run: |
           cargo build --release --locked
       - name: Upload build artifact
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v3
         with:
           name: binary
           path: target/release/crowbar
@@ -54,14 +54,14 @@ jobs:
         run: echo ::set-output name=RELEASE_TAG::${GITHUB_REF/refs\/tags\/v/}
         shell: bash
       - name: Restore artifact from previous job
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v3
         with:
           name: binary
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v1-release
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: binary/crowbar
+          file: crowbar
           asset_name: crowbar-x86_64-macos
           tag: ${{ github.ref }}
           overwrite: true
