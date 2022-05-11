@@ -29,7 +29,7 @@ jobs:
         run: |
           cargo build --release --locked
       - name: Publish to crates.io
-        run: cargo publish -v --locked --token ${{ secrets.CRATES_IO_TOKEN }}
+        run: cargo publish -v --no-verify --locked --token ${{ secrets.CRATES_IO_TOKEN }}
       - name: Upload build artifact
         uses: actions/upload-artifact@v3
         with:

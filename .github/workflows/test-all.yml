@@ -35,7 +35,6 @@ jobs:
           echo "GITHUB_ACTIONS_OS=linux" >> $GITHUB_ENV
         if: runner.os == 'Linux'
       - name: Build
-        shell: bash
         env:
           RUST_BACKTRACE: "full"
           GITHUB_ACTIONS_OS: "${{ env.GITHUB_ACTIONS_OS }}"
