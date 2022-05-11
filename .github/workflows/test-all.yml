@@ -12,11 +12,13 @@ on:
 jobs:
   test:
     if: "!contains(github.event.commits[0].message, '[ci skip]')"
+    env:
+      RUST_BACKTRACE: "full"
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: true
       matrix:
-        os: [macos-latest, windows-2019, ubuntu-latest]
+        os: [macos-latest, windows-latest, ubuntu-latest]
 
     steps:
       - uses: actions/checkout@v2
@@ -32,14 +34,16 @@ jobs:
           DEBIAN_FRONTEND: "noninteractive"
         run: |
           sudo apt update && sudo apt install -y libdbus-1-dev gnome-keyring dbus-x11 libssl-dev
-          echo "GITHUB_ACTIONS_OS=linux" >> $GITHUB_ENV
         if: runner.os == 'Linux'
-      - name: Build
-        shell: bash
-        env:
-          RUST_BACKTRACE: "full"
-          GITHUB_ACTIONS_OS: "${{ env.GITHUB_ACTIONS_OS }}"
+      - name: Test on Linux
+        if: runner.os == 'Linux'
         run: |
           cargo fmt -- --check
           cargo clippy --release
           ci/test.sh
+      - name: Test on Windows/macOS
+        if: runner.os != 'Linux'
+        run: |
+          cargo fmt -- --check
+          cargo clippy --release
+          cargo test --release --locked
