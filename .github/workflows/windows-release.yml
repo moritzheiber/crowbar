@@ -46,7 +46,7 @@ jobs:
           cargo clippy --release
           cargo test --release --locked
       - name: Upload build artifact
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v3
         with:
           name: binary
           path: target/release/crowbar.exe

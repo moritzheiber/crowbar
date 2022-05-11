@@ -53,7 +53,7 @@ jobs:
       - name: Publish to crates.io
         run: cargo publish -v --locked --token ${{ secrets.CRATES_IO_TOKEN }}
       - name: Upload build artifact
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v3
         with:
           name: binary
           path: target/release/crowbar
