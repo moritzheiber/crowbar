@@ -7,7 +7,6 @@ use anyhow::{anyhow, Result};
 use crowbar::credentials::aws;
 use crowbar::credentials::aws::AwsCredentials;
 use crowbar::credentials::Credential;
-use keyring::Keyring;
 
 #[test]
 fn load_non_existing_credentials() -> Result<()> {
@@ -27,7 +26,7 @@ fn handles_credentials_with_keystore() -> Result<()> {
     let creds = creds.write(&app_profile)?;
 
     let service = aws::credentials_as_service(&app_profile);
-    let value = Keyring::new(&service, "access_key_id")
+    let value = keyring::Entry::new(&service, "access_key_id")
         .get_password()
         .map_err(|_e| anyhow!("Test failed!"))?;
 

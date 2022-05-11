@@ -12,7 +12,6 @@ use aws_smithy_types::date_time::Format;
 use anyhow::{anyhow, Result};
 use aws_sdk_sts::model::Credentials;
 use chrono::{DateTime, Utc};
-use keyring::Keyring;
 use std::collections::HashMap;
 use std::{fmt, str};
 
@@ -121,7 +120,7 @@ impl Credential<AppProfile, AwsCredentials> for AwsCredentials {
         for key in default_map.keys() {
             let _res = credential_map.insert(
                 key.clone(),
-                match Keyring::new(&service, key).get_password() {
+                match keyring::Entry::new(&service, &key).get_password() {
                     Ok(s) => Some(s),
                     Err(e) => {
                         debug!("Error while fetching credentials: {}", e);
@@ -140,9 +139,11 @@ impl Credential<AppProfile, AwsCredentials> for AwsCredentials {
         debug!("Saving AWS credentials for {}", &service);
 
         for (key, secret) in credential_map.iter() {
-            Keyring::new(&service, key)
-                .set_password(&secret.clone().unwrap())
-                .map_err(|e| anyhow!("{}", e))?;
+            if let Some(s) = secret {
+                keyring::Entry::new(&service, &key)
+                    .set_password(&s)
+                    .map_err(|e| anyhow!("{}", e))?;
+            }
         }
 
         Ok(self)
@@ -153,11 +154,11 @@ impl Credential<AppProfile, AwsCredentials> for AwsCredentials {
         let service = credentials_as_service(profile);
 
         for (key, _) in credential_map.iter() {
-            let keyring = Keyring::new(&service, key);
+            let keyring = keyring::Entry::new(&service, &key);
             let pass = keyring.get_password();
 
             if pass.is_ok() {
-                debug!("Deleting secret for {} at service {}", key, &service);
+                debug!("Deleting secret for {} at service {}", &key, &service);
                 keyring.delete_password().map_err(|e| anyhow!("{}", e))?
             }
         }

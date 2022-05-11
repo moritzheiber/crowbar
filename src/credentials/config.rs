@@ -2,7 +2,6 @@ use crate::config::app::AppProfile;
 use crate::credentials::{Credential, CredentialType};
 use crate::utils;
 use anyhow::{anyhow, Result};
-use keyring::Keyring;
 
 #[derive(Clone)]
 pub struct ConfigCredentials {
@@ -24,11 +23,10 @@ impl Credential<AppProfile, ConfigCredentials> for ConfigCredentials {
     fn load(profile: &AppProfile) -> Result<ConfigCredentials> {
         let credential_type = CredentialType::Config;
         let service = format!("crowbar::{}::{}", &credential_type, profile);
-        let username = &profile.username;
 
         debug!("Trying to load credentials from ID {}", &service);
 
-        let password = Keyring::new(&service, username)
+        let password = keyring::Entry::new(&service, &profile.username)
             .get_password()
             .map_err(|e| anyhow!("{}", e))?;
 
@@ -39,17 +37,15 @@ impl Credential<AppProfile, ConfigCredentials> for ConfigCredentials {
     }
 
     fn write(self, profile: &AppProfile) -> Result<ConfigCredentials> {
-        let service = &format!("crowbar::{}::{}", self.credential_type, profile);
-        let username = &profile.username;
-        let password = &self.password;
+        let service = format!("crowbar::{}::{}", self.credential_type, profile);
 
         debug!(
-            "Saving Okta credentials for {}",
+            "Saving credentials for {}",
             profile.base_url()?.host().unwrap()
         );
 
-        Keyring::new(service, username)
-            .set_password(password)
+        keyring::Entry::new(&service, &profile.username)
+            .set_password(&self.password)
             .map_err(|e| anyhow!("{}", e))?;
 
         Ok(self)
@@ -57,10 +53,12 @@ impl Credential<AppProfile, ConfigCredentials> for ConfigCredentials {
 
     fn delete(self, profile: &AppProfile) -> Result<ConfigCredentials> {
         let service = format!("crowbar::{}::{}", self.credential_type, profile);
-        let username = &profile.username;
-        let keyring = Keyring::new(&service, username);
+        let keyring = keyring::Entry::new(&service, &profile.username);
 
-        debug!("Deleting credentials for {} at {}", username, &service);
+        debug!(
+            "Deleting credentials for {} at {}",
+            &profile.username, &service
+        );
 
         let pass = keyring.get_password();
 

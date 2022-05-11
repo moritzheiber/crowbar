@@ -4,7 +4,6 @@ extern crate keyring;
 use crowbar::config::app::AppProfile;
 use crowbar::credentials::aws;
 use crowbar::credentials::aws::AwsCredentials;
-use keyring::Keyring;
 use std::collections::HashMap;
 
 #[allow(dead_code)]
@@ -84,6 +83,8 @@ pub fn clean_keystore(profile: &AppProfile, creds: AwsCredentials) {
     let service = aws::credentials_as_service(profile);
 
     for key in credential_map.keys() {
-        Keyring::new(&service, key).delete_password().unwrap()
+        keyring::Entry::new(&service, key)
+            .delete_password()
+            .unwrap()
     }
 }
