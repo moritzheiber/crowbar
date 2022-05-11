@@ -7,8 +7,6 @@ if [ "${GITHUB_ACTIONS_OS}" == "linux" ] ; then
     eval "$(printf '\n' | gnome-keyring-daemon --unlock)" && \
     eval "$(printf '\n' | /usr/bin/gnome-keyring-daemon --start)" && \
 
-    cargo test --release --locked
-
-else
-    cargo test --release --locked
 fi
+
+cargo test --release --locked

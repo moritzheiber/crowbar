@@ -7,11 +7,12 @@ use crate::providers::adfs::AdfsProvider;
 use crate::providers::jumpcloud::JumpcloudProvider;
 use crate::providers::okta::OktaProvider;
 use crate::providers::ProviderType;
+use aws_smithy_types::date_time::Format;
 
 use anyhow::{anyhow, Result};
+use aws_sdk_sts::model::Credentials;
 use chrono::{DateTime, Utc};
 use keyring::Keyring;
-use rusoto_sts::Credentials;
 use std::collections::HashMap;
 use std::{fmt, str};
 
@@ -50,10 +51,12 @@ impl From<Credentials> for AwsCredentials {
     fn from(creds: Credentials) -> Self {
         AwsCredentials {
             version: 1,
-            access_key_id: Some(creds.access_key_id),
-            secret_access_key: Some(creds.secret_access_key),
-            session_token: Some(creds.session_token),
-            expiration: Some(creds.expiration),
+            access_key_id: creds.access_key_id().and_then(|c| Some(c.to_owned())),
+            secret_access_key: creds.secret_access_key().and_then(|sk| Some(sk.to_owned())),
+            session_token: creds.session_token().and_then(|t| Some(t.to_owned())),
+            expiration: creds
+                .expiration()
+                .and_then(|t| t.fmt(Format::DateTime).ok()),
         }
     }
 }
@@ -223,6 +226,8 @@ pub fn credentials_as_service(profile: &AppProfile) -> String {
 #[cfg(test)]
 mod test {
     use super::*;
+    use aws_smithy_types::DateTime;
+    use std::time::SystemTime;
 
     #[test]
     fn shows_if_expired() {
@@ -286,12 +291,12 @@ mod test {
     }
 
     fn create_real_aws_credentials() -> Credentials {
-        Credentials {
-            access_key_id: "some_key".to_string(),
-            secret_access_key: "some_secret".to_string(),
-            session_token: "some_token".to_string(),
-            expiration: "2038-01-01T10:10:10Z".to_string(),
-        }
+        Credentials::builder()
+            .access_key_id("some_key")
+            .secret_access_key("some_secret")
+            .session_token("some_token")
+            .expiration(DateTime::from(SystemTime::now()))
+            .build()
     }
 
     fn hashmap_credentials() -> HashMap<String, Option<String>> {

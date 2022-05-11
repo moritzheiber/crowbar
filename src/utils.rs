@@ -4,7 +4,6 @@ use crate::config::app::AppProfile;
 use anyhow::{Context, Result};
 use dialoguer::{theme::SimpleTheme, Select};
 use dialoguer::{Input, PasswordInput};
-use log::LevelFilter as LogLevelFilter;
 use std::collections::HashSet;
 use std::env::var;
 
@@ -18,15 +17,15 @@ pub enum LevelFilter {
     Trace,
 }
 
-impl From<LevelFilter> for LogLevelFilter {
-    fn from(level_filter: LevelFilter) -> LogLevelFilter {
+impl From<LevelFilter> for log::LevelFilter {
+    fn from(level_filter: LevelFilter) -> log::LevelFilter {
         match level_filter {
-            LevelFilter::Debug => LogLevelFilter::Debug,
-            LevelFilter::Warn => LogLevelFilter::Warn,
-            LevelFilter::Error => LogLevelFilter::Error,
-            LevelFilter::Trace => LogLevelFilter::Trace,
-            LevelFilter::Info => LogLevelFilter::Info,
-            LevelFilter::Off => LogLevelFilter::Off,
+            LevelFilter::Debug => log::LevelFilter::Debug,
+            LevelFilter::Warn => log::LevelFilter::Warn,
+            LevelFilter::Error => log::LevelFilter::Error,
+            LevelFilter::Trace => log::LevelFilter::Trace,
+            LevelFilter::Info => log::LevelFilter::Info,
+            LevelFilter::Off => log::LevelFilter::Off,
         }
     }
 }

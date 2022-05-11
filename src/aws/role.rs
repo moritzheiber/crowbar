@@ -1,8 +1,9 @@
+use crate::aws::AWS_DEFAULT_REGION;
 use anyhow::{anyhow, Error, Result};
-use rusoto_core::request::HttpClient;
-use rusoto_core::Region;
-use rusoto_credential::StaticProvider;
-use rusoto_sts::{AssumeRoleWithSAMLRequest, AssumeRoleWithSAMLResponse, Sts, StsClient};
+use aws_config::meta::region::RegionProviderChain;
+use aws_config::provider_config::ProviderConfig;
+use aws_sdk_sts::output::AssumeRoleWithSamlOutput;
+use aws_sdk_sts::Region;
 
 use std::str::FromStr;
 use std::{fmt, str};
@@ -44,27 +45,19 @@ pub fn assume_role(
         role_arn,
     }: &Role,
     saml_assertion: String,
-) -> Result<AssumeRoleWithSAMLResponse, Error> {
-    let req = AssumeRoleWithSAMLRequest {
-        duration_seconds: None,
-        policy: None,
-        policy_arns: None,
-        principal_arn: provider_arn.to_owned(),
-        role_arn: role_arn.to_owned(),
-        saml_assertion,
-    };
-
-    let provider = StaticProvider::new_minimal(String::from(""), String::from(""));
-    let client = StsClient::new_with(HttpClient::new()?, provider, Region::default());
-
-    trace!("Assuming role: {:?}", &req);
-
-    let mut runtime = Runtime::new()?;
+) -> Result<AssumeRoleWithSamlOutput, Error> {
+    let runtime = Runtime::new()?;
     runtime.block_on(async {
-        client
-            .assume_role_with_saml(req)
-            .await
-            .map_err(|e| e.into())
+        let region_provider =
+            RegionProviderChain::default_provider().or_else(Region::new(AWS_DEFAULT_REGION));
+        let config = aws_config::from_env().region(region_provider).load().await;
+        let client = aws_sdk_sts::Client::new(&config)
+            .assume_role_with_saml()
+            .principal_arn(provider_arn)
+            .role_arn(role_arn)
+            .saml_assertion(saml_assertion);
+
+        client.send().await.map_err(|e| e.into())
     })
 }
 

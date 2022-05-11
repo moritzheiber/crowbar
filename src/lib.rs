@@ -6,12 +6,11 @@ extern crate dialoguer;
 extern crate keyring;
 #[macro_use]
 extern crate log;
+extern crate aws_config;
+extern crate aws_sdk_sts;
 extern crate env_logger;
 extern crate regex;
 extern crate reqwest;
-extern crate rusoto_core;
-extern crate rusoto_credential;
-extern crate rusoto_sts;
 #[macro_use]
 extern crate serde_derive;
 extern crate dirs_next;
@@ -41,15 +40,16 @@ use crate::credentials::aws as CredentialsProvider;
 use crate::exec::Executor;
 use anyhow::Result;
 use env_logger::{Builder, WriteStyle};
-use std::io::Write;
 
 pub fn run() -> Result<()> {
     let cli = cli::config()?;
     let mut logger = Builder::new();
     logger
-        .filter(None, Into::into(cli.log_level))
+        .filter_level(cli.log_level.into())
+        .filter_module("aws_smithy_http_tower", log::LevelFilter::Off)
+        .filter_module("aws_config", log::LevelFilter::Off)
+        .filter_module("aws_http", log::LevelFilter::Off)
         .write_style(WriteStyle::Never)
-        .format(|buf, record| writeln!(buf, "{}", record.args()))
         .init();
 
     let force_new_credentials = cli.force;
