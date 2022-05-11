@@ -6,30 +6,15 @@ use anyhow::{anyhow, Result};
 use clap::crate_name;
 use std::default::Default;
 
-#[derive(Deserialize, Serialize, Debug, Clone)]
+#[derive(Deserialize, Serialize, Debug, Clone, Default)]
 pub struct CrowbarConfig {
     pub profiles: Vec<AppProfile>,
     pub location: Option<String>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Default)]
 struct AppProfiles {
     profiles: Vec<AppProfile>,
-}
-
-impl Default for CrowbarConfig {
-    fn default() -> Self {
-        Self {
-            profiles: vec![],
-            location: None,
-        }
-    }
-}
-
-impl Default for AppProfiles {
-    fn default() -> Self {
-        Self { profiles: vec![] }
-    }
 }
 
 impl CrowbarConfig {

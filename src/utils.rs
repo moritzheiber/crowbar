@@ -80,9 +80,10 @@ pub fn select_role(roles: HashSet<AwsRole>, role: Option<String>) -> Result<AwsR
             None => match roles.clone() {
                 r if r.len() < 2 => 0,
                 r => Select::with_theme(&SimpleTheme)
-                    .with_prompt(
-                        &format!("Role {} not found; select the role to assume:", role).to_string(),
-                    )
+                    .with_prompt(&format!(
+                        "Role {} not found; select the role to assume:",
+                        role
+                    ))
                     .default(0)
                     .items(
                         &r.iter()

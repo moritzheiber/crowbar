@@ -33,6 +33,7 @@ impl LoginRequest {
 }
 
 #[derive(Deserialize, Debug, Clone)]
+#[allow(dead_code)]
 #[serde(rename_all = "camelCase")]
 pub struct LoginEmbedded {
     #[serde(default)]

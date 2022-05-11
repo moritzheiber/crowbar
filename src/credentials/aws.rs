@@ -51,9 +51,9 @@ impl From<Credentials> for AwsCredentials {
     fn from(creds: Credentials) -> Self {
         AwsCredentials {
             version: 1,
-            access_key_id: creds.access_key_id().and_then(|c| Some(c.to_owned())),
-            secret_access_key: creds.secret_access_key().and_then(|sk| Some(sk.to_owned())),
-            session_token: creds.session_token().and_then(|t| Some(t.to_owned())),
+            access_key_id: creds.access_key_id().map(|ak| ak.to_owned()),
+            secret_access_key: creds.secret_access_key().map(|sk| sk.to_owned()),
+            session_token: creds.session_token().map(|t| t.to_owned()),
             expiration: creds
                 .expiration()
                 .and_then(|t| t.fmt(Format::DateTime).ok()),
@@ -227,7 +227,8 @@ pub fn credentials_as_service(profile: &AppProfile) -> String {
 mod test {
     use super::*;
     use aws_smithy_types::DateTime;
-    use std::time::SystemTime;
+
+    const FUTURE: &str = "2038-01-01T10:10:10.311833Z";
 
     #[test]
     fn shows_if_expired() {
@@ -244,7 +245,12 @@ mod test {
 
     #[test]
     fn should_render_proper_json() {
-        let json = r#"{"Version":1,"AccessKeyId":"some_key","SecretAccessKey":"some_secret","SessionToken":"some_token","Expiration":"2038-01-01T10:10:10Z"}"#;
+        let json = format!(
+            "{}{}{}",
+            r#"{"Version":1,"AccessKeyId":"some_key","SecretAccessKey":"some_secret","SessionToken":"some_token","Expiration":""#,
+            FUTURE,
+            r#""}"#
+        );
         assert_eq!(json, format!("{}", create_credentials()))
     }
 
@@ -276,7 +282,7 @@ mod test {
             access_key_id: Some("some_key".to_string()),
             secret_access_key: Some("some_secret".to_string()),
             session_token: Some("some_token".to_string()),
-            expiration: Some("2038-01-01T10:10:10Z".to_string()),
+            expiration: Some(FUTURE.to_string()),
         }
     }
 
@@ -295,7 +301,10 @@ mod test {
             .access_key_id("some_key")
             .secret_access_key("some_secret")
             .session_token("some_token")
-            .expiration(DateTime::from(SystemTime::now()))
+            .expiration(
+                DateTime::from_str(FUTURE, Format::DateTime)
+                    .expect("Unable to convert future time for test"),
+            )
             .build()
     }
 
@@ -307,10 +316,7 @@ mod test {
                 Some("some_secret".to_string()),
             ),
             ("session_token".to_string(), Some("some_token".to_string())),
-            (
-                "expiration".to_string(),
-                Some("2038-01-01T10:10:10Z".to_string()),
-            ),
+            ("expiration".to_string(), Some(FUTURE.to_string())),
         ]
         .iter()
         .cloned()

@@ -1,7 +1,6 @@
 use crate::aws::AWS_DEFAULT_REGION;
 use anyhow::{anyhow, Error, Result};
 use aws_config::meta::region::RegionProviderChain;
-use aws_config::provider_config::ProviderConfig;
 use aws_sdk_sts::output::AssumeRoleWithSamlOutput;
 use aws_sdk_sts::Region;
 

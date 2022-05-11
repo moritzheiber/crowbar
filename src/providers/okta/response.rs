@@ -6,6 +6,7 @@ use std::collections::HashMap;
 use std::fmt;
 
 #[derive(Deserialize, Debug)]
+#[allow(dead_code)]
 #[serde(rename_all = "camelCase")]
 pub struct Response {
     pub state_token: Option<String>,
@@ -63,6 +64,7 @@ impl fmt::Display for FactorResult {
 }
 
 #[derive(Deserialize, Debug, Clone)]
+#[allow(dead_code)]
 #[serde(rename_all = "camelCase")]
 pub struct Embedded {
     #[serde(default)]
