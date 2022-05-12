@@ -71,7 +71,7 @@ jobs:
         continue-on-error: true
         run: |
           mkdir -p chocolatey/release
-          cp -v binary/crowbar.exe chocolatey/release/
+          cp -v crowbar.exe chocolatey/release/
           cp -v chocolatey/VERIFICATION.txt chocolatey/release/
           cp -v LICENSE chocolatey/release/
           cd chocolatey/
