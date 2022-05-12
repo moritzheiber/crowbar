@@ -36,7 +36,6 @@ jobs:
         run: |
           sudo apt update && sudo apt install -y libdbus-1-dev gnome-keyring dbus-x11 libssl-dev
           mkdir -p ~/.cache ~/.local/share/keyrings
-          sudo systemctl start dbus
         if: runner.os == 'Linux'
       - name: Test on Linux
         shell: /bin/bash -Eeuxl -o pipefail {0}
@@ -44,6 +43,7 @@ jobs:
         run: |
           cargo fmt -- --check
           cargo clippy --release
+          export $(dbus-launch)
           eval "printf '\n' | gnome-keyring-daemon --unlock"
           ps aux
           cargo test
