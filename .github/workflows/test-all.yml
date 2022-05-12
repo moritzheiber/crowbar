@@ -29,18 +29,19 @@ jobs:
           toolchain: stable
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v1
-      - name: Install dependencies and set OS environment variable
+      - name: Install dependencies and create directories
         env:
           DEBIAN_FRONTEND: "noninteractive"
         run: |
           sudo apt update && sudo apt install -y libdbus-1-dev gnome-keyring dbus-x11 libssl-dev
+          mkdir -p ~/.cache ~/.local/share/keyrings
         if: runner.os == 'Linux'
       - name: Test on Linux
         if: runner.os == 'Linux'
         run: |
           cargo fmt -- --check
           cargo clippy --release
-          ci/test.sh
+          dbus-run-session -- printf '\n' | gnome-keyring-daemon -rd --unlock && cargo test
       - name: Test on Windows/macOS
         if: runner.os != 'Linux'
         run: |

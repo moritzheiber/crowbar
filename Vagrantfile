@@ -8,11 +8,11 @@ SCRIPT
 
 Vagrant.configure('2') do |config|
   config.vm.provider 'virtualbox' do |v|
-    v.memory = 2048
+    v.memory = 4096
     v.cpus = 2
   end
 
-  config.vm.box = 'ubuntu/bionic64'
+  config.vm.box = 'ubuntu/jammy64'
   config.vm.provision 'shell',
                       inline: provisioning_script,
                       privileged: true
@@ -20,6 +20,9 @@ Vagrant.configure('2') do |config|
                       inline: 'curl https://sh.rustup.rs -sSf | ' \
                         'sh -s -- -y --profile minimal --default-toolchain '\
                         'stable && '\
-                        'mkdir -p ~/.cache ~/.local/share/keyrings',
+                        'mkdir -p ~/.cache ~/.local/share/keyrings && ' \
+                        'sudo apt update && ' \
+                        'sudo apt install -y build-essential git libdbus-1-dev dbus-x11 && ' \
+                        'git clone https://github.com/moritzheiber/crowbar.git crowbar',
                       privileged: false
 end
