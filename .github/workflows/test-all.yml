@@ -44,7 +44,8 @@ jobs:
         run: |
           cargo fmt -- --check
           cargo clippy --release
-          printf '\n' | gnome-keyring-daemon --unlock
+          eval "printf '\n' | gnome-keyring-daemon --unlock"
+          ps aux
           cargo test
       - name: Test on Windows/macOS
         if: runner.os != 'Linux'
