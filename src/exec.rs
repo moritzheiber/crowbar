@@ -63,7 +63,7 @@ impl Executor {
 
 fn shell() -> Result<Vec<String>> {
     if cfg!(windows) {
-        Ok(vec!["cmd.exec".into(), "/C".into()])
+        Ok(vec!["cmd.exe".into(), "/C".into()])
     } else if let Ok(shell) = env::var("SHELL") {
         Ok(vec![shell, "-c".into()])
     } else {
