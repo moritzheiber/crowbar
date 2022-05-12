@@ -35,13 +35,15 @@ jobs:
         run: |
           sudo apt update && sudo apt install -y libdbus-1-dev gnome-keyring dbus-x11 libssl-dev
           mkdir -p ~/.cache ~/.local/share/keyrings
+          sudo systemctl start dbus
         if: runner.os == 'Linux'
       - name: Test on Linux
         if: runner.os == 'Linux'
         run: |
           cargo fmt -- --check
           cargo clippy --release
-          dbus-run-session -- printf '\n' | gnome-keyring-daemon -rd --unlock && cargo test
+          printf '\n' | gnome-keyring-daemon --unlock
+          cargo test
       - name: Test on Windows/macOS
         if: runner.os != 'Linux'
         run: |
