@@ -30,22 +30,19 @@ jobs:
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v1
       - name: Install dependencies and create directories
-        shell: /bin/bash -Eeuxl -o pipefail {0}
         env:
           DEBIAN_FRONTEND: "noninteractive"
         run: |
-          sudo apt update && sudo apt install -y libdbus-1-dev gnome-keyring dbus-x11 libssl-dev
+          sudo apt update && sudo apt install -y libdbus-1-dev gnome-keyring dbus-x11
           mkdir -p ~/.cache ~/.local/share/keyrings
         if: runner.os == 'Linux'
       - name: Test on Linux
-        shell: /bin/bash -Eeuxl -o pipefail {0}
         if: runner.os == 'Linux'
         run: |
           cargo fmt -- --check
           cargo clippy --release
           export $(dbus-launch)
           eval "printf '\n' | gnome-keyring-daemon --unlock"
-          ps aux
           cargo test
       - name: Test on Windows/macOS
         if: runner.os != 'Linux'
