@@ -8,7 +8,7 @@ on:
 jobs:
   build:
     name: Build on Linux
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
       - name: Install Rust stable
@@ -37,7 +37,7 @@ jobs:
           path: target/release/crowbar
   test:
     name: Test on Linux
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
       - name: Install Rust stable
@@ -61,7 +61,7 @@ jobs:
           cargo clippy --release
           ci/test.sh
   release:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: [build, test]
     steps:
       - name: Restore artifact from previous job
