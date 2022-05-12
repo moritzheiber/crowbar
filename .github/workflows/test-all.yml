@@ -49,4 +49,4 @@ jobs:
         run: |
           cargo fmt -- --check
           cargo clippy --release
-          cargo test --release --locked
+          cargo test

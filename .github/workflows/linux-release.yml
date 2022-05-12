@@ -9,6 +9,8 @@ jobs:
   build:
     name: Build on Linux
     runs-on: ubuntu-22.04
+    env:
+      RUST_BACKTRACE: "full"
     steps:
       - uses: actions/checkout@v3
       - name: Install Rust stable
@@ -52,14 +54,14 @@ jobs:
           DEBIAN_FRONTEND: "noninteractive"
         run: |
           sudo apt update && sudo apt install -y libdbus-1-dev gnome-keyring dbus-x11 libssl-dev
+          mkdir -p ~/.cache ~/.local/share/keyrings
       - name: Test
-        env:
-          RUST_BACKTRACE: "full"
-          GITHUB_ACTIONS_OS: "linux"
         run: |
           cargo fmt -- --check
           cargo clippy --release
-          ci/test.sh
+          export $(dbus-launch)
+          eval "printf '\n' | gnome-keyring-daemon --unlock"
+          cargo test --release --locked
   release:
     runs-on: ubuntu-22.04
     needs: [build, test]
