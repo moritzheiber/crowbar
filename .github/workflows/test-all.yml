@@ -30,6 +30,7 @@ jobs:
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v1
       - name: Install dependencies and create directories
+        shell: /bin/bash -Eeuxl -o pipefail {0}
         env:
           DEBIAN_FRONTEND: "noninteractive"
         run: |
@@ -38,6 +39,7 @@ jobs:
           sudo systemctl start dbus
         if: runner.os == 'Linux'
       - name: Test on Linux
+        shell: /bin/bash -Eeuxl -o pipefail {0}
         if: runner.os == 'Linux'
         run: |
           cargo fmt -- --check
