@@ -9,7 +9,7 @@ jobs:
   build:
     name: Build on Linux
     container: node:alpine
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
     env:
       RUST_BACKTRACE: "full"
     steps:
@@ -37,7 +37,10 @@ jobs:
           path: target/release/crowbar
   test:
     name: Test on Linux
-    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        os: [ubuntu-20.04, ubuntu-22.04]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
       - name: Install Rust stable
@@ -61,7 +64,7 @@ jobs:
           eval "printf '\n' | gnome-keyring-daemon --unlock"
           cargo test --release --locked
   release:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
     needs: [build, test]
     steps:
       - name: Restore artifact from previous job
