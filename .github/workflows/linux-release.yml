@@ -20,6 +20,8 @@ jobs:
           profile: minimal
           toolchain: stable
       - uses: Swatinem/rust-cache@v1
+        with:
+          key: ubuntu-20.04
       - name: Install dependencies
         run: |
           apk add --no-cache build-base dbus-x11 dbus-dev openssl-dev perl
@@ -50,6 +52,8 @@ jobs:
           toolchain: stable
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v1
+        with:
+          key: ${{ matrix.os }}
       - name: Install dependencies
         env:
           DEBIAN_FRONTEND: "noninteractive"

@@ -29,6 +29,8 @@ jobs:
           toolchain: stable
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v1
+        with:
+          key: ${{ matrix.os }}
       - name: Install dependencies and create directories
         env:
           DEBIAN_FRONTEND: "noninteractive"
