@@ -8,6 +8,7 @@ on:
 jobs:
   build:
     name: Build on Linux
+    container: node:alpine
     runs-on: ubuntu-22.04
     env:
       RUST_BACKTRACE: "full"
@@ -20,14 +21,11 @@ jobs:
           toolchain: stable
       - uses: Swatinem/rust-cache@v1
       - name: Install dependencies
-        env:
-          DEBIAN_FRONTEND: "noninteractive"
         run: |
-          sudo apt update && sudo apt install -y libdbus-1-dev gnome-keyring dbus-x11 libssl-dev
+          apk add --no-cache build-base dbus-x11 dbus-dev openssl-dev perl
       - name: Build
         env:
           RUSTFLAGS: "-C link-arg=-s"
-          GITHUB_ACTIONS_OS: linux
         run: |
           cargo build --release --locked
       - name: Publish to crates.io
