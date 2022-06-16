@@ -1,9 +1,9 @@
 [package]
 name = "crowbar"
-version = "0.4.5"
+version = "0.4.6"
 authors = ["Moritz Heiber <hello@heiber.im>"]
 description = "Securily generates temporary AWS credentials through Identity Providers using SAML"
-edition = "2018"
+edition = "2021"
 license = "Apache-2.0"
 homepage = "https://github.com/moritzheiber/crowbar"
 repository = "https://github.com/moritzheiber/crowbar"
@@ -37,7 +37,7 @@ aws-sdk-sts = "0.11.0"
 aws-smithy-types = "0.41.0"
 base64 = "~0.12"
 log = "~0.4"
-keyring = "~1"
+keyring = "~1.1.2"
 whoami = "~0.8"
 dialoguer = "~0.5"
 sxd-document = "~0.3"
@@ -58,6 +58,9 @@ confy = "~0.4"
 tokio = { version = "1", features = ["full"] }
 console = "~0.10"
 select = "~0.4"
+
+[patch.crates-io]
+secret-service = { git = "https://github.com/hwchen/secret-service-rs" }
 
 [dev-dependencies]
 tempfile = "3"
