@@ -19,12 +19,12 @@ jobs:
         with:
           profile: minimal
           toolchain: stable
+      - name: Install dependencies
+        run: |
+          apk add --no-cache build-base dbus-x11 dbus-dev openssl-dev perl tar
       - uses: Swatinem/rust-cache@v1
         with:
           key: ubuntu-20.04
-      - name: Install dependencies
-        run: |
-          apk add --no-cache build-base dbus-x11 dbus-dev openssl-dev perl
       - name: Build
         env:
           RUSTFLAGS: "-C link-arg=-s"
