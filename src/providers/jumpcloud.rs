@@ -9,7 +9,9 @@ use crate::saml;
 use crate::utils;
 
 use anyhow::{anyhow, Context, Result};
+use log::{debug, trace};
 use reqwest::{StatusCode, Url};
+use serde::{Deserialize, Serialize};
 
 const AUTH_SUBMIT_URL: &str = "https://console.jumpcloud.com/userconsole/auth";
 const XSRF_URL: &str = "https://console.jumpcloud.com/userconsole/xsrf";

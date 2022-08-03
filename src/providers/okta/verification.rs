@@ -3,6 +3,7 @@ use crate::providers::okta::factors::Factor;
 use crate::providers::okta::response::{Links, Response};
 
 use anyhow::{anyhow, Result};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 #[derive(Deserialize, Debug, Serialize)]

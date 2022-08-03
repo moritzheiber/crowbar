@@ -2,6 +2,7 @@ use crate::config::app::AppProfile;
 use crate::credentials::{Credential, CredentialType};
 use crate::utils;
 use anyhow::{anyhow, Result};
+use log::debug;
 
 #[derive(Clone)]
 pub struct ConfigCredentials {

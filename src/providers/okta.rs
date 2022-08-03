@@ -14,6 +14,7 @@ use crate::providers::okta::login::LoginRequest;
 use crate::saml;
 
 use anyhow::{Context, Result};
+use log::{debug, trace};
 
 const API_AUTHN_PATH: &str = "api/v1/authn";
 

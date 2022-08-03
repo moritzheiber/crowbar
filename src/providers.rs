@@ -3,6 +3,7 @@ pub mod jumpcloud;
 pub mod okta;
 
 use anyhow::{anyhow, Result};
+use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]

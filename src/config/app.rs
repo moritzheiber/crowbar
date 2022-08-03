@@ -1,6 +1,7 @@
 use crate::providers::ProviderType;
 use anyhow::{anyhow, Result};
 use clap::ArgMatches;
+use serde::{Deserialize, Serialize};
 use sha2::Digest;
 use std::fmt;
 use std::str::FromStr;

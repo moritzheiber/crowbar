@@ -1,4 +1,5 @@
 use crate::providers::okta::response::Links;
+use serde::Deserialize;
 use std::collections::HashMap;
 use std::fmt;
 

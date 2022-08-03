@@ -1,6 +1,6 @@
 [package]
 name = "crowbar"
-version = "0.4.8"
+version = "0.4.9"
 authors = ["Moritz Heiber <hello@heiber.im>"]
 description = "Securily generates temporary AWS credentials through Identity Providers using SAML"
 edition = "2021"

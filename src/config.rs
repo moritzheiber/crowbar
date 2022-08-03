@@ -4,6 +4,7 @@ pub mod aws;
 use crate::config::app::AppProfile;
 use anyhow::{anyhow, Result};
 use clap::crate_name;
+use serde::{Deserialize, Serialize};
 use std::default::Default;
 
 #[derive(Deserialize, Serialize, Debug, Clone, Default)]

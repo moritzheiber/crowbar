@@ -5,6 +5,7 @@ use crate::utils;
 
 use anyhow::{anyhow, Context as AnyhowContext, Result};
 use base64::decode;
+use log::{debug, trace};
 use select::document::Document;
 use select::predicate::Attr;
 use std::collections::HashSet;

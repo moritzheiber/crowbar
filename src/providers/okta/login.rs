@@ -2,6 +2,7 @@ use crate::providers::okta::client::Client;
 use crate::providers::okta::factors::Factor;
 use crate::providers::okta::response::{Response, User};
 use crate::providers::okta::API_AUTHN_PATH;
+use serde::{Deserialize, Serialize};
 
 use anyhow::Result;
 

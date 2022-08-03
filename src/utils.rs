@@ -4,6 +4,7 @@ use crate::config::app::AppProfile;
 use anyhow::{Context, Result};
 use dialoguer::{theme::SimpleTheme, Select};
 use dialoguer::{Input, PasswordInput};
+use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::env::var;
 

@@ -1,29 +1,3 @@
-extern crate base64;
-extern crate clap;
-extern crate confy;
-extern crate console;
-extern crate dialoguer;
-extern crate keyring;
-#[macro_use]
-extern crate log;
-extern crate aws_config;
-extern crate aws_sdk_sts;
-extern crate env_logger;
-extern crate regex;
-extern crate reqwest;
-#[macro_use]
-extern crate serde_derive;
-extern crate dirs_next;
-extern crate itertools;
-extern crate select;
-extern crate serde;
-extern crate serde_str;
-extern crate sxd_document;
-extern crate sxd_xpath;
-extern crate toml;
-extern crate walkdir;
-extern crate whoami;
-
 mod aws;
 mod cli;
 pub mod config;
@@ -38,8 +12,10 @@ use crate::cli::{CliAction, CliSubAction};
 use crate::config::{aws::AwsConfig, CrowbarConfig};
 use crate::credentials::aws as CredentialsProvider;
 use crate::exec::Executor;
+
 use anyhow::Result;
 use env_logger::{Builder, WriteStyle};
+use log::info;
 
 pub fn run() -> Result<()> {
     let cli = cli::config()?;
