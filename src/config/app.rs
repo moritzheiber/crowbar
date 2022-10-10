@@ -30,14 +30,15 @@ impl fmt::Display for AppProfile {
     }
 }
 
-impl<'a> From<&ArgMatches<'a>> for AppProfile {
+impl From<&ArgMatches> for AppProfile {
     fn from(action: &ArgMatches) -> AppProfile {
         AppProfile {
-            name: action.value_of("profile").unwrap().to_owned(),
-            username: action.value_of("username").unwrap().to_owned(),
-            url: action.value_of("url").unwrap().to_owned(),
-            role: action.value_of("role").map(|r| r.to_owned()),
-            provider: ProviderType::from_str(action.value_of("provider").unwrap()).unwrap(),
+            name: action.get_one::<String>("profile").unwrap().to_string(),
+            username: action.get_one::<String>("username").unwrap().to_string(),
+            url: action.get_one::<String>("url").unwrap().to_string(),
+            role: action.get_one::<String>("role").map(|r| r.to_string()),
+            provider: ProviderType::from_str(action.get_one::<String>("provider").unwrap())
+                .unwrap(),
         }
     }
 }

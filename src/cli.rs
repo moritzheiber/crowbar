@@ -1,7 +1,7 @@
 use crate::config::app::AppProfile;
 use crate::utils::LevelFilter;
 use anyhow::Result;
-use clap::{crate_description, crate_version, App, AppSettings, Arg, ArgMatches, SubCommand};
+use clap::{crate_description, crate_version, Arg, ArgAction, ArgMatches, Command};
 
 #[derive(Debug)]
 pub struct CliConfig {
@@ -33,119 +33,115 @@ pub enum CliSubAction {
     List,
 }
 
-fn get_matches() -> ArgMatches<'static> {
-    App::new("crowbar")
+fn get_matches() -> ArgMatches {
+    Command::new("crowbar")
       .version(crate_version!())
       .about(crate_description!())
-      .setting(AppSettings::SubcommandRequiredElseHelp)
-      .setting(AppSettings::GlobalVersion)
-      .setting(AppSettings::UnifiedHelpMessage)
-      .setting(AppSettings::DisableHelpSubcommand)
+      .subcommand_required(true)
+        .propagate_version(true)
+            .subcommand_required(true)      .disable_help_subcommand(true)
       .arg(
-          Arg::with_name("force")
-              .short("f")
-              .takes_value(false)
+          Arg::new("force")
+              .short('f')
+              .action(ArgAction::SetTrue)
               .long("force")
               .help("Forces re-entering of your Okta credentials"),
       )
       .arg(
-          Arg::with_name("log-level")
-              .short("l")
+          Arg::new("log-level")
+              .short('l')
               .long("log-level")
               .value_name("LOG_LEVEL")
               .help("Set the log level")
-              .possible_values(&["info", "debug", "trace"])
+              .value_parser(clap::builder::PossibleValuesParser::new(["info", "debug", "trace"]))
               .default_value("info")
-              .takes_value(true),
       )
       .arg(
-          Arg::with_name("location")
-              .short("c")
+          Arg::new("location")
+              .short('c')
               .long("config")
               .value_name("CONFIG")
               .help("The location of the configuration file"),
       )
       .subcommand(
-          SubCommand::with_name("profiles")
+          Command::new("profiles")
           .about("Add or delete profiles")
-          .setting(AppSettings::SubcommandRequiredElseHelp)
-          .setting(AppSettings::DisableHelpSubcommand)
-          .subcommand(
-              SubCommand::with_name("add")
+          .arg_required_else_help(true)
+          .disable_help_subcommand(true)
+        .subcommand(
+              Command::new("add")
               .about("Add a profile")
               .arg(
-                  Arg::with_name("provider")
-                      .short("p")
+                  Arg::new("provider")
+                      .short('p')
                       .long("provider")
                       .value_name("PROVIDER")
                       .required(true)
                       .help("The name of the provider to use")
-                      .possible_values(&["okta","jumpcloud"])
-                      .takes_value(true),
+                      .value_parser(clap::builder::PossibleValuesParser::new(["okta","jumpcloud"]))
               )
               .arg(
-                  Arg::with_name("username")
-                      .short("u")
+                  Arg::new("username")
+                      .short('u')
                       .long("username")
                       .value_name("USERNAME")
                       .required(true)
                       .help("The username to use for logging into your IdP"),
               )
               .arg(
-                  Arg::with_name("url")
+                  Arg::new("url")
                       .long("url")
                       .value_name("URL")
                       .required(true)
                       .help("The URL used to log into AWS from your IdP"),
               )
               .arg(
-                  Arg::with_name("role")
+                  Arg::new("role")
                       .long("r")
                       .value_name("ROLE")
                       .required(false)
                       .help("The AWS role to assume after a successful login (Optional)"),
               )
               .arg(
-                  Arg::with_name("profile").required(true).help("The name of the profile"),
+                  Arg::new("profile").required(true).help("The name of the profile"),
               ),
           )
           .subcommand(
-              SubCommand::with_name("list")
+              Command::new("list")
               .about("List all profiles")
           )
           .subcommand(
-              SubCommand::with_name("delete")
+              Command::new("delete")
               .about("Delete a profile")
               .arg(
-                  Arg::with_name("profile").required(true)
+                  Arg::new("profile").required(true)
               ),
           )
       )
       .subcommand(
-          SubCommand::with_name("creds")
+          Command::new("creds")
           .about("Exposed temporary credentials on the command line using the credential_process JSON layout")
           .arg(
-              Arg::with_name("print")
-              .short("p")
-              .takes_value(false)
+              Arg::new("print")
+              .short('p')
+              .action(ArgAction::SetTrue)
               .long("print")
               .help("Print credentials to stdout"),
           )
           .arg(
-              Arg::with_name("profile").required(true)
+              Arg::new("profile").required(true)
           ),
       )
       .subcommand(
-        SubCommand::with_name("exec")
+        Command::new("exec")
         .about("Exposed temporary credentials on the command line by executing a child process with environment variables")
         .arg(
-            Arg::with_name("profile").required(true)
+            Arg::new("profile").required(true)
         )
         .arg(
-            Arg::with_name("command")
-            .takes_value(true)
+            Arg::new("command")
             .last(true)
-            .multiple(true)
+            .action(ArgAction::Append)
         ),
     )
     .get_matches()
@@ -154,11 +150,11 @@ fn get_matches() -> ArgMatches<'static> {
 pub fn config() -> Result<CliConfig> {
     let matches = get_matches();
     let cli_action = select_action(&matches);
-    let location = matches.value_of("config").map(|c| c.to_owned());
-    let log_level_from_matches = matches.value_of("log-level").unwrap();
+    let location = matches.get_one::<String>("location").map(|c| c.to_string());
+    let log_level_from_matches = matches.get_one::<String>("log-level").unwrap();
 
     Ok(CliConfig {
-        force: matches.is_present("force"),
+        force: matches.get_flag("force"),
         location,
         log_level: select_log_level(log_level_from_matches),
         action: cli_action?,
@@ -167,30 +163,30 @@ pub fn config() -> Result<CliConfig> {
 
 fn select_action(matches: &ArgMatches) -> Result<CliAction> {
     match matches.subcommand() {
-        ("exec", Some(m)) => {
-            let parts: Vec<_> = m
-                .values_of("command")
+        Some(("exec", m)) => {
+            let parts = m
+                .get_many::<String>("command")
                 .unwrap()
                 .map(|o| o.to_owned())
                 .collect();
             Ok(CliAction::Exec {
                 command: parts,
-                profile: m.value_of("profile").unwrap().to_owned(),
+                profile: m.get_one::<String>("profile").unwrap().to_string(),
             })
         }
-        ("creds", Some(m)) => Ok(CliAction::Creds {
-            print: m.is_present("print"),
-            profile: m.value_of("profile").unwrap().to_owned(),
+        Some(("creds", m)) => Ok(CliAction::Creds {
+            print: m.get_flag("print"),
+            profile: m.get_one::<String>("profile").unwrap().to_string(),
         }),
-        ("profiles", Some(action)) => Ok(CliAction::Profiles {
+        Some(("profiles", action)) => Ok(CliAction::Profiles {
             action: match action.subcommand() {
-                ("add", Some(action)) => CliSubAction::Add {
+                Some(("add", action)) => CliSubAction::Add {
                     profile: AppProfile::from(action),
                 },
-                ("delete", Some(action)) => CliSubAction::Delete {
-                    profile_name: action.value_of("profile").unwrap().to_owned(),
+                Some(("delete", action)) => CliSubAction::Delete {
+                    profile_name: action.get_one::<String>("profile").unwrap().to_string(),
                 },
-                ("list", Some(_action)) => CliSubAction::List,
+                Some(("list", _)) => CliSubAction::List,
                 _ => unreachable!(),
             },
         }),
