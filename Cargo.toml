@@ -1,6 +1,6 @@
 [package]
 name = "crowbar"
-version = "0.4.9"
+version = "0.4.10"
 authors = ["Moritz Heiber <hello@heiber.im>"]
 description = "Securily generates temporary AWS credentials through Identity Providers using SAML"
 edition = "2021"
@@ -32,9 +32,9 @@ reqwest = { version = "~0.11", features = [
 serde = "~1.0"
 serde_derive = "~1.0"
 toml = "~0.5"
-aws-config = "0.46.0"
-aws-sdk-sts = "0.16.0"
-aws-smithy-types = "0.46.0"
+aws-config = "0.51.0"
+aws-sdk-sts = "0.21.0"
+aws-smithy-types = "0.51.0"
 base64 = "~0.12"
 log = "~0.4"
 keyring = "~1.1.2"
