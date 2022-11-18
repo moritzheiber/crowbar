@@ -16,7 +16,7 @@ jobs:
         with:
           profile: minimal
           toolchain: stable
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2
       - name: Build
         env:
           RUSTFLAGS: "-C link-arg=-s -C target-feature=+crt-static"
@@ -37,7 +37,7 @@ jobs:
         with:
           profile: minimal
           toolchain: stable
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2
       - name: Test
         env:
           RUSTFLAGS: "-C link-arg=-s -C target-feature=+crt-static"
