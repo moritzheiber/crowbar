@@ -60,10 +60,8 @@ jobs:
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@2.3.0
         with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: crowbar
           asset_name: crowbar-x86_64-macos
-          tag: ${{ github.ref }}
           overwrite: true
       - name: Bump Homebrew formula
         uses: mislav/bump-homebrew-formula-action@v2
