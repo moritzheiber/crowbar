@@ -22,7 +22,7 @@ jobs:
       - name: Install dependencies
         run: |
           apk add --no-cache build-base dbus-x11 dbus-dev openssl-dev perl tar
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2
         with:
           key: ubuntu-20.04
       - name: Build
@@ -49,7 +49,7 @@ jobs:
           profile: minimal
           toolchain: stable
           components: rustfmt, clippy
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2
         with:
           key: ${{ matrix.os }}
       - name: Install dependencies
