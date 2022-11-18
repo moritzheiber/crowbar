@@ -23,10 +23,8 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Install Rust stable
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@stable
         with:
-          profile: minimal
-          toolchain: stable
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
         with:
