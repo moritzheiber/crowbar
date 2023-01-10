@@ -56,7 +56,7 @@ jobs:
         with:
           name: binary
       - name: Upload binaries to release
-        uses: svenstaro/upload-release-action@2.3.0
+        uses: svenstaro/upload-release-action@2.4.0
         with:
           file: crowbar
           asset_name: crowbar-x86_64-macos
