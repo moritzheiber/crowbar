@@ -644,7 +644,7 @@ dependencies = [
 
 [[package]]
 name = "crowbar"
-version = "0.4.9"
+version = "0.4.10"
 dependencies = [
  "anyhow",
  "aws-config",
@@ -1277,9 +1277,9 @@ dependencies = [
 
 [[package]]
 name = "keyring"
-version = "1.1.2"
+version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "894a58932447ecc241a3545135bdfd26ac0e611295b391904ce0b085310ab38c"
+checksum = "38fb8399ddcabfccb274577a8d90f0653e0b5b5977797c1c8834ad09839a10e5"
 dependencies = [
  "byteorder",
  "secret-service",
