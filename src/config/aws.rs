@@ -1,7 +1,7 @@
 use crate::config::app::AppProfile;
 use crate::utils;
 use anyhow::{anyhow, Context, Result};
-use dirs_next::home_dir;
+use dirs::home_dir;
 use ini::Ini;
 use std::fs;
 use std::fs::File;

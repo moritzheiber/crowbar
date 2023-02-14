@@ -3,7 +3,7 @@ use crate::config::app::AppProfile;
 
 use anyhow::{Context, Result};
 use dialoguer::{theme::SimpleTheme, Select};
-use dialoguer::{Input, PasswordInput};
+use dialoguer::{Input, Password};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::env::var;
@@ -45,7 +45,7 @@ pub fn non_empty_env_var(name: &str) -> Option<String> {
 }
 
 pub fn prompt_password(profile: &AppProfile) -> Result<String> {
-    PasswordInput::new()
+    Password::new()
         .with_prompt(&format!(
             "Password for {} at {}",
             &profile.username,

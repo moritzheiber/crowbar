@@ -32,7 +32,7 @@ impl CrowbarConfig {
     pub fn read(mut self) -> Result<CrowbarConfig> {
         let app_profiles: AppProfiles = match &self.location {
             Some(l) => confy::load_path(l)?,
-            _ => confy::load(crate_name!())?,
+            _ => confy::load(crate_name!(), Some("crowbar"))?,
         };
         self.profiles = app_profiles.profiles;
 
@@ -83,7 +83,7 @@ impl CrowbarConfig {
 
         match self.location {
             Some(l) => confy::store_path(l, app_profiles).map_err(|e| e.into()),
-            _ => confy::store(crate_name!(), app_profiles).map_err(|e| e.into()),
+            _ => confy::store(crate_name!(), Some("crowbar"), app_profiles).map_err(|e| e.into()),
         }
     }
 }

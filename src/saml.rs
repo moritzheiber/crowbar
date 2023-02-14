@@ -4,7 +4,7 @@ use crate::credentials::aws::AwsCredentials;
 use crate::utils;
 
 use anyhow::{anyhow, Context as AnyhowContext, Result};
-use base64::decode;
+use base64::{engine::general_purpose::STANDARD as b64, Engine as _};
 use log::{debug, trace};
 use select::document::Document;
 use select::predicate::Attr;
@@ -23,7 +23,7 @@ impl FromStr for Response {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self> {
-        let decoded_saml = String::from_utf8(decode(&s)?)?;
+        let decoded_saml = String::from_utf8(b64.decode(&s)?)?;
 
         trace!("SAML: {}", s);
 
@@ -91,7 +91,6 @@ pub fn extract_saml_assertion(text: &str) -> Result<Response> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use base64::encode;
     use claim::assert_ok;
     use std::fs;
 
@@ -157,7 +156,7 @@ mod tests {
 
     fn get_response(path: &str) -> Result<Response> {
         let saml_xml: String = fs::read_to_string(path)?;
-        let saml_base64 = encode(&saml_xml);
+        let saml_base64 = b64.encode(&saml_xml);
         saml_base64.parse()
     }
 }
