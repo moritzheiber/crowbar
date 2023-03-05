@@ -118,7 +118,6 @@ pub struct UserProfile {
 mod test {
     use super::*;
     use anyhow::Result;
-    use claim::assert_ok;
     use std::fs;
 
     #[test]
@@ -181,7 +180,7 @@ mod test {
             "tests/fixtures/okta/login_response_unimplemented_factors.json",
         )?);
 
-        assert_ok!(response);
+        assert!(response.is_ok());
         Ok(())
     }
 }

@@ -97,14 +97,13 @@ fn find_duplicate(vec: &[AppProfile], profile: &AppProfile) -> bool {
 mod test {
     use super::*;
     use crate::providers::ProviderType;
-    use claim::{assert_err, assert_ok};
 
     #[test]
     fn serializes_valid_config_for_location() -> Result<()> {
         let crowbar_config =
             CrowbarConfig::with_location(Some("tests/fixtures/valid_config.toml".to_string()));
         let result = crowbar_config.read();
-        assert_ok!(&result);
+        assert!(&result.is_ok());
 
         let config = result?.profiles;
         assert_eq!(config.len(), 1);
@@ -116,7 +115,7 @@ mod test {
     fn serializes_empty_config_for_location_into_empty_vec() -> Result<()> {
         let crowbar_config = CrowbarConfig::with_location(Some("/tmp/some/location".to_string()));
         let result = crowbar_config.read();
-        assert_ok!(&result);
+        assert!(&result.is_ok());
 
         let config = result?.profiles;
         assert_eq!(config.len(), 0);
@@ -152,7 +151,7 @@ mod test {
 
         let result = config.add_profile(&profile_a());
 
-        assert_err!(result);
+        assert!(result.is_err());
         Ok(())
     }
 
@@ -180,7 +179,7 @@ mod test {
         };
 
         let profile = profile_a();
-        assert_err!(config.delete_profile(&profile.name));
+        assert!(config.delete_profile(&profile.name).is_err());
 
         Ok(())
     }

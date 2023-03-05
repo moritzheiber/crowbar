@@ -23,7 +23,7 @@ impl FromStr for Response {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self> {
-        let decoded_saml = String::from_utf8(b64.decode(&s)?)?;
+        let decoded_saml = String::from_utf8(b64.decode(s)?)?;
 
         trace!("SAML: {}", s);
 
@@ -91,7 +91,6 @@ pub fn extract_saml_assertion(text: &str) -> Result<Response> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use claim::assert_ok;
     use std::fs;
 
     #[test]
@@ -149,7 +148,7 @@ mod tests {
         let html: String = fs::read_to_string("tests/fixtures/jumpcloud/html_saml_response.html")?;
         let saml_response = extract_saml_assertion(&html);
 
-        assert_ok!(saml_response);
+        assert!(saml_response.is_ok());
 
         Ok(())
     }
