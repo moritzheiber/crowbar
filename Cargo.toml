@@ -30,7 +30,7 @@ reqwest = { version = "0.11.14", default-features = false, features = [
     "rustls-tls",
 ] }
 serde = "1.0"
-toml = "0.7.2"
+toml = "0.7.4"
 aws-config = "0.54.1"
 aws-sdk-sts = "0.24.0"
 aws-smithy-types = "0.54.1"
