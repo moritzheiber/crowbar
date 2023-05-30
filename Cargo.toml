@@ -51,7 +51,7 @@ dirs = "4"
 url = "2.3.1"
 sha2 = "0.10.6"
 anyhow = "1.0"
-chrono = { version = "0.4.23", default-features = false, features = [
+chrono = { version = "0.4.25", default-features = false, features = [
     "clock",
     "std",
     "serde",
